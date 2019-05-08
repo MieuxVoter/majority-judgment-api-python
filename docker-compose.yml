@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  web:
+    image: drf-tdd:latest
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/code
+    ports:
+      - "8012:8000"
+
+
