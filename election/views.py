@@ -9,11 +9,6 @@ from election.serializers import ElectionSerializer
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = ElectionSerializer
 
-class ElectionResultsAPIView(APIView):
-    def get(self, *args, **kwargs):
-        ret = {}
-        ret['data'] = 'results'
-        return Response(ret)
 
 class ElectionDetailsAPIView(APIView):
     def get(self, *args, **kwargs):
