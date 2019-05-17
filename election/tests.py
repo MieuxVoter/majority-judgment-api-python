@@ -20,12 +20,3 @@ class ElectionCreateAPIViewTestCase(APITestCase):
         response_get = self.client.get(urls.election_details(election_pk))
         self.assertEqual(200, response_get.status_code)
         self.assertEqual(title, response_get.data["title"])
-
-
-
-class ElectionDetailsAPIViewTestCase(APITestCase):
-
-    def test_election_results(self):
-        response = self.client.get(urls.election_details(None))
-        self.assertEqual(200, response.status_code)
-        self.assertEqual("details", response.data["data"])
