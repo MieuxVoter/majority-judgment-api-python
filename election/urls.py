@@ -5,12 +5,12 @@ from django.urls import reverse
 app_name = 'election'
 
 urlpatterns = [
-    path('create/', ElectionCreateAPIView.as_view(), name="create"),
-    path('details/', ElectionDetailsAPIView.as_view(), name="details"),
+    path(r'create/', ElectionCreateAPIView.as_view(), name="create"),
+    path(r'<int:pk>', ElectionDetailsAPIView.as_view(), name="details"),
 ]
 
 def new_election():
     return reverse("election:create")
 
 def election_details(election_pk):
-    return reverse("election:details")
+    return reverse("election:details", args=(election_pk,))
