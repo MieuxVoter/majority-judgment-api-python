@@ -6,7 +6,7 @@ app_name = 'election'
 
 urlpatterns = [
     path(r'create/', ElectionCreateAPIView.as_view(), name="create"),
-    path(r'<int:pk>', ElectionDetailsAPIView.as_view(), name="details"),
+    path(r'<str:pk>', ElectionDetailsAPIView.as_view(), name="details"),
 ]
 
 def new_election():

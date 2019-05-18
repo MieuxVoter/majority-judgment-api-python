@@ -1,6 +1,6 @@
 from django.db import models
+from libs.django_randomprimary import RandomPrimaryIdModel
 
-# Create your models here.
 
-class Election(models.Model):
+class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
