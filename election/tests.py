@@ -9,10 +9,18 @@ class ElectionCreateAPIViewTestCase(APITestCase):
 
     def test_create_election(self):
         title = "Super élection - utf-8 chars: 🤨 😐 😑 😶 🙄 😏 😣 😥 😮 🤐 😯 😪 😫 😴 😌 😛 😜 😝 🤤 😒 😓 😔 😕 🙃 🤑 😲 ☹️ 🙁 😖 😞 😟 😤 😢 😭 😦 😧 😨 😩 🤯 !"
+        candidates = [
+            "Seb",
+            "Pierre-Louis",
+        ]
+
 
         response_post = self.client.post(
             urls.new_election(),
-            {"title": title},
+            {
+                "title": title,
+                "candidates": candidates
+            },
         )
         self.assertEqual(201, response_post.status_code)
 
@@ -20,3 +28,4 @@ class ElectionCreateAPIViewTestCase(APITestCase):
         response_get = self.client.get(urls.election_details(election_pk))
         self.assertEqual(200, response_get.status_code)
         self.assertEqual(title, response_get.data["title"])
+        self.assertEqual(candidates, response_get.data["candidates"])

@@ -14,7 +14,7 @@ class ElectionViewMixin:
 class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
     class Meta:
         model = Election
-        fields = ('title',)
+        fields = ('title', 'candidates')
 
 class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
     class Meta:
