@@ -5,8 +5,9 @@ from django.urls import reverse
 app_name = 'election'
 
 urlpatterns = [
-    path(r'create/', ElectionCreateAPIView.as_view(), name="create"),
-    path(r'<str:pk>/', ElectionDetailsAPIView.as_view(), name="details"),
+    path(r'', ElectionCreateAPIView.as_view(), name="create"),
+    path(r'get/<str:pk>/', ElectionDetailsAPIView.as_view(), name="details"),
+    path(r'vote/', vote, name="vote"),
 ]
 
 def new_election():
