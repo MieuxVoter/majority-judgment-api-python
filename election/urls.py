@@ -7,7 +7,7 @@ app_name = 'election'
 urlpatterns = [
     path(r'', ElectionCreateAPIView.as_view(), name="create"),
     path(r'get/<str:pk>/', ElectionDetailsAPIView.as_view(), name="details"),
-    path(r'vote/', vote, name="vote"),
+    path(r'vote/', VoteAPIView.as_view(), name="vote"),
 ]
 
 def new_election():
@@ -15,3 +15,6 @@ def new_election():
 
 def election_details(election_pk):
     return reverse("election:details", args=(election_pk,))
+
+def vote():
+    return reverse("election:vote")
