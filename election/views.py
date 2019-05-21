@@ -74,6 +74,8 @@ class VoteAPIView(CreateAPIView):
                     "token already used",
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            token_object.used = True
+            token_object.save()
 
 
         # Dealing with potential errors like the number of mentions
