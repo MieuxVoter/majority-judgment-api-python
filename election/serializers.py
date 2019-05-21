@@ -12,9 +12,30 @@ class ElectionViewMixin:
         return ret
 
 class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
+    elector_emails = serializers.ListField(
+        child=serializers.EmailField(),
+        write_only=True,
+        required=False,
+    )
+
+    def create(self, validated_data):
+        # Copy the validated_data
+        validated_data = dict(validated_data)
+        try:
+            validated_data.pop("elector_emails")
+        except KeyError:
+            pass
+
+        return Election.objects.create(**validated_data)
+
     class Meta:
         model = Election
-        fields = ('title', 'candidates')
+        fields = (
+            'title',
+            'candidates',
+            'on_invitation_only',
+            'elector_emails',
+        )
 
 class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
     class Meta:
@@ -29,7 +50,24 @@ class VoteSerializer(serializers.ModelSerializer):
             max_value=NUMBER_OF_MENTIONS-1,
         )
     )
+    token = serializers.CharField(write_only=True, required=False)
+
+    def create(self, validated_data):
+        # Copy the validated_data
+        validated_data = dict(validated_data)
+        try:
+            validated_data.pop("token")
+        except KeyError:
+            pass
+
+        return Vote.objects.create(**validated_data)
 
     class Meta:
         model = Vote
-        fields = '__all__'
+        fields = (
+            'mentions_by_candidate',
+            'election',
+            'token',
+        )
+
+

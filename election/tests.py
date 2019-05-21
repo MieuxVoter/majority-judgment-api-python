@@ -1,6 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APITestCase
-from election.models import Election, NUMBER_OF_MENTIONS
+from election.models import Election, Token, NUMBER_OF_MENTIONS
 import election.urls as urls
 
 import json
@@ -21,7 +21,8 @@ class ElectionCreateAPIViewTestCase(APITestCase):
             urls.new_election(),
             {
                 "title": title,
-                "candidates": candidates
+                "candidates": candidates,
+                "on_invitation_only": False,
             },
         )
         self.assertEqual(201, response_post.status_code)
@@ -98,3 +99,74 @@ class VoteCreateAPIViewTestCase(APITestCase):
         )
 
         self.assertEqual(400, response.status_code)
+
+
+class VoteOnInvitationViewTestCase(APITestCase):
+
+
+    def setUp(self):
+        self.election = Election.objects.create(
+            title="Test election",
+            candidates=[
+                "Seb",
+                "Pierre-Louis",
+            ],
+            on_invitation_only=True,
+        )
+
+        self.token = Token.objects.create(
+            election=self.election,
+            email="joe@example.com",
+        )
+
+    def test_valid_vote(self):
+        response = self.client.post(
+            urls.vote(),
+            {
+                "election": self.election.id,
+                "mentions_by_candidate": [0, 0],
+                "token": self.token.id
+            }
+        )
+
+        self.assertEqual(201, response.status_code)
+
+
+    def test_vote_without_token(self):
+        response = self.client.post(
+            urls.vote(),
+            {
+                "election": self.election.id,
+                "mentions_by_candidate": [0, 0],
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_vote_wrong_token(self):
+        response = self.client.post(
+            urls.vote(),
+            {
+                "election": self.election.id,
+                "mentions_by_candidate": [0, 0],
+                # make sure the token is not the good one
+                "token": self.token.id + "#abc"
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_vote_alreadry_used_token(self):
+        for _ in range(2):
+            response = self.client.post(
+                urls.vote(),
+                {
+                    "election": self.election.id,
+                    "mentions_by_candidate": [0, 0],
+                    "token": self.token.id
+                }
+            )
+
+
+        self.assertEqual(400, response.status_code)
+

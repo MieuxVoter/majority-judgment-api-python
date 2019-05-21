@@ -7,7 +7,9 @@ NUMBER_OF_MENTIONS = 7
 
 class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
-    candidates = ArrayField(models.CharField("Name", max_length=255), default=list)
+    candidates = ArrayField(models.CharField("Name", max_length=255))
+    on_invitation_only =models.BooleanField(default=False)
+
 
 class Vote(models.Model):
     election = models.ForeignKey(Election, on_delete=models.CASCADE)
@@ -30,3 +32,8 @@ class Vote(models.Model):
             )
 
         return super().save(*args, **kwargs)
+
+class Token(RandomPrimaryIdModel):
+    election = models.ForeignKey(Election, on_delete=models.CASCADE)
+    email = models.EmailField()
+    used = models.BooleanField("Used", default=False)
