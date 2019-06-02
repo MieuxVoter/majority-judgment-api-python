@@ -8,6 +8,7 @@ import math
 
 def majority_judgment(results):
     ''' Return the ranking from results using the majority judgment '''
+    results = Result(results)
     return sorted(results, reverse=True)
 
 
@@ -105,83 +106,15 @@ def get_scores(election):
     return scores
 
 
-def get_ratings(election):
-    """ Compute a 2D array with all the ratings from the candidates """
-
-    grades = Grade.objects.filter(election=election)
-    candidates = Candidate.objects.filter(election=election)
-    scores = np.zeros( (len(candidates), len(grades)) )
-
-    # order in the grades is defined by their increasing id
-    # could it be better?
-
-    # order_grades = [grade.id for grade in grades]
-    ratings = Rating.objects.filter(election=election)
-
-    for i in range(len(candidates)):
-        for j in range(len(grades)):
-            rating = ratings.filter(candidate=candidates[i], grade=grades[j])
-            scores[i,j] = len(rating)
-
-    return scores
-
-
 class Result():
-    """ Store a candidate with one's ratings """
+    """ A verbose way for custom comparison with a dictionary """
 
-    def __init__(self, name = "", ratings = np.array([]), scores = None, grades = [], candidate = None):
+    def __init__(self, scores):
 
-        self.name = name
-        self.ratings = ratings
-        self.grades = grades
         self.scores = scores
-        self.candidate = candidate
-
-
-        if name == "" and candidate is not None:
-            self.name = candidate.label.title()
-        if not ratings.size and scores is None:
-            self.scores = sorted_scores(ratings, len(grades))
 
     def __lt__(self, other):
-        return tie_breaking(self.ratings, other.ratings)
+        return tie_breaking(self.scores, other.scores)
 
-    def __repr__(self):
-        return str(self.name)
-
-    def __str__(self):
-        return str(self.name)
-
-
-def get_ranking(election_id):
-
-    election = get_object_or_404(Election, pk=election_id)
-
-    # fetch results
-    grades = [g.name for g in Grade.objects.filter(election=election)]
-    ratings = get_ratings(election)
-    ratings = np.array(ratings, dtype=int)
-    results = []
-    candidates = Candidate.objects.filter(election=election)
-    Nvotes = len(Rating.objects.filter(election=election))
-
-    if Nvotes == 0:
-        raise EmptyResultSet(_("No vote has already been casted."))
-
-    for i, candidate in enumerate(candidates):
-        result = Result(candidate=candidate,
-                        ratings=ratings[i, :],
-                        grades=grades)
-        results.append(result)
-
-    # ranking according to the majority judgment
-    ranking = []
-
-    for r in majority_judgment(results):
-
-        candidate = r.candidate
-        candidate.ratings = r.ratings
-        candidate.majority_grade = grades[majority_grade(r.ratings)]
-        ranking.append(candidate)
-
-    return ranking
+    def __get__(self):
+        return self.scores
