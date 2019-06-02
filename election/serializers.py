@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from election.models import Election, Vote, NUMBER_OF_MENTIONS
+from election.models import Election, Vote, MAX_NUM_GRADES
 
 from django.utils.text import slugify
 
@@ -44,10 +44,10 @@ class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
 
 
 class VoteSerializer(serializers.ModelSerializer):
-    mentions_by_candidate = serializers.ListField(
+    grades_by_candidate = serializers.ListField(
         child=serializers.IntegerField(
             min_value=0,
-            max_value=NUMBER_OF_MENTIONS-1,
+            max_value=MAX_NUM_GRADES - 1,
         )
     )
     token = serializers.CharField(write_only=True, required=False)
@@ -65,7 +65,7 @@ class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
         fields = (
-            'mentions_by_candidate',
+            'grades_by_candidate',
             'election',
             'token',
         )
