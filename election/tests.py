@@ -1,172 +1,25 @@
 from django.test import TestCase
-from rest_framework.test import APITestCase
-from election.models import Election, Token, NUMBER_OF_MENTIONS
-import election.urls as urls
-
-import json
+from majority_judgment.tools import get_ranking, get_ratings, majority_grade
 
 
+class MajorityJudgmentTestCase(TestCase):
+    fixtures = ['election.json']
 
-class ElectionCreateAPIViewTestCase(APITestCase):
+    # def setUp(self):
 
-    def test_create_election(self):
-        title = "Super élection - utf-8 chars: 🤨 😐 😑 😶 🙄 😏 😣 😥 😮 🤐 😯 😪 😫 😴 😌 😛 😜 😝 🤤 😒 😓 😔 😕 🙃 🤑 😲 ☹️ 🙁 😖 😞 😟 😤 😢 😭 😦 😧 😨 😩 🤯 !"
+    def test_ranking(self):
+        election_id = 2
+        ranking = get_ranking(election_id)
+        ranking = [candidate.pk for candidate in ranking]
+        ground_truth = [ 2,  3,  4, 13,  6,  7, 15, 14,  8, 12, 16,  5, 11, 17, 10,  1,  9]
 
-        candidates = [
-            "Seb",
-            "Pierre-Louis",
-        ]
+        self.assertEqual(ranking, ground_truth)
 
-        response_post = self.client.post(
-            urls.new_election(),
-            {
-                "title": title,
-                "candidates": candidates,
-                "on_invitation_only": False,
-            },
-        )
-        self.assertEqual(201, response_post.status_code)
-
-        election_pk = response_post.data["id"]
-        response_get = self.client.get(urls.election_details(election_pk))
-        self.assertEqual(200, response_get.status_code)
-        self.assertEqual(title, response_get.data["title"])
-        self.assertEqual(candidates, response_get.data["candidates"])
-
-class VoteCreateAPIViewTestCase(APITestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.election = Election.objects.create(
-            title="Test election",
-            candidates=[
-                "Seb",
-                "Pierre-Louis",
-            ]
-        )
-
-    def test_valid_vote(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, 1],
-            }
-        )
-
-        self.assertEqual(201, response.status_code)
-
-    def test_too_many_mentions(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, 1, 0],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_too_few_mentions(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [1],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_mention_too_high(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, NUMBER_OF_MENTIONS],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_mention_too_low(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, -1],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-
-class VoteOnInvitationViewTestCase(APITestCase):
-
-
-    def setUp(self):
-        self.election = Election.objects.create(
-            title="Test election",
-            candidates=[
-                "Seb",
-                "Pierre-Louis",
-            ],
-            on_invitation_only=True,
-        )
-
-        self.token = Token.objects.create(
-            election=self.election,
-            email="joe@example.com",
-        )
-
-    def test_valid_vote(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, 0],
-                "token": self.token.id
-            }
-        )
-
-        self.assertEqual(201, response.status_code)
-
-
-    def test_vote_without_token(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, 0],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_vote_wrong_token(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "mentions_by_candidate": [0, 0],
-                # make sure the token is not the good one
-                "token": self.token.id + "#abc"
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_vote_alreadry_used_token(self):
-        for _ in range(2):
-            response = self.client.post(
-                urls.vote(),
-                {
-                    "election": self.election.id,
-                    "mentions_by_candidate": [0, 0],
-                    "token": self.token.id
-                }
-            )
-
-
-        self.assertEqual(400, response.status_code)
-
+    def test_majority_grade(self):
+        election_id = 2
+        ranking = get_ranking(election_id)
+        # ratings = get_ratings(election_id)
+        majority_grades = [majority_grade(candidate.ratings) for candidate in ranking]
+        ground_truth = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        
+        self.assertEqual(majority_grades, ground_truth)
