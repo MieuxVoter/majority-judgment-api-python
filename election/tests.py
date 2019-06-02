@@ -1,7 +1,9 @@
 from django.test import TestCase
 from rest_framework.test import APITestCase
-from election.models import Election, Token, NUMBER_OF_MENTIONS
+from election.models import Election, Token, MAX_NUM_GRADES
 import election.urls as urls
+from mvapi.utils import majority_judgment
+from election.utils import grades_matrix
 
 import json
 
@@ -83,7 +85,7 @@ class VoteCreateAPIViewTestCase(APITestCase):
             urls.vote(),
             {
                 "election": self.election.id,
-                "grades_by_candidate": [0, NUMBER_OF_MENTIONS],
+                "grades_by_candidate": [0, MAX_NUM_GRADES],
             }
         )
 
@@ -170,3 +172,29 @@ class VoteOnInvitationViewTestCase(APITestCase):
 
         self.assertEqual(400, response.status_code)
 
+
+class VoteWithResutsTestCase(TestCase):
+
+     def setUp(self):
+
+        self.election = Election.objects.create(
+            title="Test election",
+            candidates=[
+                "Seb",
+                "Pierre-Louis",
+            ],
+            on_invitation_only=True,
+        )
+
+        self.votes = [
+             Vote.objects.create(election=self.election, grades_by_candidate=[1,2]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[3, 2]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[1,3]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[4,1])
+        ]
+
+
+        def test_results_with_majority_judgment(self):
+            scores = grades_matrix(e)
+            rank = majority_judgment(scores)
+            assert rank == [1, 0]

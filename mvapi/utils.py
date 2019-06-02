@@ -8,8 +8,9 @@ import math
 
 def majority_judgment(results):
     ''' Return the ranking from results using the majority judgment '''
-    results = Result(results)
-    return sorted(results, reverse=True)
+    results = [Result(i, r) for i, r in enumerate(results)]
+    results = sorted(results, reverse=True)
+    return [r.rid for r in results]
 
 
 def majority_grade(x):
@@ -25,6 +26,7 @@ def tie_breaking(A, B):
     ''' Algorithm to divide out candidates with the same median grade.
     Return True if A < B (or if B has a better ranking than A)'''
 
+    print(A, B)
     Ac = np.copy(A)
     Bc = np.copy(B)
     medA = majority_grade(Ac)
@@ -107,10 +109,10 @@ def get_scores(election):
 
 
 class Result():
-    """ A verbose way for custom comparison with a dictionary """
+    """ A verbose way for custom comparison """
 
-    def __init__(self, scores):
-
+    def __init__(self, rid, scores):
+        self.rid = rid
         self.scores = scores
 
     def __lt__(self, other):
@@ -118,3 +120,7 @@ class Result():
 
     def __get__(self):
         return self.scores
+
+    def __repr__(self):
+        return "%s - [%s]" % (str(self.rid),  \
+                ", ".join([str(s) for s in self.scores]))
