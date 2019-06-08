@@ -1,11 +1,12 @@
-from django.test import TestCase
-from rest_framework.test import APITestCase
-from election.models import Election, Token, MAX_NUM_GRADES
-import election.urls as urls
-from mvapi.utils import majority_judgment
-from election.utils import grades_matrix
-
 import json
+from django.test import TestCase
+from django.db import IntegrityError
+from rest_framework.test import APITestCase
+
+from election.models import Election, Token, MAX_NUM_GRADES, Vote
+import election.urls as urls
+from libs.majority_judgment import majority_judgment, votes_to_grades
+
 
 
 
@@ -182,7 +183,8 @@ class VoteWithResutsTestCase(TestCase):
             candidates=[
                 "Seb",
                 "Pierre-Louis",
-            ],
+            ], 
+            num_grades=5,
             on_invitation_only=True,
         )
 
@@ -194,7 +196,12 @@ class VoteWithResutsTestCase(TestCase):
         ]
 
 
-        def test_results_with_majority_judgment(self):
-            scores = grades_matrix(e)
-            rank = majority_judgment(scores)
-            assert rank == [1, 0]
+     def test_results_with_majority_judgment(self):
+         scores = votes_to_grades([v.grades_by_candidate for v in self.votes], \
+                 self.election.num_grades)
+         rank = majority_judgment(scores)
+         assert rank == [1, 0]
+
+     def test_num_grades(self):
+         self.assertRaises(IntegrityError, Vote.objects.create, \
+                 election=self.election, grades_by_candidate=[1,6])

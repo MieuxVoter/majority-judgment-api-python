@@ -5,13 +5,16 @@ from django.utils.text import slugify
 
 
 class ElectionViewMixin:
+    
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret["slug"] = slugify(instance.title)
         ret["id"] = instance.id
         return ret
 
+
 class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
+    
     elector_emails = serializers.ListField(
         child=serializers.EmailField(),
         write_only=True,
@@ -37,19 +40,23 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'elector_emails',
         )
 
+
 class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
+    
     class Meta:
         model = Election
         fields = '__all__'
 
 
 class VoteSerializer(serializers.ModelSerializer):
+    
     grades_by_candidate = serializers.ListField(
         child=serializers.IntegerField(
             min_value=0,
             max_value=MAX_NUM_GRADES - 1,
         )
     )
+    
     token = serializers.CharField(write_only=True, required=False)
 
     def create(self, validated_data):
@@ -69,5 +76,3 @@ class VoteSerializer(serializers.ModelSerializer):
             'election',
             'token',
         )
-
-

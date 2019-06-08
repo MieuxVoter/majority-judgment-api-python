@@ -1,4 +1,9 @@
+import numpy as np
+from django.db.models import Count
 from django.db import IntegrityError
+from django.core.exceptions import EmptyResultSet
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -8,6 +13,9 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 
 from election.models import Election, Vote, Token
 import election.serializers as serializers
+
+from libs import majority_judgment as mj
+
 
 
 class ElectionCreateAPIView(CreateAPIView):
@@ -34,11 +42,13 @@ class ElectionCreateAPIView(CreateAPIView):
                 )
 
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers = headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class ElectionDetailsAPIView(RetrieveAPIView):
     serializer_class = serializers.ElectionViewSerializer
     queryset = Election.objects.all()
+
 
 class VoteAPIView(CreateAPIView):
     serializer_class = serializers.VoteSerializer
@@ -86,3 +96,52 @@ class VoteAPIView(CreateAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_201_CREATED, headers=headers)
+
+
+
+
+class ResultAPIView(APIView):
+    """ 
+    View to list the result of an election using majority judgment.
+    """
+
+
+    def create(self, request, *args, **kwargs):
+
+        election = request.data.get("election", "")
+
+        try:
+           election = Election.objects.get(id=election)
+        except Election.DoesNotExist:
+            return Response(
+                "unknown election",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        votes = Vote.objects.filter(election=election)
+        scores = mj.votes_to_grades([v.grades_by_candidate for v in votes], \
+                                    election.num_grades)
+        ranks = mj.majority_judgment(scores)
+        
+        class Candidate:
+            def __init__(self, name, rank, votes):
+                self.name = name
+                self.rank = rank
+                self.votes = votes
+
+        class CandidateSerializer(serializers.serializer):
+            name = serializers.CharField(max_length=255)
+            rank = serializers.IntField()
+            scores = serializers.ListField()
+
+        candidates = [Candidate(n, r, v) for n, r, v in \
+                        zip(election.candidates, ranks, votes)]
+        serializer = CandidateSerializer(candidates, many=True)    
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+
+
+
+
