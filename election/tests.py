@@ -1,4 +1,3 @@
-import json
 from django.test import TestCase
 from django.db import IntegrityError
 from rest_framework.test import APITestCase
@@ -35,6 +34,22 @@ class ElectionCreateAPIViewTestCase(APITestCase):
         self.assertEqual(200, response_get.status_code)
         self.assertEqual(title, response_get.data["title"])
         self.assertEqual(candidates, response_get.data["candidates"])
+
+    def test_mandatory_fields(self):
+        
+        # Missing num_grades
+        self.assertRaises(IntegrityError, Election.objects.create, 
+                 candidates=["Seb", "PL"], title="My election")
+        
+        # Missing candidates
+        self.assertRaises(IntegrityError, Election.objects.create, 
+                 num_grades=5, title="My election")
+        
+        # Missing title
+        self.assertRaises(IntegrityError, Election.objects.create, 
+                 candidates=["Seb", "PL"], num_grades=5)
+
+
 
 class VoteCreateAPIViewTestCase(APITestCase):
 
@@ -115,6 +130,7 @@ class VoteOnInvitationViewTestCase(APITestCase):
                 "Pierre-Louis",
             ],
             on_invitation_only=True,
+            num_grades=5
         )
 
         self.token = Token.objects.create(
@@ -197,11 +213,11 @@ class VoteWithResutsTestCase(TestCase):
 
 
      def test_results_with_majority_judgment(self):
-         scores = votes_to_grades([v.grades_by_candidate for v in self.votes], \
+         scores = votes_to_grades([v.grades_by_candidate for v in self.votes], 
                  self.election.num_grades)
          rank = majority_judgment(scores)
          assert rank == [1, 0]
 
      def test_num_grades(self):
-         self.assertRaises(IntegrityError, Vote.objects.create, \
+         self.assertRaises(IntegrityError, Vote.objects.create, 
                  election=self.election, grades_by_candidate=[1,6])

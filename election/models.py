@@ -12,7 +12,7 @@ class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
     candidates = ArrayField(models.CharField("Name", max_length=255))
     on_invitation_only = models.BooleanField(default=False)
-    num_grades = models.SmallIntegerField("Num. grades", default=MAX_NUM_GRADES)
+    num_grades = models.SmallIntegerField("Num. grades")
     
     # make sure we don't ask for more grades than allowed in the database
     def save(self, *args, **kwargs):
