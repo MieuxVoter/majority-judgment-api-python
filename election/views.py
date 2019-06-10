@@ -98,12 +98,10 @@ class ResultAPIView(APIView):
     """
 
 
-    def create(self, request, *args, **kwargs):
-
-        election = request.data.get("election", "")
+    def get(self, request, pk="", **kwargs):
 
         try:
-           election = Election.objects.get(id=election)
+           election = Election.objects.get(id=pk)
         except Election.DoesNotExist:
             return Response(
                 "unknown election",
@@ -115,8 +113,7 @@ class ResultAPIView(APIView):
                                     election.num_grades)
         ranks = mj.majority_judgment(scores)
         
-        candidates = [Candidate(n, r, v) for n, r, v in \
+        candidates = [serializers.Candidate(n, r, v) for n, r, v in \
                         zip(election.candidates, ranks, votes)]
-        serializer = CandidateSerializer(candidates, many=True)    
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        serializer = serializers.CandidateSerializer(candidates, many=True)    
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

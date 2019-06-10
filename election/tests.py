@@ -130,7 +130,7 @@ class VoteOnInvitationViewTestCase(APITestCase):
 
 class VoteWithResutsTestCase(TestCase):
 
-     def setUp(self):
+    def setUp(self):
 
         self.election = Election.objects.create(
             title="Test election",
@@ -150,12 +150,21 @@ class VoteWithResutsTestCase(TestCase):
         ]
 
 
-     def test_results_with_majority_judgment(self):
+    def test_results_with_majority_judgment(self):
          scores = votes_to_grades([v.grades_by_candidate for v in self.votes], 
                  self.election.num_grades)
          rank = majority_judgment(scores)
          assert rank == [1, 0]
 
-     def test_num_grades(self):
+    def test_num_grades(self):
          self.assertRaises(IntegrityError, Vote.objects.create, 
                  election=self.election, grades_by_candidate=[1,6])
+
+
+    def test_view_existing_election(self):
+        response = self.client.get(
+            urls.results(self.election.id)
+        )
+        self.assertEqual(201, response.status_code)
+
+
