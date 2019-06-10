@@ -1,3 +1,4 @@
+import logging
 from django.db import IntegrityError
 from django.test import TestCase
 from rest_framework.test import APITestCase
@@ -6,6 +7,10 @@ import election.urls as urls
 from election.models import MAX_NUM_GRADES, Election, Token, Vote
 from libs.majority_judgment import majority_judgment, votes_to_grades
 
+
+# To avoid undesirable logging messages due to 400 Error.
+logger = logging.getLogger("django.request")
+logger.setLevel(logging.ERROR)
 
 class ElectionCreateAPIViewTestCase(APITestCase):
 
@@ -50,73 +55,6 @@ class ElectionCreateAPIViewTestCase(APITestCase):
 
 
 
-class VoteCreateAPIViewTestCase(APITestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.election = Election.objects.create(
-            title="Test election",
-            candidates=[
-                "Seb",
-                "Pierre-Louis",
-            ],
-            num_grades=5
-        )
-
-    def test_valid_vote(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "grades_by_candidate": [0, 1],
-            }
-        )
-
-        self.assertEqual(201, response.status_code)
-
-    def test_too_many_grades(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "grades_by_candidate": [0, 1, 0],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_too_few_grades(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "grades_by_candidate": [1],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_mention_too_high(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "grades_by_candidate": [0, MAX_NUM_GRADES],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
-
-    def test_mention_too_low(self):
-        response = self.client.post(
-            urls.vote(),
-            {
-                "election": self.election.id,
-                "grades_by_candidate": [0, -1],
-            }
-        )
-
-        self.assertEqual(400, response.status_code)
 
 
 class VoteOnInvitationViewTestCase(APITestCase):
