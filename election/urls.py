@@ -1,6 +1,6 @@
-from django.urls import path
+from django.urls import path, reverse
+
 from election.views import *
-from django.urls import reverse
 
 app_name = 'election'
 

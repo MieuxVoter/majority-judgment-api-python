@@ -1,12 +1,10 @@
-from django.test import TestCase
 from django.db import IntegrityError
+from django.test import TestCase
 from rest_framework.test import APITestCase
 
-from election.models import Election, Token, MAX_NUM_GRADES, Vote
 import election.urls as urls
+from election.models import MAX_NUM_GRADES, Election, Token, Vote
 from libs.majority_judgment import majority_judgment, votes_to_grades
-
-
 
 
 class ElectionCreateAPIViewTestCase(APITestCase):
@@ -25,6 +23,7 @@ class ElectionCreateAPIViewTestCase(APITestCase):
                 "title": title,
                 "candidates": candidates,
                 "on_invitation_only": False,
+                "num_grades": 5
             },
         )
         self.assertEqual(201, response_post.status_code)
@@ -60,7 +59,8 @@ class VoteCreateAPIViewTestCase(APITestCase):
             candidates=[
                 "Seb",
                 "Pierre-Louis",
-            ]
+            ],
+            num_grades=5
         )
 
     def test_valid_vote(self):

@@ -1,7 +1,7 @@
-from rest_framework import serializers
-from election.models import Election, Vote, MAX_NUM_GRADES
-
 from django.utils.text import slugify
+from rest_framework import serializers
+
+from election.models import MAX_NUM_GRADES, Election, Vote
 
 
 class ElectionViewMixin:
@@ -37,6 +37,7 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'title',
             'candidates',
             'on_invitation_only',
+            'num_grades',
             'elector_emails',
         )
 
@@ -76,3 +77,14 @@ class VoteSerializer(serializers.ModelSerializer):
             'election',
             'token',
         )
+
+# See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations 
+class Candidate:
+    def __init__(self, name, rank, votes):
+        self.name = name
+        self.rank = rank
+        self.votes = votes
+
+class CandidateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Candidate

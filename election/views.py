@@ -1,21 +1,13 @@
-import numpy as np
-from django.db.models import Count
 from django.db import IntegrityError
-from django.core.exceptions import EmptyResultSet
-from django.shortcuts import get_object_or_404
-from django.utils.translation import gettext_lazy as _
-
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from election.models import Election, Vote, Token
 import election.serializers as serializers
-
+from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
-
 
 
 class ElectionCreateAPIView(CreateAPIView):
@@ -123,25 +115,8 @@ class ResultAPIView(APIView):
                                     election.num_grades)
         ranks = mj.majority_judgment(scores)
         
-        class Candidate:
-            def __init__(self, name, rank, votes):
-                self.name = name
-                self.rank = rank
-                self.votes = votes
-
-        class CandidateSerializer(serializers.serializer):
-            name = serializers.CharField(max_length=255)
-            rank = serializers.IntField()
-            scores = serializers.ListField()
-
         candidates = [Candidate(n, r, v) for n, r, v in \
                         zip(election.candidates, ranks, votes)]
         serializer = CandidateSerializer(candidates, many=True)    
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
-
-
-
-
