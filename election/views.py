@@ -98,7 +98,7 @@ class ResultAPIView(APIView):
     """
 
 
-    def get(self, request, pk="", **kwargs):
+    def get(self, request, pk, **kwargs):
 
         try:
            election = Election.objects.get(id=pk)
@@ -109,11 +109,10 @@ class ResultAPIView(APIView):
             )
 
         votes = Vote.objects.filter(election=election)
-        scores = mj.votes_to_grades([v.grades_by_candidate for v in votes], \
+        scores = mj.votes_to_scores([v.grades_by_candidate for v in votes],
                                     election.num_grades)
-        ranks = mj.majority_judgment(scores)
+        sorted_indexes = mj.majority_judgment(scores)
         
-        candidates = [serializers.Candidate(n, r, v) for n, r, v in \
-                        zip(election.candidates, ranks, votes)]
-        serializer = serializers.CandidateSerializer(candidates, many=True)    
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = serializers.OrderedCandidatesWithScores(sorted_indexes,
+                                                             scores)
+        return Response(serializer.data, status=status.HTTP_200_OK)

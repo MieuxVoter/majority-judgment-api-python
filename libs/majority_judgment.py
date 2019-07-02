@@ -38,17 +38,6 @@ def tie_breaking(A, B):
 
 
 
-def get_scores(election):
-    """ Compute a 2D array with all the ratings from the candidates """
-
-    scores = get_ratings(election)
-
-    for i in range(len(scores)):
-        scores[i] /= sum(scores[i])
-
-    return scores
-
-
 class VotesByCandidate():
     """ A verbose way for custom comparison """
 
@@ -63,11 +52,11 @@ class VotesByCandidate():
         return self.scores
 
     def __repr__(self):
-        return "%s - [%s]" % (str(self.rid),  \
+        return "%s - [%s]" % (str(self.rid),  
                 ", ".join([str(s) for s in self.scores]))
 
 
-def votes_to_grades(votes, num_grades):
+def votes_to_scores(votes, num_grades):
     """ Convert a list of votes into a matrix containing the number of grades for each candidate """
 
     assert len(votes) > 0, "Empty list of votes"
