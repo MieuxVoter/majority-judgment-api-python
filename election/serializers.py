@@ -1,17 +1,20 @@
-from rest_framework import serializers
-from election.models import Election, Vote, NUMBER_OF_MENTIONS
-
 from django.utils.text import slugify
+from rest_framework import serializers
+
+from election.models import MAX_NUM_GRADES, Election, Vote
 
 
 class ElectionViewMixin:
+    
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret["slug"] = slugify(instance.title)
         ret["id"] = instance.id
         return ret
 
+
 class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
+    
     elector_emails = serializers.ListField(
         child=serializers.EmailField(),
         write_only=True,
@@ -34,22 +37,27 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'title',
             'candidates',
             'on_invitation_only',
+            'num_grades',
             'elector_emails',
         )
 
+
 class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
+    
     class Meta:
         model = Election
         fields = '__all__'
 
 
 class VoteSerializer(serializers.ModelSerializer):
-    mentions_by_candidate = serializers.ListField(
+    
+    grades_by_candidate = serializers.ListField(
         child=serializers.IntegerField(
             min_value=0,
-            max_value=NUMBER_OF_MENTIONS-1,
+            max_value=MAX_NUM_GRADES - 1,
         )
     )
+    
     token = serializers.CharField(write_only=True, required=False)
 
     def create(self, validated_data):
@@ -65,9 +73,19 @@ class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
         fields = (
-            'mentions_by_candidate',
+            'grades_by_candidate',
             'election',
             'token',
         )
 
+# See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations 
+class Candidate:
+    def __init__(self, name, idx, scores):
+        self.name = name
+        self.id = idx
+        self.scores = scores
 
+class CandidateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    id = serializers.IntegerField(min_value=0)
+    scores = serializers.ListField(child=serializers.IntegerField())
