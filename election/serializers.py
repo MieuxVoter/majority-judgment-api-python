@@ -87,5 +87,5 @@ class Candidate:
 
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
-    rank = serializers.IntegerField(min_value=0)
+    id = serializers.IntegerField(min_value=0)
     scores = serializers.ListField(child=serializers.IntegerField())

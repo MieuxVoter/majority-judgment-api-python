@@ -34,7 +34,7 @@ def tie_breaking(A, B):
         medA = majority_grade(Ac)
         medB = majority_grade(Bc)
 
-    return medA > medB
+    return medA < medB
 
 
 

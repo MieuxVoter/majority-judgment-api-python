@@ -137,16 +137,16 @@ class VoteWithResutsTestCase(TestCase):
             candidates=[
                 "Seb",
                 "Pierre-Louis",
-            ], 
+            ],
             num_grades=5,
             on_invitation_only=True,
         )
 
         self.votes = [
-             Vote.objects.create(election=self.election, grades_by_candidate=[1,2]),
-             Vote.objects.create(election=self.election, grades_by_candidate=[3, 2]),
-             Vote.objects.create(election=self.election, grades_by_candidate=[1,3]),
-             Vote.objects.create(election=self.election, grades_by_candidate=[4,1])
+             Vote.objects.create(election=self.election, grades_by_candidate=[1, 2]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[1, 2]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[1, 3]),
+             Vote.objects.create(election=self.election, grades_by_candidate=[2, 1])
         ]
 
 
