@@ -85,6 +85,3 @@ class Candidate:
         self.rank = rank
         self.votes = votes
 
-class CandidateSerializer(serializers.Serializer):
-    class Meta:
-        model = Candidate
