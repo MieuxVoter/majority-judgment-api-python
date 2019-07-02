@@ -78,10 +78,14 @@ class VoteSerializer(serializers.ModelSerializer):
             'token',
         )
 
+# See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations 
+class Candidate:
+    def __init__(self, name, idx, scores):
+        self.name = name
+        self.id = idx
+        self.scores = scores
 
-class OrderedCandidatesWithScores(serializers.Serializer):
-    #FIXME should we include candidates names?
-    sorted_indexes = serializers.ListField(
-        child=serializers.IntegerField(min_value=0))
-    scores = serializers.ListField(
-        child=serializers.ListField(serializers.IntegerField(min_value=0)))
+class CandidateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    rank = serializers.IntegerField(min_value=0)
+    scores = serializers.ListField(child=serializers.IntegerField())

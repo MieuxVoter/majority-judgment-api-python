@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 
 import election.urls as urls
 from election.models import MAX_NUM_GRADES, Election, Token, Vote
-from libs.majority_judgment import majority_judgment, votes_to_grades
+from libs.majority_judgment import majority_judgment, votes_to_scores
 
 
 # To avoid undesirable logging messages due to 400 Error.
@@ -151,13 +151,13 @@ class VoteWithResutsTestCase(TestCase):
 
 
     def test_results_with_majority_judgment(self):
-         scores = votes_to_grades([v.grades_by_candidate for v in self.votes], 
+         scores = votes_to_scores([v.grades_by_candidate for v in self.votes], 
                  self.election.num_grades)
-         rank = majority_judgment(scores)
-         assert rank == [1, 0]
+         sorted_indexes = majority_judgment(scores)
+         assert sorted_indexes == [1, 0]
 
     def test_num_grades(self):
-         self.assertRaises(IntegrityError, Vote.objects.create, 
+         self.assertRaises(IntegrityError, Vote.objects.create,
                  election=self.election, grades_by_candidate=[1,6])
 
 
@@ -165,6 +165,6 @@ class VoteWithResutsTestCase(TestCase):
         response = self.client.get(
             urls.results(self.election.id)
         )
-        self.assertEqual(201, response.status_code)
+        self.assertEqual(200, response.status_code)
 
 

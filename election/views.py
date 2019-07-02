@@ -101,7 +101,7 @@ class ResultAPIView(APIView):
     def get(self, request, pk, **kwargs):
 
         try:
-           election = Election.objects.get(id=pk)
+            election = Election.objects.get(id=pk)
         except Election.DoesNotExist:
             return Response(
                 "unknown election",
@@ -112,7 +112,8 @@ class ResultAPIView(APIView):
         scores = mj.votes_to_scores([v.grades_by_candidate for v in votes],
                                     election.num_grades)
         sorted_indexes = mj.majority_judgment(scores)
-        
-        serializer = serializers.OrderedCandidatesWithScores(sorted_indexes,
-                                                             scores)
+
+        candidates = [serializers.Candidate(election.candidates[idx], idx, s)
+                      for idx, s in zip(sorted_indexes, scores)]
+        serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
