@@ -40,15 +40,15 @@ class ElectionCreateAPIViewTestCase(APITestCase):
         self.assertEqual(candidates, response_get.data["candidates"])
 
     def test_mandatory_fields(self):
-        
+
         # Missing num_grades
         self.assertRaises(IntegrityError, Election.objects.create, 
                  candidates=["Seb", "PL"], title="My election")
-        
+
         # Missing candidates
         self.assertRaises(IntegrityError, Election.objects.create, 
                  num_grades=5, title="My election")
-        
+
         # Missing title
         self.assertRaises(IntegrityError, Election.objects.create, 
                  candidates=["Seb", "PL"], num_grades=5)
@@ -128,7 +128,7 @@ class VoteOnInvitationViewTestCase(APITestCase):
         self.assertEqual(400, response.status_code)
 
 
-class VoteWithResutsTestCase(TestCase):
+class ResutsTestCase(TestCase):
 
     def setUp(self):
 
@@ -140,6 +140,7 @@ class VoteWithResutsTestCase(TestCase):
             ],
             num_grades=5,
             on_invitation_only=True,
+            is_finished=True
         )
 
         self.votes = [
@@ -160,11 +161,21 @@ class VoteWithResutsTestCase(TestCase):
          self.assertRaises(IntegrityError, Vote.objects.create,
                  election=self.election, grades_by_candidate=[1,6])
 
-
     def test_view_existing_election(self):
         response = self.client.get(
             urls.results(self.election.id)
         )
         self.assertEqual(200, response.status_code)
+
+    def test_ongoing_election(self):
+        self.election.is_finished = False
+        self.election.save()
+        self.election
+        response = self.client.get(
+            urls.results(self.election.id)
+        )
+        self.assertEqual(400, response.status_code)
+        self.election.is_finished = True
+        self.election.save()
 
 

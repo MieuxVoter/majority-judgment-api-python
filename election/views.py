@@ -104,11 +104,24 @@ class ResultAPIView(APIView):
             election = Election.objects.get(id=pk)
         except Election.DoesNotExist:
             return Response(
-                "unknown election",
+                "Unknown election",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not election.is_finished:
+            return Response(
+                "Ongoing election",
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         votes = Vote.objects.filter(election=election)
+
+        if election.is_finished and len(votes) == 0:
+            return Response(
+                "No recorded vote",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         scores = mj.votes_to_scores([v.grades_by_candidate for v in votes],
                                     election.num_grades)
         sorted_indexes = mj.majority_judgment(scores)
