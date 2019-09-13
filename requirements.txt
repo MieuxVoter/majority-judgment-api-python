@@ -1,5 +1,5 @@
 coverage==4.5.1
-Django==2.2.1
+Django>=2.2.4
 django-nose==1.4.6
 django-extensions==2.1.7
 djangorestframework==3.9.4
