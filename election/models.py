@@ -14,20 +14,22 @@ class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
     candidates = ArrayField(models.CharField("Name", max_length=255))
     on_invitation_only = models.BooleanField(default=False)
+    is_finished = models.BooleanField(default=False)
+    is_started = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
-    
+
     # make sure we don't ask for more grades than allowed in the database
     def save(self, *args, **kwargs):
 
         if self.num_grades is None:
             raise IntegrityError("Election requires a positive number of grades.")
-        
+
         if self.title is None or self.title == "":
             raise IntegrityError("Election requires a proper title")
-            
+
         if self.num_grades > MAX_NUM_GRADES or self.num_grades <= 0:
             raise IntegrityError(
-                "Max number of grades is %d. Asked for %d grades" 
+                "Max number of grades is %d. Asked for %d grades"
                 % (self.num_grades, MAX_NUM_GRADES)
             )
 
