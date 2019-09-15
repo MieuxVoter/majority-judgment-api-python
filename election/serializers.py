@@ -5,7 +5,7 @@ from election.models import MAX_NUM_GRADES, Election, Vote
 
 
 class ElectionViewMixin:
-    
+
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret["slug"] = slugify(instance.title)
@@ -14,7 +14,7 @@ class ElectionViewMixin:
 
 
 class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
-    
+
     elector_emails = serializers.ListField(
         child=serializers.EmailField(),
         write_only=True,
@@ -43,21 +43,21 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
 
 
 class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
-    
+
     class Meta:
         model = Election
         fields = '__all__'
 
 
 class VoteSerializer(serializers.ModelSerializer):
-    
+
     grades_by_candidate = serializers.ListField(
         child=serializers.IntegerField(
             min_value=0,
             max_value=MAX_NUM_GRADES - 1,
         )
     )
-    
+
     token = serializers.CharField(write_only=True, required=False)
 
     def create(self, validated_data):
@@ -78,14 +78,18 @@ class VoteSerializer(serializers.ModelSerializer):
             'token',
         )
 
-# See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations 
+# See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations
 class Candidate:
-    def __init__(self, name, idx, scores):
+    def __init__(self, name, idx, profile, grade, score):
         self.name = name
         self.id = idx
-        self.scores = scores
+        self.score = score
+        self.profile = profile
+        self.grade = grade
 
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
     id = serializers.IntegerField(min_value=0)
-    scores = serializers.ListField(child=serializers.IntegerField())
+    score = serializers.FloatField(min_value=0, max_value=1)
+    profile = serializers.ListField(child=serializers.IntegerField())
+    grade = serializers.IntegerField(min_value=0, max_value=MAX_NUM_GRADES)

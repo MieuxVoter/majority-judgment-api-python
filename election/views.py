@@ -100,7 +100,7 @@ class VoteAPIView(CreateAPIView):
 
 
 class ResultAPIView(APIView):
-    """ 
+    """
     View to list the result of an election using majority judgment.
     """
 
@@ -129,11 +129,11 @@ class ResultAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        scores = mj.votes_to_scores([v.grades_by_candidate for v in votes],
+        profiles, scores, grades = mj.compute_votes([v.grades_by_candidate for v in votes],
                                     election.num_grades)
-        sorted_indexes = mj.majority_judgment(scores)
-
-        candidates = [serializers.Candidate(election.candidates[idx], idx, s)
-                      for idx, s in zip(sorted_indexes, scores)]
+        sorted_indexes = mj.majority_judgment(profiles)
+        #grades = [mj.majority_grade(profile) for profile in profiles]
+        candidates = [serializers.Candidate(election.candidates[idx], idx, p, g, s)
+                      for idx, p, s, g in zip(sorted_indexes, profiles, scores, grades)]
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
