@@ -14,6 +14,9 @@ class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
     candidates = ArrayField(models.CharField("Name", max_length=255))
     on_invitation_only = models.BooleanField(default=False)
+
+    # An opened election is Doodle-like: results are always visible
+    is_opened = models.BooleanField(default=True)
     is_finished = models.BooleanField(default=False)
     is_started = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)

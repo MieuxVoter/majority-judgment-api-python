@@ -139,8 +139,7 @@ class ResutsTestCase(TestCase):
                 "Pierre-Louis",
             ],
             num_grades=5,
-            on_invitation_only=True,
-            is_finished=True
+            on_invitation_only=True
         )
 
         self.votes = [
@@ -149,6 +148,15 @@ class ResutsTestCase(TestCase):
              Vote.objects.create(election=self.election, grades_by_candidate=[1, 3]),
              Vote.objects.create(election=self.election, grades_by_candidate=[2, 1])
         ]
+
+        self.election_no_vote = Election.objects.create(
+            title="Election without votes",
+            candidates=[
+                "Clement",
+                "Seb"
+            ],
+            num_grades=7
+        )
 
 
     def test_results_with_majority_judgment(self):
@@ -169,13 +177,26 @@ class ResutsTestCase(TestCase):
 
     def test_ongoing_election(self):
         self.election.is_finished = False
+        self.election.is_opened = False
         self.election.save()
-        self.election
         response = self.client.get(
             urls.results(self.election.id)
         )
         self.assertEqual(400, response.status_code)
         self.election.is_finished = True
+        self.election.is_opened = True
         self.election.save()
+
+    def test_opened_election_without_vote(self):
+        response = self.client.get(
+            urls.results(self.election_no_vote.id)
+        )
+        self.assertEqual(400, response.status_code)
+
+    def test_opened_election_with_vote(self):
+        response = self.client.get(
+            urls.results(self.election.id)
+        )
+        self.assertEqual(200, response.status_code)
 
 

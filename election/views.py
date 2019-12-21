@@ -10,6 +10,13 @@ from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
 
 
+# Error codes:
+UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
+ONGOING_ELECTION_ERROR = "E2: Ongoing election"
+NO_VOTE_ERROR = "E3: No recorded vote"
+
+
+
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
 
@@ -93,7 +100,7 @@ class VoteAPIView(CreateAPIView):
 
 
 class ResultAPIView(APIView):
-    """ 
+    """
     View to list the result of an election using majority judgment.
     """
 
@@ -104,29 +111,29 @@ class ResultAPIView(APIView):
             election = Election.objects.get(id=pk)
         except Election.DoesNotExist:
             return Response(
-                "Unknown election",
+                UNKNOWN_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not election.is_finished:
+        if not election.is_finished and not election.is_opened:
             return Response(
-                "Ongoing election",
+                ONGOING_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         votes = Vote.objects.filter(election=election)
 
-        if election.is_finished and len(votes) == 0:
+        if len(votes) == 0:
             return Response(
-                "No recorded vote",
+                NO_VOTE_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        scores = mj.votes_to_scores([v.grades_by_candidate for v in votes],
+        profiles, scores, grades = mj.compute_votes([v.grades_by_candidate for v in votes],
                                     election.num_grades)
-        sorted_indexes = mj.majority_judgment(scores)
-
-        candidates = [serializers.Candidate(election.candidates[idx], idx, s)
-                      for idx, s in zip(sorted_indexes, scores)]
+        sorted_indexes = mj.majority_judgment(profiles)
+        #grades = [mj.majority_grade(profile) for profile in profiles]
+        candidates = [serializers.Candidate(election.candidates[idx], idx, p, g, s)
+                      for idx, p, s, g in zip(sorted_indexes, profiles, scores, grades)]
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
