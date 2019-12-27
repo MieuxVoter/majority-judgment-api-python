@@ -17,17 +17,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SITE_URL = os.environ['SITE_URL']
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v7*_$#i)^@)hn-hb&ag!4^sz4hs^g2qwvi-el759gmj70(bxo%'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+DEBUG = os.environ.get('DJANGO_DEBUG', 'on') == 'on'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.urandom(50))
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
 
 # Application definition
 
