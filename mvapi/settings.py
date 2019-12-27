@@ -16,10 +16,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SITE_URL = os.environ['SITE_URL']
-
-DEBUG = os.environ.get('DJANGO_DEBUG', 'on') == 'on'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.urandom(50))
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
+DEBUG = os.environ['DJANGO_DEBUG'] == 'on'
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Application definition
 
