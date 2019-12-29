@@ -15,18 +15,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker 
-      - run:
-          name: Run unit tests
-          environment:
-            DATABASE_URL: "postgres://ubuntu@localhost:5432/contacts?sslmode=disable"
-            DB_MIGRATIONS: /go/src/github.com/circleci/cci-demo-docker/db/migrations
-          command: |
-            mkdir -p $TEST_RESULTS
-            set -ou pipefail
-            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-            # Notice this `set -o pipefail`, this will cause script to fail if `make test` fails
-            # without this option script will return success regardless of testing result due to pipe after test command
-            make test | tee ${TEST_RESULTS}/go-test.out
       
       - run:
           name: Build service
@@ -37,18 +25,24 @@ jobs:
           command: |
             set -x
             docker-compose up -d
-            # docker-compose will start 2 containers, the one with service will be named `contacts`
+            # docker-compose will start 2 containers, the one with service will be named `mvapi_web_1`
             # we start another container with curl in the same network as `contacts`, this way we have
             # all exposed ports from `contacts` available on `localhost` in this new container
-            docker run --network container:contacts \
-              appropriate/curl --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8080/contacts/test
-      - deploy:
-          name: Build and push Docker image
+            docker run --network container:mvapi_web_1 \
+              appropriate/curl --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
+      
+      - run:
+          name: Run unit tests
           command: |
-            TAG="0.1.${CIRCLE_BUILD_NUM}"
-            docker build -t circleci/cci-demo-docker:$TAG .
-            docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-            docker push circleci/cci-demo-docker:$TAG
+            mkdir -p $TEST_RESULTS
+            
+            # Notice this `set -o pipefail`, this will cause script to fail if `make test` fails
+            # without this option script will return success regardless of testing result due to pipe after test command
+            set -ou pipefail
+            
+            docker exec -it mvapi_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
+      
+      
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output
