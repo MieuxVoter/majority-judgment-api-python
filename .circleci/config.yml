@@ -15,11 +15,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker 
-      
-      - run:
-          name: Build service
-          command: make
-
       - run:
           name: Start container and verify it's working
           command: |
@@ -41,8 +36,7 @@ jobs:
             set -ou pipefail
             
             docker exec -it mvapi_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
-      
-      
+  
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output
