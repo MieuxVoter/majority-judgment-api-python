@@ -16,6 +16,9 @@ jobs:
       - checkout
       - setup_remote_docker 
       - run:
+          name: Build container from Dockerfile
+          command: docker build -t drf-tdd:latest .
+      - run:
           name: Start container and verify it's working
           command: |
             set -x
