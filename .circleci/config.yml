@@ -33,7 +33,7 @@ jobs:
             # without this option script will return success regardless of testing result due to pipe after test command
             set -ou pipefail
             
-            docker exec -it mvapi_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
+            docker exec -it project_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
   
       - store_artifacts:
           path: /tmp/test-results
