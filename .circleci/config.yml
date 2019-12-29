@@ -3,11 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/python:stretch
-#      - image: postgres:9.4.1
-#        environment:
-#          POSTGRES_USER: ubuntu
-#          POSTGRES_DB: contacts
-#    working_directory: /go/src/github.com/circleci/cci-demo-docker
 
     environment:
       TEST_RESULTS: /tmp/test-results
