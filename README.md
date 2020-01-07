@@ -1,25 +1,34 @@
-## Build the docker image
+## Installation with Docker
 
-`sudo ./build.sh`
+Edit the `.env` with your own settings. A secret key can be generated in Python REPL:
 
-## Run the docker container
+```
+>>> from django.core.management.utils import get_random_secret_key
+>>> get_random_secret_key()
+```
+
+Then launch the dockers with:
 
 `sudo docker-compose up -d`
 
-## Initialize the database
+You certainly want to apply databases migrations with:
 
-`sudo ./makemigrations.sh`
+`sudo docker/migrate.sh`
 
-`sudo ./migrate.sh`
+## Browse the admin
+
+Create a super-user:
+
+```
+sudo docker exec -it mvapi_web_1 python ./manage.py createsuperuser
+```
+
+Visit the admin page at [http://localhost:8012/admin/](http://localhost:8012/admin/).
 
 ## Run the tests
 
 `sudo ./test.sh`
 
-## Create a super-user
+## Create databases migrations
 
-`sudo docker exec -it mvapi_web_1 python ./manage.py createsuperuser`
-
-## Browse the admin
-
-[http://localhost:8012/admin/](http://localhost:8012/admin/)
+`sudo docker/makemigrations.sh`
