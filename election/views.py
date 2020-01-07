@@ -1,4 +1,9 @@
 from django.db import IntegrityError
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
+
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -15,7 +20,23 @@ UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
 
+def send_mail_invitation(email, election):   
+    merge_data = {
+        "invitation_url":settings.SITE_URL + "/vote/" + election.id,
+        "title": election.title,
+        }
+    text_body = render_to_string("election/mail_invitation.txt",merge_data)
+    html_body = render_to_string("election/mail_invitation.html",merge_data)   
+    msg = EmailMultiAlternatives(
+        election.title,
+        text_body,
+        settings.DEFAULT_FROM_EMAIL,
+        [ email ]
+    )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
 
+    
 
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
@@ -25,20 +46,19 @@ class ElectionCreateAPIView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         election = serializer.save()
-        for email in serializer.validated_data.get("elector_emails", []):
+        electors_emails = serializer.validated_data.get("elector_emails", [])
+        for email in electors_emails:
             if election.on_invitation_only:
                 token = Token.objects.create(
                     election=election,
                     email=email,
                 )
-                print(
+                print(# TODO!
                     "Send mail : id election: %s, token: %s, email: %s"
                     %(election.id, token.id, email)
                 )
             else:
-                print("Send mail: id election: %s, email: %s"
-                    %(election.id, email)
-                )
+                send_mail_invitation(email, election)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

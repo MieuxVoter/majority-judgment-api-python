@@ -15,18 +15,10 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v7*_$#i)^@)hn-hb&ag!4^sz4hs^g2qwvi-el759gmj70(bxo%'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+SITE_URL = os.environ['SITE_URL']
+DEBUG = os.environ['DJANGO_DEBUG'] == 'on'
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 
 # Application definition
 
@@ -58,7 +50,7 @@ ROOT_URLCONF = 'mvapi.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -124,3 +116,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+################################################################################
+#                                                                              #
+#                       MAIL SETTINGS                                          #
+#                                                                              #
+################################################################################
+DEFAULT_FROM_EMAIL = os.environ['DEFAULT_FROM_EMAIL']
+EMAIL_HOST = os.environ['EMAIL_HOST']
+EMAIL_PORT = int(os.environ['EMAIL_PORT'])
+if os.environ.get('EMAIL_USE_TLS') in ("True", "true", "on", "1"):
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_USE_TLS = False

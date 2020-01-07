@@ -12,6 +12,10 @@ services:
       - "8012:8000"
     depends_on:
       - db
-
+    env_file:
+      - .env
+  mail:
+    image: bytemark/smtp
+    restart: always
 
 

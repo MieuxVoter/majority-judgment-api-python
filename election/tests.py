@@ -1,4 +1,5 @@
 import logging
+from django.core import mail
 from django.db import IntegrityError
 from django.test import TestCase
 from rest_framework.test import APITestCase
@@ -126,6 +127,27 @@ class VoteOnInvitationViewTestCase(APITestCase):
 
 
         self.assertEqual(400, response.status_code)
+
+
+class MailForCreationTestCase(TestCase):
+
+    def test_send_mail(self):
+        
+        response_post = self.client.post(
+            urls.new_election(),
+            {
+                "title": "Test",
+                "candidates": ["A", "B"],
+                "on_invitation_only": False,
+                "num_grades": 5,
+                "elector_emails": ["name@example.com"],
+            },
+        )
+
+        election_pk = response_post.data["id"]
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/vote/" + election_pk, mail.outbox[0].body)
 
 
 class ResutsTestCase(TestCase):
