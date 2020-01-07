@@ -11,8 +11,8 @@ jobs:
       - checkout
       - setup_remote_docker 
       - run:
-          name: Build container from Dockerfile
-          command: docker build -t drf-tdd:latest .
+          name: Add a secret key
+          command: echo "DJANGO_SECRET_KEY=ersldnfnfkfhfhefhfadhfadsklfhaskdlfhdvn" >> .env
       - run:
           name: Start container and verify it's working
           command: |
