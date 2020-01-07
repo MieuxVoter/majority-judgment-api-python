@@ -27,7 +27,7 @@ Visit the admin page at [http://localhost:8012/admin/](http://localhost:8012/adm
 
 ## Run the tests
 
-`sudo ./test.sh`
+`sudo docker/test.sh`
 
 ## Create databases migrations
 
