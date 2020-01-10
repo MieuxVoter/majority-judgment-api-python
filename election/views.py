@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 
@@ -21,19 +21,21 @@ ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
 
 def send_mail_invitation(email, election):   
-    send_mail(
+    merge_data = {
+        "invitation_url":settings.SITE_URL + "/vote/" + election.id,
+        "title": election.title,
+        }
+    text_body = render_to_string("election/mail_invitation.txt",merge_data)
+    html_body = render_to_string("election/mail_invitation.html",merge_data)   
+    msg = EmailMultiAlternatives(
         election.title,
-        render_to_string(
-            "election/mail_invitation.txt",
-            {
-                "invitation_url":
-                    settings.SITE_URL + "/vote/" + election.id,
-                "title": election.title,
-            }
-        ),
+        text_body,
         settings.DEFAULT_FROM_EMAIL,
         [ email ]
     )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
+
     
 
 class ElectionCreateAPIView(CreateAPIView):
