@@ -1,2 +1,8 @@
-Please answer the question {{ title }} by clicking this link:
-{{ invitation_url | safe }}
+Ce mail vous a été envoyé car votre mail a été renseigner pour participé au vote concernant le sujet :
+{{ title }}
+
+Le lien pour le vote est le suivant :
+{{ invitation_url | safe}}
+
+Le lien qui vous donnera les résultats quand ils seront disponible est le suivant :
+{{ result_url | safe }}

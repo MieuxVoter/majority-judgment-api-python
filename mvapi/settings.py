@@ -122,10 +122,19 @@ STATIC_URL = '/static/'
 #                       MAIL SETTINGS                                          #
 #                                                                              #
 ################################################################################
-DEFAULT_FROM_EMAIL = os.environ['DEFAULT_FROM_EMAIL']
-EMAIL_HOST = os.environ['EMAIL_HOST']
-EMAIL_PORT = int(os.environ['EMAIL_PORT'])
-if os.environ.get('EMAIL_USE_TLS') in ("True", "true", "on", "1"):
-    EMAIL_USE_TLS = True
-else:
-    EMAIL_USE_TLS = False
+#DEFAULT_FROM_EMAIL = os.environ['DEFAULT_FROM_EMAIL']
+#EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+#EMAIL_HOST = os.environ['EMAIL_HOST']
+#EMAIL_PORT = int(os.environ['EMAIL_PORT'])
+#if os.environ.get('EMAIL_USE_TLS') in ("True", "true", "on", "1"):
+#    EMAIL_USE_TLS = True
+#else:
+#    EMAIL_USE_TLS = False
+
+#Pour test avec compte Gmail
+EMAIL_BACKEND=os.environ['EMAIL_BACKEND']
+EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT=os.environ['EMAIL_PORT']
+EMAIL_HOST=os.environ['EMAIL_HOST']
+EMAIL_USE_TLS=os.environ['EMAIL_USE_TLS']

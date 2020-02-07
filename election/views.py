@@ -14,15 +14,18 @@ import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
 
+from django.core.mail import send_mail
+
 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
 
-def send_mail_invitation(email, election):   
+def send_mail_invitation_old(email, election):   
     merge_data = {
         "invitation_url":settings.SITE_URL + "/vote/" + election.id,
+        "result_url":settings.SITE_URL + "/result/" + election.id,
         "title": election.title,
         }
     text_body = render_to_string("election/mail_invitation.txt",merge_data)
@@ -30,13 +33,22 @@ def send_mail_invitation(email, election):
     msg = EmailMultiAlternatives(
         election.title,
         text_body,
-        settings.DEFAULT_FROM_EMAIL,
-        [ email ]
+        settings.EMAIL_HOST_USER,
+        [ email ],
+        fail_silently=False
     )
     msg.attach_alternative(html_body, "text/html")
     msg.send()
 
-    
+def send_mail_invitation(email,election):
+    subject = "ceci est un test"
+    message = "J'espère que ça fonctionne bien"
+    send_mail(subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently = False)
+
 
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
@@ -57,6 +69,7 @@ class ElectionCreateAPIView(CreateAPIView):
                     "Send mail : id election: %s, token: %s, email: %s"
                     %(election.id, token.id, email)
                 )
+                send_mail_invitation(email, election)
             else:
                 send_mail_invitation(email, election)
 
