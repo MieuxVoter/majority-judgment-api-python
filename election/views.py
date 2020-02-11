@@ -22,33 +22,21 @@ UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
 
-def send_mail_invitation_old(email, election):   
+def send_mail_invitation(email, election):   
     merge_data = {
         "invitation_url":settings.SITE_URL + "/vote/" + election.id,
         "result_url":settings.SITE_URL + "/result/" + election.id,
         "title": election.title,
         }
-    text_body = render_to_string("election/mail_invitation.txt",merge_data)
-    html_body = render_to_string("election/mail_invitation.html",merge_data)   
+    text_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.txt",merge_data)
+    html_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.html",merge_data)   
     msg = EmailMultiAlternatives(
         election.title,
         text_body,
         settings.EMAIL_HOST_USER,
-        [ email ],
-        fail_silently=False
-    )
+        [ email ])
     msg.attach_alternative(html_body, "text/html")
     msg.send()
-
-def send_mail_invitation(email,election):
-    subject = "ceci est un test"
-    message = "J'espère que ça fonctionne bien"
-    send_mail(subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently = False)
-
 
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer

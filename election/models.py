@@ -8,6 +8,7 @@ from libs.django_randomprimary import RandomPrimaryIdModel
 logger = logging.getLogger(__name__)
 
 MAX_NUM_GRADES = 20
+LANGUAGE_AVAILABLE = ['fr','en'] 
 
 class Election(RandomPrimaryIdModel):
 
@@ -20,6 +21,9 @@ class Election(RandomPrimaryIdModel):
     is_finished = models.BooleanField(default=False)
     is_started = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
+
+    #Language selection (French by default)
+    selec_language = models.CharField("Language", max_length=5,default="en")
 
     # make sure we don't ask for more grades than allowed in the database
     def save(self, *args, **kwargs):
@@ -35,6 +39,10 @@ class Election(RandomPrimaryIdModel):
                 "Max number of grades is %d. Asked for %d grades"
                 % (self.num_grades, MAX_NUM_GRADES)
             )
+
+        if not self.selec_language in LANGUAGE_AVAILABLE:
+            string_language =  ', '.join(LANGUAGE_AVAILABLE)
+            raise IntegrityError("Election is only available in " + string_language) 
 
         return super().save(*args, **kwargs)
 
