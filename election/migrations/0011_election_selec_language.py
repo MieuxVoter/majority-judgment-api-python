@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='election',
             name='selec_language',
-            field=models.CharField(default='fr_FR', max_length=5, verbose_name='Language'),
+            field=models.CharField(default='fr_FR', max_length=2, verbose_name='Language'),
         ),
     ]
