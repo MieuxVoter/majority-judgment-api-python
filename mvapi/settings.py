@@ -19,6 +19,8 @@ SITE_URL = os.environ['SITE_URL']
 DEBUG = os.environ['DJANGO_DEBUG'] == 'on'
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
+MAX_NUM_GRADES = int(os.environ['MAX_NUM_GRADES'])
+LANGUAGE_AVAILABLE = os.environ['LANGUAGE_AVAILABLE']
 
 # Application definition
 
@@ -122,14 +124,10 @@ STATIC_URL = '/static/'
 #                       MAIL SETTINGS                                          #
 #                                                                              #
 ################################################################################
-#DEFAULT_FROM_EMAIL = os.environ['DEFAULT_FROM_EMAIL']
-#EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
-#EMAIL_HOST = os.environ['EMAIL_HOST']
-#EMAIL_PORT = int(os.environ['EMAIL_PORT'])
-#if os.environ.get('EMAIL_USE_TLS') in ("True", "true", "on", "1"):
-#    EMAIL_USE_TLS = True
-#else:
-#    EMAIL_USE_TLS = False
+if os.environ['EMAIL_USE_TLS'] in ("True", "true", "on", "1"):
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_USE_TLS = False
 
 #Pour test avec compte Gmail
 EMAIL_BACKEND=os.environ['EMAIL_BACKEND']
@@ -137,4 +135,3 @@ EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_PORT=os.environ['EMAIL_PORT']
 EMAIL_HOST=os.environ['EMAIL_HOST']
-EMAIL_USE_TLS=os.environ['EMAIL_USE_TLS']

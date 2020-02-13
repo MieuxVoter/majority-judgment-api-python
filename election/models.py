@@ -2,13 +2,11 @@ import logging
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import IntegrityError, models
+from django.conf import settings
 
 from libs.django_randomprimary import RandomPrimaryIdModel
 
 logger = logging.getLogger(__name__)
-
-MAX_NUM_GRADES = 20
-LANGUAGE_AVAILABLE = ['fr','en'] 
 
 class Election(RandomPrimaryIdModel):
 
@@ -23,7 +21,7 @@ class Election(RandomPrimaryIdModel):
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
 
     #Language selection (French by default)
-    selec_language = models.CharField("Language", max_length=5,default="en")
+    selec_language = models.CharField("Language", max_length=2,default="fr")
 
     # make sure we don't ask for more grades than allowed in the database
     def save(self, *args, **kwargs):
@@ -34,14 +32,14 @@ class Election(RandomPrimaryIdModel):
         if self.title is None or self.title == "":
             raise IntegrityError("Election requires a proper title")
 
-        if self.num_grades > MAX_NUM_GRADES or self.num_grades <= 0:
+        if self.num_grades > settings.MAX_NUM_GRADES or self.num_grades <= 0:
             raise IntegrityError(
                 "Max number of grades is %d. Asked for %d grades"
-                % (self.num_grades, MAX_NUM_GRADES)
+                % (self.num_grades, settings.MAX_NUM_GRADES)
             )
 
-        if not self.selec_language in LANGUAGE_AVAILABLE:
-            string_language =  ', '.join(LANGUAGE_AVAILABLE)
+        if not self.selec_language in settings.LANGUAGE_AVAILABLE:
+            string_language =  ', '.join(settings.LANGUAGE_AVAILABLE)
             raise IntegrityError("Election is only available in " + string_language) 
 
         return super().save(*args, **kwargs)

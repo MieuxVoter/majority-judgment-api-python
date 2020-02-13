@@ -1,7 +1,8 @@
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from election.models import MAX_NUM_GRADES, Election, Vote
+from election.models import Election, Vote
+from django.conf import settings
 
 
 class ElectionViewMixin:
@@ -54,7 +55,7 @@ class VoteSerializer(serializers.ModelSerializer):
     grades_by_candidate = serializers.ListField(
         child=serializers.IntegerField(
             min_value=0,
-            max_value=MAX_NUM_GRADES - 1,
+            max_value=settings.MAX_NUM_GRADES - 1,
         )
     )
 
@@ -92,4 +93,4 @@ class CandidateSerializer(serializers.Serializer):
     id = serializers.IntegerField(min_value=0)
     score = serializers.FloatField(min_value=0, max_value=1)
     profile = serializers.ListField(child=serializers.IntegerField())
-    grade = serializers.IntegerField(min_value=0, max_value=MAX_NUM_GRADES)
+    grade = serializers.IntegerField(min_value=0, max_value=settings.MAX_NUM_GRADES)

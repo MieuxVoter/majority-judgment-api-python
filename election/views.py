@@ -2,20 +2,14 @@ from django.db import IntegrityError
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
-
-from django.core.mail import send_mail
-
 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
