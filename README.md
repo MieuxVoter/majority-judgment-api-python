@@ -6,6 +6,20 @@ Edit the `.env` with your own settings. A secret key can be generated in Python 
 >>> from django.core.management.utils import get_random_secret_key
 >>> get_random_secret_key()
 ```
+Create a `.env.local` with :
+
+```
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_PORT=587
+EMAIL_HOST_USER= address of a gmail account
+EMAIL_HOST_PASSWORD=gmail account password
+```
+
+For the gmail account, it is better to create one specially for this.
+In "Manage your google account" / "security" activated the option "Less secure access of applications"
 
 Then launch the dockers with:
 
