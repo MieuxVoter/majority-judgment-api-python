@@ -1,19 +1,15 @@
 from django.db import IntegrityError
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
-
 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
@@ -21,20 +17,20 @@ ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
 
 def send_mail_invitation(email, election):   
-    send_mail(
+    merge_data = {
+        "invitation_url":settings.SITE_URL + "/vote/" + election.id,
+        "result_url":settings.SITE_URL + "/result/" + election.id,
+        "title": election.title,
+        }
+    text_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.txt",merge_data)
+    html_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.html",merge_data)   
+    msg = EmailMultiAlternatives(
         election.title,
-        render_to_string(
-            "election/mail_invitation.txt",
-            {
-                "invitation_url":
-                    settings.SITE_URL + "/vote/" + election.id,
-                "title": election.title,
-            }
-        ),
-        settings.DEFAULT_FROM_EMAIL,
-        [ email ]
-    )
-    
+        text_body,
+        settings.EMAIL_HOST_USER,
+        [ email ])
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
 
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
@@ -55,6 +51,7 @@ class ElectionCreateAPIView(CreateAPIView):
                     "Send mail : id election: %s, token: %s, email: %s"
                     %(election.id, token.id, email)
                 )
+                send_mail_invitation(email, election)
             else:
                 send_mail_invitation(email, election)
 

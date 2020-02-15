@@ -18,6 +18,7 @@ services:
       - mail
     env_file:
       - .env
+      - .env.local
   mail:
     image: bytemark/smtp
     restart: always

@@ -1,2 +1,0 @@
-Please answer the question {{ title }} by clicking this link:
-{{ invitation_url | safe }}
