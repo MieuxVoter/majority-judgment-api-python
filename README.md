@@ -21,6 +21,7 @@ EMAIL_HOST_PASSWORD=gmail account password
 For the gmail account, it is better to create one specially for this.
 In "Manage your google account" / "security" activated the option "Less secure access of applications"
 
+
 Then launch the dockers with:
 
 `sudo docker-compose up -d`
