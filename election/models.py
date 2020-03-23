@@ -4,6 +4,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import IntegrityError, models
 from django.conf import settings
 
+from time import time
+from datetime import datetime
+
 from libs.django_randomprimary import RandomPrimaryIdModel
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,8 @@ class Election(RandomPrimaryIdModel):
     is_finished = models.BooleanField(default=False)
     is_started = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
+    started_at = models.IntegerField("Start date", default=round(time()))
+    finished_at = models.IntegerField("End date",default=round(time()+1))
 
     #Language selection (French by default)
     selec_language = models.CharField("Language", max_length=2,default="fr")
@@ -41,6 +46,19 @@ class Election(RandomPrimaryIdModel):
         if not self.selec_language in settings.LANGUAGE_AVAILABLE:
             string_language =  ', '.join(settings.LANGUAGE_AVAILABLE)
             raise IntegrityError("Election is only available in " + string_language) 
+
+        if round(time()) <= self.started_at:
+            """Section de test"""
+            test1 = round(time())
+            print("\nDate :")
+            print("Timestamp actuel ",test1)
+            print("Date du front ",self.started_at)
+            print("Soustraction ",round(time())-self.started_at)
+            print("Date actuel ",datetime.fromtimestamp(test1))
+            print("Date du front ",datetime.fromtimestamp(self.started_at))
+            print("\n\n")
+            """fin de section de test"""
+            self.is_started = False
 
         return super().save(*args, **kwargs)
 
