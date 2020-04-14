@@ -37,4 +37,3 @@ results:
  - {"more": 4, "maj_grade": "Très bien" "less": 3, "jauge": "Très bien / +4", "maj_value": "55/55/55/55/5556/46/26/16", "rank": 5.}
  - {"more": 6, "maj_grade": "Bien", "less": 6, "jauge": "Bien / -6", "maj_value": "44/44/44/35/35/35/25/25/16", "rank": 14.}
  - {"more": *, "maj_grade": "Excellent", "less": 6, "jauge": "Excellent / -6", "maj_value": "66/66/66/56/56/56/36/36/16", "rank": 2.}
-
