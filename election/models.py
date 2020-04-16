@@ -13,14 +13,13 @@ class Election(RandomPrimaryIdModel):
     title = models.CharField("Title", max_length=255)
     candidates = ArrayField(models.CharField("Name", max_length=255))
     on_invitation_only = models.BooleanField(default=False)
-
-    # An opened election is Doodle-like: results are always visible
-    restrict_results = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
     start_at = models.IntegerField("Start date", default=round(time()))
     finish_at = models.IntegerField("End date",default=round(time()+1))
     # Language preference is used for emailing voters
     select_language = models.CharField("Language", max_length=2,default="en")
+    # An opened election is Doodle-like: results are always visible
+    restrict_results = models.BooleanField(default=True)
 
     # add some constraints before saving the database
     def save(self, *args, **kwargs):

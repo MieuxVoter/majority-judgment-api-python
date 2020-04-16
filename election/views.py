@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
-
+ 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
@@ -21,6 +21,7 @@ ELECTION_FINISHED_ERROR = "E5: Election finished"
 INVITATION_ONLY_ERROR = "E6: Election on invitation only, please provide token"
 UNKNOWN_TOKEN_ERROR = "E7: Wrong token"
 USED_TOKEN_ERROR = "E8: Token already used"
+WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 
 
 def send_mail_invitation(email, election):   
@@ -29,8 +30,8 @@ def send_mail_invitation(email, election):
         "result_url":settings.SITE_URL + "/result/" + election.id,
         "title": election.title,
         }
-    text_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.txt",merge_data)
-    html_body = render_to_string("election/"+ election.selec_language +"_mail_invitation.html",merge_data)   
+    text_body = render_to_string("election/"+ election.select_language +"_mail_invitation.txt",merge_data)
+    html_body = render_to_string("election/"+ election.select_language +"_mail_invitation.html",merge_data)   
     msg = EmailMultiAlternatives(
         election.title,
         text_body,
@@ -143,7 +144,10 @@ class VoteAPIView(CreateAPIView):
         try:
             self.perform_create(serializer)
         except IntegrityError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                WRONG_ELECTION_ERROR,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_201_CREATED, headers=headers)
 
@@ -155,7 +159,6 @@ class ResultAPIView(APIView):
     View to list the result of an election using majority judgment.
     """
 
-
     def get(self, request, pk, **kwargs):
 
         try:
@@ -165,8 +168,13 @@ class ResultAPIView(APIView):
                 UNKNOWN_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        except IntegrityError:
+            return Response(
+                WRONG_ELECTION_ERROR,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if round(time()) < election.finish_at and not election.restrict_results:
+        if (election.restrict_results and round(time()) < election.finish_at):
             return Response(
                 ONGOING_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
@@ -180,11 +188,14 @@ class ResultAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        profiles, scores, grades = mj.compute_votes([v.grades_by_candidate for v in votes],
-                                    election.num_grades)
+        profiles, scores, grades = mj.compute_votes(
+            [v.grades_by_candidate for v in votes],
+            election.num_grades
+        )
         sorted_indexes = mj.majority_judgment(profiles)
-        #grades = [mj.majority_grade(profile) for profile in profiles]
-        candidates = [serializers.Candidate(election.candidates[idx], idx, p, g, s)
-                      for idx, p, s, g in zip(sorted_indexes, profiles, scores, grades)]
+        candidates = [
+            serializers.Candidate(election.candidates[idx], idx, p, g, s)
+            for idx, p, s, g in zip(sorted_indexes, profiles, scores, grades)
+        ]
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
