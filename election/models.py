@@ -18,8 +18,8 @@ class Election(RandomPrimaryIdModel):
     finish_at = models.IntegerField("End date",default=round(time()+1))
     # Language preference is used for emailing voters
     select_language = models.CharField("Language", max_length=2,default="en")
-    # An opened election is Doodle-like: results are always visible
-    restrict_results = models.BooleanField(default=True)
+    # If results are restricted, one can see them only when the election is finished
+    restrict_results = models.BooleanField(default=False)
 
     # add some constraints before saving the database
     def save(self, *args, **kwargs):

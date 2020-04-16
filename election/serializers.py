@@ -22,14 +22,11 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
         required=False,
     )
 
-    def create(self, validated_data):
+    def create(self, data):
         # Copy the validated_data
-        validated_data = dict(validated_data)
-        try:
+        validated_data = dict(data)
+        if "elector_emails" in validated_data:
             validated_data.pop("elector_emails")
-        except KeyError:
-            pass
-
         return Election.objects.create(**validated_data)
 
     class Meta:
