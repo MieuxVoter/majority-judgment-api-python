@@ -199,14 +199,20 @@ class ResultAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        profiles, scores, grades = mj.compute_votes(
+        profiles, scores, grades, sorted_indexes = mj.compute_votes(
             [v.grades_by_candidate for v in votes],
             election.num_grades
         )
-        sorted_indexes = mj.majority_judgment(profiles)
+        # sorted_indexes = mj.majority_judgment(profiles)[::-1]
         candidates = [
-            serializers.Candidate(election.candidates[idx], idx, p, g, s)
-            for idx, p, s, g in zip(sorted_indexes, profiles, scores, grades)
+            serializers.Candidate(
+                election.candidates[idx],
+                idx,
+                profiles[idx],
+                grades[idx],
+                scores[idx]
+            )
+            for idx in sorted_indexes
         ]
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
