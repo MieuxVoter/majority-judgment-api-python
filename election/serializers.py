@@ -40,6 +40,8 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'on_invitation_only',
             'num_grades',
             'elector_emails',
+            'start_at',
+            'finish_at',
         )
 
 

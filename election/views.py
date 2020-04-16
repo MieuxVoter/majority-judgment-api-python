@@ -10,11 +10,14 @@ from rest_framework.views import APIView
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
+from time import time
 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
+ELECTION_NOT_STARTED = "E4: Election not started"
+ELECTION_FINISHED = "E5: Election finished"
 
 def send_mail_invitation(email, election):   
     merge_data = {
@@ -61,6 +64,35 @@ class ElectionCreateAPIView(CreateAPIView):
 
 class ElectionDetailsAPIView(RetrieveAPIView):
     serializer_class = serializers.ElectionViewSerializer
+
+    def get(self, request, pk, **kwargs):
+
+        try:
+            election = Election.objects.get(id=pk)
+        except Election.DoesNotExist:
+            return Response(
+                UNKNOWN_ELECTION_ERROR,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if round(time()) < election.start_at:
+            return Response(
+                ELECTION_NOT_STARTED,
+                status=status.HTTP_401_UNAUTHORIZED,                
+            
+            )
+        if round(time()) >= election.finish_at:
+            return Response(
+                ELECTION_FINISHED,
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        serializer = serializers.ElectionViewSerializer(election)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+        
     queryset = Election.objects.all()
 
 
@@ -130,7 +162,7 @@ class ResultAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not election.is_finished and not election.is_opened:
+        if round(time()) < election.finish_at and not election.restrict_results:
             return Response(
                 ONGOING_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,

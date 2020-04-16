@@ -3,7 +3,7 @@ import logging
 from django.contrib.postgres.fields import ArrayField
 from django.db import IntegrityError, models
 from django.conf import settings
-
+from time import time
 from libs.django_randomprimary import RandomPrimaryIdModel
 
 logger = logging.getLogger(__name__)
@@ -15,10 +15,10 @@ class Election(RandomPrimaryIdModel):
     on_invitation_only = models.BooleanField(default=False)
 
     # An opened election is Doodle-like: results are always visible
-    is_opened = models.BooleanField(default=True)
-    is_finished = models.BooleanField(default=False)
-    is_started = models.BooleanField(default=True)
+    restrict_results = models.BooleanField(default=True)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
+    start_at = models.IntegerField("Start date", default=round(time()))
+    finish_at = models.IntegerField("End date",default=round(time()+1))
 
     #Language selection (French by default)
     selec_language = models.CharField("Language", max_length=2,default="fr")
