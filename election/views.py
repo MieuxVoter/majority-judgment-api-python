@@ -1,3 +1,4 @@
+from time import time
 from django.db import IntegrityError
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -10,14 +11,17 @@ from rest_framework.views import APIView
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
-from time import time
 
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
 NO_VOTE_ERROR = "E3: No recorded vote"
-ELECTION_NOT_STARTED = "E4: Election not started"
-ELECTION_FINISHED = "E5: Election finished"
+ELECTION_NOT_STARTED_ERROR = "E4: Election not started"
+ELECTION_FINISHED_ERROR = "E5: Election finished"
+INVITATION_ONLY_ERROR = "E6: Election on invitation only, please provide token"
+UNKNOWN_TOKEN_ERROR = "E7: Wrong token"
+USED_TOKEN_ERROR = "E8: Token already used"
+
 
 def send_mail_invitation(email, election):   
     merge_data = {
@@ -77,13 +81,13 @@ class ElectionDetailsAPIView(RetrieveAPIView):
 
         if round(time()) < election.start_at:
             return Response(
-                ELECTION_NOT_STARTED,
+                ELECTION_NOT_STARTED_ERROR,
                 status=status.HTTP_401_UNAUTHORIZED,                
             
             )
         if round(time()) >= election.finish_at:
             return Response(
-                ELECTION_FINISHED,
+                ELECTION_FINISHED_ERROR,
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         
@@ -110,7 +114,7 @@ class VoteAPIView(CreateAPIView):
                 token = serializer.validated_data["token"]
             except KeyError:
                 return Response(
-                    "election on invitation only, please provide token",
+                    INVITATION_ONLY_ERROR,
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -121,13 +125,13 @@ class VoteAPIView(CreateAPIView):
                 )
             except Token.DoesNotExist:
                 return Response(
-                    "wrong token",
+                    UNKNOWN_TOKEN_ERROR,
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
             if token_object.used:
                 return Response(
-                    "token already used",
+                    USED_TOKEN_ERROR,
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             token_object.used = True

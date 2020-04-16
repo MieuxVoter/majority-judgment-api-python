@@ -1,8 +1,8 @@
 Ce mail vous a été envoyé car votre mail a été renseigner pour participer au vote concernant le sujet :
 {{ title }}
 
-Le lien pour le vote est le suivant :
+Vous pouvez voter en accédant à ce lien :
 {{ invitation_url | safe}}
 
-Le lien qui vous donnera les résultats quand ils seront disponible est le suivant :
+A la fin de l'élection, les résultats seront disponibles depuis le lien suivant :
 {{ result_url | safe }}

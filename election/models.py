@@ -1,12 +1,12 @@
 import logging
-
+from time import time
 from django.contrib.postgres.fields import ArrayField
 from django.db import IntegrityError, models
 from django.conf import settings
-from time import time
 from libs.django_randomprimary import RandomPrimaryIdModel
 
 logger = logging.getLogger(__name__)
+
 
 class Election(RandomPrimaryIdModel):
 
@@ -19,18 +19,14 @@ class Election(RandomPrimaryIdModel):
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
     start_at = models.IntegerField("Start date", default=round(time()))
     finish_at = models.IntegerField("End date",default=round(time()+1))
+    # Language preference is used for emailing voters
+    select_language = models.CharField("Language", max_length=2,default="en")
 
-    #Language selection (French by default)
-    selec_language = models.CharField("Language", max_length=2,default="fr")
-
-    # make sure we don't ask for more grades than allowed in the database
+    # add some constraints before saving the database
     def save(self, *args, **kwargs):
-
+        # make sure we don't ask for more grades than allowed in the database
         if self.num_grades is None:
             raise IntegrityError("Election requires a positive number of grades.")
-
-        if self.title is None or self.title == "":
-            raise IntegrityError("Election requires a proper title")
 
         if self.num_grades > settings.MAX_NUM_GRADES or self.num_grades <= 0:
             raise IntegrityError(
@@ -38,7 +34,12 @@ class Election(RandomPrimaryIdModel):
                 % (self.num_grades, settings.MAX_NUM_GRADES)
             )
 
-        if not self.selec_language in settings.LANGUAGE_AVAILABLE:
+        # check that the title is not empty            
+        if self.title is None or self.title == "":
+            raise IntegrityError("Election requires a proper title")
+
+        # check that the language is known
+        if not self.select_language in settings.LANGUAGE_AVAILABLE:
             string_language =  ', '.join(settings.LANGUAGE_AVAILABLE)
             raise IntegrityError("Election is only available in " + string_language) 
 
