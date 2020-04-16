@@ -26,19 +26,19 @@ WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 
 
 def send_mail_invitation(email: str, election: str, token_id: Optional[int] = None):   
-    token_get: str = "?token={token_id}" if token_id is not None else ""
+    token_get: str = f"?token={token_id}" if token_id is not None else ""
     merge_data = {
         "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
-        "result_url": settings.SITE_URL + "/result/" + election.id,
+        "result_url": f"{settings.SITE_URL}/result/{election.id}",
         "title": election.title,
         }
     text_body = render_to_string(
-        "election/"+ election.select_language +"_mail_invitation.txt",
+        f"election/{election.select_language}_mail_invitation.txt",
         merge_data
     )
     html_body = render_to_string(
-            "election/"+ election.select_language +"_mail_invitation.html",
-            merge_data
+        f"election/{election.select_language}_mail_invitation.html",
+        merge_data
     )   
     msg = EmailMultiAlternatives(
         election.title,
