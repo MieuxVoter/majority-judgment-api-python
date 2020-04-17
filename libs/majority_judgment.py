@@ -11,11 +11,11 @@ def majority_grade(scores: List[int]) -> int:
             return len(scores) - 1 - i
 
 
-def majority_score(x: List[int], grade: int) -> float:
-    total = sum(x)
-    left = sum(x[:grade])
-    right = sum(x[:1 + grade])
-    return -left/total if left > right else right/total
+def majority_score(profile: List[int], grade: int) -> float:
+    total = sum(profile)
+    left = sum(profile[:grade]) / total
+    right = sum(profile[1 + grade:]) / total
+    return -right if left < right else left
 
 
 def tie_breaking(a: List[int], b: List[int]):
@@ -61,26 +61,26 @@ class VotesByCandidate():
 
 def compute_votes(votes: List[List[int]], num_grades: int):
 
-    pref_profiles = votes_to_pref_profiles(votes, num_grades)
+    merit_profiles = votes_to_merit_profiles(votes, num_grades)
     scores = []
     grades = []
     ranking = []
 
-    for profile in pref_profiles:
+    for profile in merit_profiles:
         grade = majority_grade(profile)
         score = majority_score(profile, grade)
 
         scores.append(score)
         grades.append(grade)
 
-    num_candidates = len(pref_profiles)
+    num_candidates = len(merit_profiles)
     tuples = [(num_grades - g, s) for g, s in zip(grades, scores)]
     ranking = sorted(range(num_candidates), reverse=True, key=tuples.__getitem__)
     
-    return pref_profiles, scores, grades, ranking
+    return merit_profiles, scores, grades, ranking
 
 
-def votes_to_pref_profiles(votes: List[List[int]], num_grades: int):
+def votes_to_merit_profiles(votes: List[List[int]], num_grades: int):
     """
     Convert a list of votes into a matrix containing the number of grades for
     each candidate
@@ -99,14 +99,14 @@ def votes_to_pref_profiles(votes: List[List[int]], num_grades: int):
     return profiles
 
 
-def majority_judgment(pref_profiles: List[List[int]]) -> List[int]:
+def majority_judgment(merit_profiles: List[List[int]]) -> List[int]:
     '''
     Return the id of each candidate ranked wrt. their preference profiles.
 
     A preference profile contains the number of votes for each grade.
     '''
     results: List[VotesByCandidate] = [
-            VotesByCandidate(i, r) for i, r in enumerate(pref_profiles)
+            VotesByCandidate(i, r) for i, r in enumerate(merit_profiles)
     ]
     results = sorted(results, reverse=True)
     return [r.id for r in results]
