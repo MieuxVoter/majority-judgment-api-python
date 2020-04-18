@@ -80,12 +80,13 @@ class VoteSerializer(serializers.ModelSerializer):
 
 # See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations
 class Candidate:
-    def __init__(self, name, idx, profile, grade, score):
+    def __init__(self, name, idx, profile, grade, score, num_votes):
         self.name = name
         self.id = idx
         self.score = score
         self.profile = profile
         self.grade = grade
+        self.num_votes = num_votes
 
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -93,3 +94,4 @@ class CandidateSerializer(serializers.Serializer):
     score = serializers.FloatField(min_value=0, max_value=1)
     profile = serializers.ListField(child=serializers.IntegerField())
     grade = serializers.IntegerField(min_value=0, max_value=settings.MAX_NUM_GRADES)
+    num_votes = serializers.IntegerField(min_value=0)

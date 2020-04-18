@@ -203,14 +203,15 @@ class ResultAPIView(APIView):
             [v.grades_by_candidate for v in votes],
             election.num_grades
         )
-        # sorted_indexes = mj.majority_judgment(profiles)[::-1]
+
         candidates = [
             serializers.Candidate(
                 election.candidates[idx],
                 idx,
                 profiles[idx],
                 grades[idx],
-                scores[idx]
+                scores[idx],
+                len(votes)
             )
             for idx in sorted_indexes
         ]
