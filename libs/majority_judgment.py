@@ -40,25 +40,6 @@ def tie_breaking(a: List[int], b: List[int]):
     return med_a < med_b
 
 
-
-class VotesByCandidate():
-    """ A verbose way for custom comparison """
-
-    def __init__(self, id, profile):
-        self.id = id
-        self.profile = profile
-
-    def __lt__(self, other: "VotesByCandidate") -> bool:
-        return tie_breaking(self.profile.copy(), other.profile.copy())
-
-    def __get__(self) -> List[int]:
-        return self.profile
-
-    def __repr__(self):
-        return "%s - [%s]" % (str(self.id),
-                ", ".join([str(s) for s in self.profile]))
-
-
 def compute_votes(votes: List[List[int]], num_grades: int):
 
     merit_profiles = votes_to_merit_profiles(votes, num_grades)
@@ -97,16 +78,3 @@ def votes_to_merit_profiles(votes: List[List[int]], num_grades: int):
             profiles[i][grade] += 1
 
     return profiles
-
-
-def majority_judgment(merit_profiles: List[List[int]]) -> List[int]:
-    '''
-    Return the id of each candidate ranked wrt. their preference profiles.
-
-    A preference profile contains the number of votes for each grade.
-    '''
-    results: List[VotesByCandidate] = [
-            VotesByCandidate(i, r) for i, r in enumerate(merit_profiles)
-    ]
-    results = sorted(results, reverse=True)
-    return [r.id for r in results]
