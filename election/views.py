@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Dict
 from time import time
 from django.db import IntegrityError
 from django.conf import settings
@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework.views import APIView
 import election.serializers as serializers
 from election.models import Election, Token, Vote
@@ -27,9 +28,11 @@ USED_TOKEN_ERROR = "E8: Token already used"
 WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 
 
-def send_mail_invitation(email: str, election: str, token_id: Optional[int] = None):   
-    token_get: str = f"?token={token_id}" if token_id is not None else ""
-    merge_data = {
+def send_mail_invitation(
+        email: str, election: str, token_id: int
+    ):   
+    token_get: str = f"?token={token_id}"
+    merge_data: Dict[str, str] = {
         "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
         "result_url": f"{settings.SITE_URL}/result/{election.id}",
         "title": election.title,
@@ -56,34 +59,31 @@ def send_mail_invitation(email: str, election: str, token_id: Optional[int] = No
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         election = serializer.save()
         electors_emails = serializer.validated_data.get("elector_emails", [])
         for email in electors_emails:
-            if election.on_invitation_only:
-                token = Token.objects.create(
-                    election=election,
-                    email=email,
-                )
-                print(
-                    "Send mail : id election: %s, token: %s, email: %s"
-                    %(election.id, token.id, email)
-                )
-                send_mail_invitation(email, election, token_id=token.id)
-            else:
-                send_mail_invitation(email, election)
+            token = Token.objects.create(
+                election=election,
+                email=email,
+            )
+            send_mail_invitation(email, election, token.id)
 
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
 
 class ElectionDetailsAPIView(RetrieveAPIView):
     serializer_class = serializers.ElectionViewSerializer
 
-    def get(self, request, pk, **kwargs):
+    def get(self, request: Request, pk: str, **kwargs) -> Response:
 
         try:
             election = Election.objects.get(id=pk)
@@ -99,11 +99,6 @@ class ElectionDetailsAPIView(RetrieveAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,                
             
             )
-        if round(time()) >= election.finish_at:
-            return Response(
-                ELECTION_FINISHED_ERROR,
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
         
         serializer = serializers.ElectionViewSerializer(election)
         return Response(
@@ -111,21 +106,23 @@ class ElectionDetailsAPIView(RetrieveAPIView):
             status=status.HTTP_200_OK,
         )
         
-    queryset = Election.objects.all()
-
 
 class VoteAPIView(CreateAPIView):
     serializer_class = serializers.VoteSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         election = serializer.validated_data["election"]
 
-        # TODO this feature is not yet implement in the front 
-        # if election.on_invitation_only:
-        if False:
+        if round(time()) >= election.finish_at:
+            return Response(
+                ELECTION_FINISHED_ERROR,
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if election.on_invitation_only:
             try:
                 token = serializer.validated_data["token"]
             except KeyError:
