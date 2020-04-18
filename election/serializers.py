@@ -25,11 +25,11 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
     def create(self, data):
         # Copy the validated_data
         validated_data = dict(data)
+        validated_data["on_invitation_only"] = False
         if "elector_emails" in validated_data:
+            if validated_data["elector_emails"] != []:
+                validated_data["on_invitation_only"] = True
             validated_data.pop("elector_emails")
-            validated_data["on_invitation_only"] = True
-        else:
-            validated_data["on_invitation_only"] = False
         return Election.objects.create(**validated_data)
 
     class Meta:
