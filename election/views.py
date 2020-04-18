@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.utils.translation import activate
+from django.utils.translation import activate, gettext
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -45,7 +45,7 @@ def send_mail_invitation(email: str, election: str, token_id: Optional[int] = No
     html_body = render_to_string("election/mail_invitation.html", merge_data)   
 
     msg = EmailMultiAlternatives(
-        election.title,
+        f"[{gettext('Mieux Voter')}] {election.title}",
         text_body,
         settings.EMAIL_HOST_USER,
         [email])
