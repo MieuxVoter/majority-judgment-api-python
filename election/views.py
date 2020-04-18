@@ -1,9 +1,11 @@
+import os
 from typing import Optional
 from time import time
 from django.db import IntegrityError
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.translation import activate
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -31,15 +33,17 @@ def send_mail_invitation(email: str, election: str, token_id: Optional[int] = No
         "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
         "result_url": f"{settings.SITE_URL}/result/{election.id}",
         "title": election.title,
-        }
-    text_body = render_to_string(
-        f"election/{election.select_language}_mail_invitation.txt",
-        merge_data
+    }
+
+    activate(
+        election.select_language
+        if election.select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
+        else "en"
     )
-    html_body = render_to_string(
-        f"election/{election.select_language}_mail_invitation.html",
-        merge_data
-    )   
+
+    text_body = render_to_string("election/mail_invitation.txt", merge_data)
+    html_body = render_to_string("election/mail_invitation.html", merge_data)   
+
     msg = EmailMultiAlternatives(
         election.title,
         text_body,

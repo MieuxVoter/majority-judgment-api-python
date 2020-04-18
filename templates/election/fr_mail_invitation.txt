@@ -1,8 +1,0 @@
-Ce mail vous a été envoyé car votre mail a été renseigner pour participer au vote concernant le sujet :
-{{ title }}
-
-Vous pouvez voter en accédant à ce lien :
-{{ invitation_url | safe}}
-
-A la fin de l'élection, les résultats seront disponibles depuis le lien suivant :
-{{ result_url | safe }}

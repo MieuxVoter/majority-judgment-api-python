@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-04-18 15:36+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/election/mail_invitation.html:76
+#: templates/election/mail_invitation.html:114
+msgid ""
+"We are happy to send you this email! You will be able to vote using majority "
+"judgment."
+msgstr ""
+
+#: templates/election/mail_invitation.html:100
+msgid "Hello!"
+msgstr ""
+
+#: templates/election/mail_invitation.html:122
+msgid ""
+"This email was sent to you because your email address was entered to "
+"participate in the vote on the subject:"
+msgstr ""
+
+#: templates/election/mail_invitation.html:136
+msgid "Vote!"
+msgstr ""
+
+#: templates/election/mail_invitation.html:148
+msgid ""
+"If that doesn't work, copy and paste the following link into your browser:"
+msgstr ""
+
+#: templates/election/mail_invitation.html:158
+msgid ""
+"The results will be available with the following link when the vote is "
+"finished:"
+msgstr ""
+
+#: templates/election/mail_invitation.html:166
+msgid "Good vote"
+msgstr ""
+
+#: templates/election/mail_invitation.html:166
+#: templates/election/mail_invitation.html:206
+msgid "Mieux Voter"
+msgstr ""
+
+#: templates/election/mail_invitation.html:180
+msgid "Need more information?"
+msgstr ""
+
+#: templates/election/mail_invitation.html:183
+msgid "Do you want to help us?"
+msgstr ""
+
+#: templates/election/mail_invitation.html:199
+msgid "You received this email because someone invited you to vote."
+msgstr ""
+
+#: templates/election/mail_invitation.txt:2
+msgid ""
+"This email was sent to you because your email was filled out to participate "
+"in the vote on the subject:"
+msgstr ""

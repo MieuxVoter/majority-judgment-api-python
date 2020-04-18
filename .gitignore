@@ -1,5 +1,6 @@
 __pycache__/
 *.swp
+*.mo
 .#*
 .ipynb_checkpoints/
 .env.local
