@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple, List
 from time import time
 from django.db import IntegrityError
 from django.conf import settings
@@ -27,6 +27,8 @@ UNKNOWN_TOKEN_ERROR = "E7: Wrong token"
 USED_TOKEN_ERROR = "E8: Token already used"
 WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 
+# A Grade is always given a int
+Grade = int 
 
 def send_mail_invitation(
         email: str, election: str, token_id: int
@@ -200,21 +202,25 @@ class ResultAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        profiles, scores, grades, sorted_indexes = mj.compute_votes(
-            [v.grades_by_candidate for v in votes],
-            election.num_grades
+        votes: List[List[Grade]] = [v.grades_by_candidate for v in votes]
+
+        merit_profiles: List[Dict[Grade, int]] = mj.votes_to_merit_profiles(
+            votes, range(election.num_grades)
         )
+        indexed_values: List[Tuple[int, mj.MajorityValue]] = mj.sort_by_value_with_index([
+            mj.MajorityValue(profil) for profil in merit_profiles
+        ])
+        print(len(indexed_values))
 
         candidates = [
             serializers.Candidate(
                 election.candidates[idx],
                 idx,
-                profiles[idx],
-                grades[idx],
-                scores[idx],
-                len(votes)
+                merit_profiles[idx],
+                value.grade,
             )
-            for idx in sorted_indexes
+            # for idx in sorted_indexes
+            for idx, value in indexed_values
         ]
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
