@@ -25,11 +25,11 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
     def create(self, data):
         # Copy the validated_data
         validated_data = dict(data)
-        validated_data["on_invitation_only"] = False
         if "elector_emails" in validated_data:
-            if validated_data["elector_emails"] != []:
-                validated_data["on_invitation_only"] = True
             validated_data.pop("elector_emails")
+            validated_data["on_invitation_only"] = True
+        else:
+            validated_data["on_invitation_only"] = False
         return Election.objects.create(**validated_data)
 
     class Meta:
@@ -83,15 +83,28 @@ class VoteSerializer(serializers.ModelSerializer):
 
 # See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations
 class Candidate:
-    def __init__(self, name, idx, profile, grade):
+    def __init__(self, name, idx, profile, grade, score, num_votes):
         self.name = name
         self.id = idx
+        self.score = score
         self.profile = profile
         self.grade = grade
-
+        self.num_votes = num_votes
 
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
     id = serializers.IntegerField(min_value=0)
-    profile = serializers.DictField(child=serializers.IntegerField())
+    score = serializers.FloatField(min_value=0, max_value=1)
+    profile = serializers.ListField(child=serializers.IntegerField())
     grade = serializers.IntegerField(min_value=0, max_value=settings.MAX_NUM_GRADES)
+    num_votes = serializers.IntegerField(min_value=0)
+
+class LinkSerializer(serializers.Serializer):
+
+    id_election=serializers.CharField()
+    select_language = serializers.CharField(max_length=2,default="en")
+    creator_emails = serializers.ListField(
+        child=serializers.EmailField(),
+        write_only=True,
+        required=True
+    )
