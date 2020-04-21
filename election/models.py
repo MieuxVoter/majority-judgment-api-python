@@ -14,8 +14,8 @@ class Election(RandomPrimaryIdModel):
     candidates = ArrayField(models.CharField("Name", max_length=255))
     on_invitation_only = models.BooleanField(default=False)
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
-    start_at = models.IntegerField("Start date", default=round(time()))
-    finish_at = models.IntegerField("End date",default=round(time()+1))
+    start_at = models.IntegerField("Start date", default=1587059214 )
+    finish_at = models.IntegerField("End date",default=1587059215 )
     # Language preference is used for emailing voters
     select_language = models.CharField("Language", max_length=2,default="en")
     # If results are restricted, one can see them only when the election is finished
