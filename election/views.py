@@ -240,7 +240,7 @@ class LinkAPIView(CreateAPIView):
 
         try:
             election = Election.objects.get(id=id_election)
-        except:
+        except Election.DoesNotExist:
             return Response(
                 WRONG_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
