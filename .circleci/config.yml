@@ -24,8 +24,8 @@ jobs:
             # - project_db_1
 
             # we start another container with curl in the same network
-            docker run --network container:project_web_1 \
-              circleci/buildpack-deps:curl-dind --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
+            # docker run --network container:project_web_1 \
+            #   circleci/buildpack-deps:curl-dind --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
       
             mkdir -p $TEST_RESULTS
             
