@@ -1,0 +1,48 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:stretch
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+
+    steps:
+      - checkout
+      - setup_remote_docker 
+      - run:
+          name: Add a secret key
+          command: echo "DJANGO_SECRET_KEY=ersldnfnfkfhfhefhfadhfadsklfhaskdlfhdvn" >> .env
+      - run:
+          name: Start container
+          command: |
+            set -x
+            docker-compose up -d
+            # docker-compose start 3 services
+            # - project_web_1
+            # - project_dash_1
+            # - project_db_1
+      - run:
+          name: Verify the API anwsers something
+          command: |
+            # we start another container with curl in the same network
+            docker run --network container:project_web_1 \
+              circleci/buildpack-deps:curl-dind --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
+      
+      - run:
+          name: Run unit tests
+          command: |
+            mkdir -p $TEST_RESULTS
+            
+            # Notice this `set -o pipefail`, this will cause script to fail if `make test` fails
+            # without this option, script returns success regardless of testing result due to pipe after test command
+            set -ou pipefail
+            
+            docker exec -it project_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
+  
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results
