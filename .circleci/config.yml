@@ -17,6 +17,11 @@ jobs:
           name: Start container
           command: |
             set -x
+            docker-compose build
+            # CircleCI does not mount volumes.
+            # Instead, we copy files
+            docker cp . project_web_1:/code
+            docker cp . project_dash_1:/code
             docker-compose up -d
             # docker-compose start 3 services
             # - project_web_1
