@@ -1,15 +1,15 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: circleci/python:stretch
+    # We need a machine executor to mount volumes
+    machine:
+      image: ubuntu-1604:201903-01
 
     environment:
       TEST_RESULTS: /tmp/test-results
 
     steps:
       - checkout
-      - setup_remote_docker 
       - run:
           name: Add a secret key
           command: echo "DJANGO_SECRET_KEY=ersldnfnfkfhfhefhfadhfadsklfhaskdlfhdvn" >> .env.local
