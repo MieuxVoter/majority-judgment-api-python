@@ -24,13 +24,7 @@ jobs:
             # - project_db_1
 
             # Recover service name for web
-            names=$(docker ps --format "{{.Names}}")
-            for name in $names; do
-              if [[ $name == *db* ]]; then
-                WEB=$name
-                echo $WEB
-              fi
-            done
+            WEB=$(docker ps --format "{{.Names}}" -f name=web)
 
             # we start another container with curl in the same network
             docker run --network container:$WEB \
