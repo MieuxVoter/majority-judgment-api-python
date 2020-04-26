@@ -12,7 +12,7 @@ jobs:
       - setup_remote_docker 
       - run:
           name: Add a secret key
-          command: echo "DJANGO_SECRET_KEY=ersldnfnfkfhfhefhfadhfadsklfhaskdlfhdvn" >> .env
+          command: echo "DJANGO_SECRET_KEY=ersldnfnfkfhfhefhfadhfadsklfhaskdlfhdvn" >> .env.local
       - run:
           name: Start container
           command: |
