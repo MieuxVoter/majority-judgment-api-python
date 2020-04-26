@@ -23,9 +23,18 @@ jobs:
             # - project_dash_1
             # - project_db_1
 
+            # Recover service name for web
+            names=$(docker ps --format "{{.Names}}")
+            for name in $names; do
+              if [[ $name == *db* ]]; then
+                WEB=$name
+                echo $WEB
+              fi
+            done
+
             # we start another container with curl in the same network
-            # docker run --network container:project_web_1 \
-            #   circleci/buildpack-deps:curl-dind --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
+            docker run --network container:$WEB \
+              circleci/buildpack-deps:curl-dind --retry 10 --retry-delay 1 --retry-connrefused http://localhost:8000/api/
       
             mkdir -p $TEST_RESULTS
             
@@ -33,4 +42,4 @@ jobs:
             # without this option, script returns success regardless of testing result due to pipe after test command
             set -ou pipefail
             
-            docker exec -it project_web_1 python manage.py test | tee ${TEST_RESULTS}/django-test.out
+            docker exec -it $WEB python manage.py test | tee ${TEST_RESULTS}/django-test.out
