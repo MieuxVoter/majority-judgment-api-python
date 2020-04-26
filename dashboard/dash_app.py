@@ -24,10 +24,19 @@ from election.models import Election, Vote, Token
 app = dash.Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
-    external_stylesheets=[dbc.themes.BOOTSTRAP]
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    suppress_callback_exceptions=True,
+    url_base_pathname="/dashboard/"
 )
 
+# app.config.update({
+#     'routes_pathname_prefix': '/',
+#     'requests_pathname_prefix': '/'
+# })
 
+
+app.css.config.serve_locally = True
+app.scripts.config.serve_locally = True
 
 elections = Election.objects.all()
 votes = Vote.objects.all()
@@ -59,7 +68,7 @@ for e in elections:
 fig_election = go.Figure(
     data=[go.Bar(x=list(start.keys()), y=list(start.values()))],
     layout=go.Layout(
-        title="Starting day of elections"
+        title="Number of elections created per day"
     )
 )
 
@@ -73,7 +82,7 @@ votes_per_el = list(
     votes
       .values('election_id', 'election__title')
       .annotate(count=Count("election_id"))
-      .order_by("count")
+      .order_by("-count")
       [:10]
 )
 titles = [election["election__title"] for election in votes_per_el]
@@ -81,7 +90,7 @@ num_votes = [election["count"] for election in votes_per_el]
 fig_votes = go.Figure(
     data=[go.Table(
         header=dict(values=["Title", "Number of votes"]),
-        cells=dict(values=[titles, num_votes])
+        cells=dict(values=[titles, num_votes]),
     )]
 )
 
