@@ -1,3 +1,10 @@
+# API for Mieux Voter
+
+This API allows you to create elections, vote and obtain results with [majority judgment](https://en.wikipedia.org/wiki/Majority_judgment).
+
+You can use our server at [demo.mieuxvoter.fr/api/](demo.mieuxvoter.fr/api/).
+
+
 ## Installation with Docker
 
 Edit the `.env` with your own settings. A secret key can be generated in Python REPL:
