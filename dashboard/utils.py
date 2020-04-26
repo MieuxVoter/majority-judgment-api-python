@@ -151,8 +151,8 @@ def build_most_voted_tables(top=10):
     if len(votes_qs) == 0:
         return html.H1(children=["No votes were found"])
 
-    titles = [election["election__title"] for election in votes_per_el]
-    num_votes = [election["count"] for election in votes_per_el]
+    titles = [election["election__title"] for election in votes_qs]
+    num_votes = [election["count"] for election in votes_qs]
     return dcc.Graph(
         go.Figure(
             data=[go.Table(
