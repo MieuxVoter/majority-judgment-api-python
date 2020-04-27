@@ -1,3 +1,8 @@
+"""
+Esoteric (coming from within) steps about users.
+These steps deal with the database directly, and NOT with the REST API.
+"""
+
 ###############################################################################
 # from behave import given, when, then
 # Pycharm 2020.1 won't understand the above, but it understands `step`.
@@ -8,7 +13,7 @@ from behave import step
 from hamcrest import assert_that, equal_to
 
 from tools_nlp import parse_amount
-from tools_db import count_users
+from tools_dbal import count_users
 
 
 ###############################################################################

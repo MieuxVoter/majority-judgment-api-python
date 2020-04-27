@@ -1,3 +1,8 @@
+"""
+Esoteric (coming from within) steps about polls.
+These steps deal with the database directly, and NOT with the REST API.
+"""
+
 ###############################################################################
 # from behave import given, when, then
 # Pycharm 2020.1 won't understand the above, but it understands `step`.
@@ -10,7 +15,7 @@ from yaml import safe_load
 from hamcrest import assert_that, equal_to
 
 from tools_nlp import parse_amount, parse_yaml
-from tools_db import count_polls
+from tools_dbal import count_polls
 
 
 ###############################################################################
