@@ -1,6 +1,6 @@
 """
-These steps should effect nothing.
-They help keep the features idiomatic, suggest additions, etc.
+These steps should [ae]ffect nothing.
+They help keep the features idiomatic, engaging, etc.
 """
 
 from behave import step

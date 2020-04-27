@@ -5,6 +5,7 @@ from behave import step
 # Swap to usage of `given`, `when`, `then` when relevant
 ###############################################################################
 
+from hamcrest import assert_that, equal_to
 
 from tools_nlp import parse_amount
 from tools_db import count_users
@@ -33,13 +34,7 @@ def create_citizen_named(context, name):
 
 
 # @then
-@step(u"(?:qu')?il ne devrait y avoir aucun citoyen dans la base de données")
-def there_should_not_be_any_user(context):
-    assert(count_users() == 0)
-
-
-# @then
-@step(u"(?:qu')?il devrait y avoir (?P<amount>.+) citoyen(?:[⋅.-]?ne?|)s? dans la base de données")
+@step(u"(?:qu')?il(?: ne)? devrait y avoir (?P<amount>.+) citoyen(?:[⋅.-]?ne?|)s? dans la base de données")
 def there_should_be_n_users(context, amount):
     amount = parse_amount(context, amount)
-    assert(count_users() == amount)
+    assert_that(count_users(), equal_to(amount))
