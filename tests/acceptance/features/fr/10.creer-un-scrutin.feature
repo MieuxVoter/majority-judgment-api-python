@@ -18,7 +18,7 @@ Contexte:
   # …
 
 
-
+@wip
 Scénario: Créer un scrutin au jugement majoritaire
   Quand ??? créé un scrutin comme suit:
   """
