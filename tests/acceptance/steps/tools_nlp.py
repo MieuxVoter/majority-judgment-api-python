@@ -1,35 +1,30 @@
+"""
+Natural Language Processing tools
+"""
 
-# Natural Language Processing tools
-
+import re
+from text_to_num import text2num
 
 from tools_i18n import guess_language
 
 
 def parse_amount(context, amount_string):
     """
-    - Probably Not Invented Here ; help us find where it's at
     - Multilingual (hopefully) EN - FR - …
     - Tailored for Gherkin features and behave
     :param context: Context object from behave step def
     :param string amount_string:
     :return int|float:
     """
-
-    # TODO: find the lib(s) implementing what we want here
-    # - num2words odes it the other way around
-    # - word2number looks ok, but for english only
-    # - spacy ? or our very own tensorflow experiment
-
-    if 'fr' in context.tags:
-        if amount_string.startswith('aucun'):
+    language = guess_language(context)
+    if 'fr' == language:
+        if re.match("^aucun(?:[⋅.-]?e)?$", amount_string):
             return 0
-        if 'un' == amount_string:
-            return 1
-        # :(|)
-        raise NotImplemented()
+    elif 'en' == language:
+        if re.match("^no(?:ne)?$", amount_string):
+            return 0
 
-    from word2number import w2n
-    return w2n.word_to_num(amount_string)
+    return text2num(text=amount_string, lang=language, relaxed=True)
 
 
 def parse_yaml(context, with_i18n=True):

@@ -1,9 +1,9 @@
 #language: fr
 @fr
 Fonctionnalité: Décrire les comportements des étapes des scénarios
-  Dans le but de …
-  En tant que …
-  Nous souhaitons …
+  Dans le but d'expliciter le comportement des étapes des scénarios
+  En tant que débogueur⋅es
+  Nous souhaitons les utiliser dans différents contextes
 
 
 Scénario: Requérir la présence à priori de citoyen⋅nes
@@ -16,7 +16,7 @@ Scénario: Requérir la présence à priori de citoyen⋅nes
 
 
 Scénario: Requérir la présence à priori de scrutins
-  Étant donné qu'il ne devrait y avoir aucun scrutin dans la base de données
+  Sachant qu'il ne devrait y avoir aucun scrutin dans la base de données
   Étant donné un scrutin comme suit:
   """
   titre: Responsable de l'animation du chantier Constituance Algorithmique
@@ -26,6 +26,28 @@ Scénario: Requérir la présence à priori de scrutins
     - Dominique Merle
   """
   Alors il devrait y avoir un scrutin dans la base de données
+
+
+Scénario: Compter les scrutins
+  Sachant qu'il ne devrait y avoir aucun scrutin dans la base de données
+  Étant donné un scrutin comme suit:
+  """
+  titre: Mon app JM préférée
+  candidats:
+    - app.mieuxvoter.fr
+    - jugementmajoritaire.net
+    - lechoixcommun.fr
+  """
+  Alors il devrait y avoir un scrutin dans la base de données
+  Mais ce n'est pas tout !
+  Étant donné un autre scrutin comme suit:
+  """
+  titre: Canaux de communication interne
+  candidats:
+    - Telegram
+    - Telegram
+  """
+  Alors il devrait maintenant y avoir deux scrutins dans la base de données
 
 
 # Scénario: Soumettre un nouveau scrutin
