@@ -6,7 +6,7 @@ They help keep the features idiomatic, engaging, etc.
 from behave import step
 
 
-@step(u"etc[.]?|…|[.]{2,}")
+@step(u"(?:etc[.]?|…|[.]{3,}|[?!]+)[?!]*")
 def et_caetera(context):
     pass
 
