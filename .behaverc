@@ -1,0 +1,7 @@
+[behave]
+; perhaps we want some of those?
+;format=plain
+;logging_clear_handlers=yes
+;logging_filter=-suds
+
+paths=tests/acceptance
