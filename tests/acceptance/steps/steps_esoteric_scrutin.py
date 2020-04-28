@@ -14,7 +14,7 @@ from tools_dbal import count_polls
 
 
 # @given
-@step(u"un(?: autre)? scrutin comme suit:?")
+@step(u"un(?: autre)? scrutin comme suit *:?")
 def there_is_a_poll_like_so(context):
     data = parse_yaml(context)
     from election.models import Election
@@ -23,6 +23,7 @@ def there_is_a_poll_like_so(context):
     election.candidates = data.get('candidates')
     election.num_grades = data.get('grades', 7)
     election.save()
+    context.that_poll = election
 
 
 # @then

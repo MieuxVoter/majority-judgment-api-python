@@ -12,5 +12,5 @@ def et_caetera(context):
 
 
 @step(u"ce n'est pas tout *!*:?")
-def but_wait_there_is_more(context):
+def wait_there_is_more(context):
     pass  # nothing is cool

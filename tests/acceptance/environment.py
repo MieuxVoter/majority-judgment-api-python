@@ -3,6 +3,10 @@ Environment module for acceptance testing of the scenaristic constitution.
 https://behave.readthedocs.io/en/latest/api.html#environment-file-functions
 """
 
+
+from steps.context_main import reset_context as reset_main_context
+
+
 # Since we expect most of our step defs to require the flexibility of regular
 # expressions (I18N, epicene) we make regular expressions the default.
 # This is at the expense of automatic type casting of step variables.
@@ -25,6 +29,7 @@ def before_scenario(context, scenario):
     """
     Ran before _each_ scenario is run.
     """
+    reset_main_context(context)
     pass
 
 

@@ -25,11 +25,12 @@ from tools_dbal import count_users
 def create_citizen_named(context, name):
     print("Creating citizen named `%s'…" % name)
     from django.contrib.auth.models import User
-    _user = User.objects.create_user(
+    user = User.objects.create_user(
         username=name,
         email='user@test.mieuxvoter.fr',
         password=name
     )
+    context.that_user = user
 
 
 # @then
