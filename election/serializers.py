@@ -98,9 +98,9 @@ class CandidateSerializer(serializers.Serializer):
 
 class LinkSerializer(serializers.Serializer):
 
-    id_election=serializers.CharField()
-    select_language = serializers.CharField(max_length=2,default="en")
-    creator_emails = serializers.ListField(
+    election_id=serializers.CharField()
+    select_language = serializers.CharField(max_length=2,required=False)
+    emails = serializers.ListField(
         child=serializers.EmailField(),
         write_only=True,
         required=True

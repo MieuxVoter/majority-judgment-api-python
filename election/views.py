@@ -235,18 +235,20 @@ class LinkAPIView(CreateAPIView):
     def create(self, request: Request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)        
-        id_election = serializer.validated_data["id_election"]
+        election_id = serializer.validated_data["election_id"]
         select_language = serializer.validated_data["select_language"]
 
         try:
-            election = Election.objects.get(id=id_election)
+            election = Election.objects.get(id=election_id)
         except Election.DoesNotExist:
             return Response(
                 WRONG_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        creator_emails = serializer.validated_data.get("creator_emails",[])        
+        if select_language == None:
+            select_language = election.select_language
+
+        creator_emails = serializer.validated_data.get("emails",[])        
         
         if election.on_invitation_only:
             merge_data: Dict[str, str] = {
@@ -280,7 +282,7 @@ class LinkAPIView(CreateAPIView):
 
         else:
             merge_data: Dict[str, str] = {
-                "invitation_url": f"{settings.SITE_URL}/vote/{election.id}",
+                "vote_url": f"{settings.SITE_URL}/vote/{election.id}",
                 "result_url": f"{settings.SITE_URL}/result/{election.id}",
                 "title": election.title,
             }
@@ -311,5 +313,5 @@ class LinkAPIView(CreateAPIView):
        
 
         headers = self.get_success_headers(serializer.data)
-        return Response(status=status.HTTP_201_CREATED, headers=headers)
+        return Response(status=status.HTTP_200_OK, headers=headers)
 

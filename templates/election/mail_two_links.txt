@@ -4,7 +4,7 @@
 
 {% trans "The voting link to send to all those who wanted to participate in this vote is:
 " %}
-{{ invitation_url | safe }}
+{{ vote_url | safe }}
 
 {% trans "The link to view the results when they are available is:
 " %}
