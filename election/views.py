@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 import election.serializers as serializers
 from election.models import Election, Token, Vote
 from libs import majority_judgment as mj
- 
+
 # Error codes:
 UNKNOWN_ELECTION_ERROR = "E1: Unknown election"
 ONGOING_ELECTION_ERROR = "E2: Ongoing election"
@@ -248,70 +248,40 @@ class LinkAPIView(CreateAPIView):
         if select_language == None:
             select_language = election.select_language
 
-        creator_emails = serializer.validated_data.get("emails",[])        
-        
-        if election.on_invitation_only:
-            merge_data: Dict[str, str] = {
-                "result_url": f"{settings.SITE_URL}/result/{election.id}",
-                "title": election.title,
+        emails = serializer.validated_data.get("emails",[])  
+
+        merge_data: Dict[str, str] = {
+            "result_url": f"{settings.SITE_URL}/result/{election.id}",
+            "title": election.title,
             }
 
-            activate(
-                select_language
-                if select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
-                else "en"
-            )
-
+        activate(
+            select_language
+            if select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
+            else "en"
+            )     
+        
+        if election.on_invitation_only:
             text_body = render_to_string("election/mail_one_link.txt", merge_data)
             html_body = render_to_string("election/mail_one_link.html", merge_data)
 
-            try:
-                for email in creator_emails:
-                    msg = EmailMultiAlternatives(
-                        f"[{gettext('Mieux Voter')}] {election.title}",
-                        text_body,
-                        settings.EMAIL_HOST_USER,
-                        [email])
-                    msg.attach_alternative(html_body, "text/html")
-                    msg.send()
-            except:
-                Response(
-                    SEND_MAIL_ERROR,
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
         else:
-            merge_data: Dict[str, str] = {
-                "vote_url": f"{settings.SITE_URL}/vote/{election.id}",
-                "result_url": f"{settings.SITE_URL}/result/{election.id}",
-                "title": election.title,
-            }
-
-            activate(
-                select_language
-                if select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
-                else "en"
-            )
-
+            merge_data["vote_url"]=(f"{settings.SITE_URL}/vote/{election.id}")
             text_body = render_to_string("election/mail_two_links.txt", merge_data)
             html_body = render_to_string("election/mail_two_links.html", merge_data)
 
-            try:
-                for email in creator_emails:
-                    msg = EmailMultiAlternatives(
-                        f"[{gettext('Mieux Voter')}] {election.title}",
-                        text_body,
-                        settings.EMAIL_HOST_USER,
-                        [email])
-                    msg.attach_alternative(html_body, "text/html")
-                    msg.send()
-            except:
-                Response(
-                    SEND_MAIL_ERROR,
-                    status=status.HTTP_400_BAD_REQUEST,
+        try:
+            msg = EmailMultiAlternatives(
+                f"[{gettext('Mieux Voter')}] {election.title}",
+                text_body,
+                settings.EMAIL_HOST_USER,
+                bcc=emails)
+            msg.attach_alternative(html_body, "text/html")
+            msg.send()
+        except:
+            Response(
+                SEND_MAIL_ERROR,
+                status=status.HTTP_400_BAD_REQUEST,
                 )
-       
-
         headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_200_OK, headers=headers)
-
