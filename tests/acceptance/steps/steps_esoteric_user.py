@@ -3,13 +3,7 @@ Esoteric (coming from within) steps about users.
 These steps deal with the database directly, and NOT with the REST API.
 """
 
-###############################################################################
-# from behave import given, when, then
-# Pycharm 2020.1 won't understand the above, but it understands `step`.
-from behave import step
-# Swap to usage of `given`, `when`, `then` when relevant
-###############################################################################
-
+from behave import given, when, then, step
 from hamcrest import assert_that, equal_to
 
 from tools_nlp import parse_amount
