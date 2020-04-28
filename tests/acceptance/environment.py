@@ -19,7 +19,6 @@ def before_feature(context, feature):
     Ran before _each_ feature file is exercised.
     """
     pass
-    # context.fixtures = ['behave-fixtures.json']
 
 
 def before_scenario(context, scenario):
@@ -27,7 +26,6 @@ def before_scenario(context, scenario):
     Ran before _each_ scenario is run.
     """
     pass
-    # context.fixtures.append('behave-second-fixture.json')
 
 
 def before_all(context):
