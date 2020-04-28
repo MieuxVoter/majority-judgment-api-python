@@ -97,7 +97,6 @@ class CandidateSerializer(serializers.Serializer):
     num_votes = serializers.IntegerField(min_value=0)
 
 class LinkSerializer(serializers.Serializer):
-
     election_id=serializers.CharField()
     select_language = serializers.CharField(max_length=2,required=False)
     emails = serializers.ListField(
