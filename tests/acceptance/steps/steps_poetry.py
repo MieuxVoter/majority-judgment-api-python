@@ -8,9 +8,9 @@ from behave import step
 
 @step(u"(?:etc[.]?|…|[.]{3,}|[?!]+)[?!]*")
 def et_caetera(context):
-    pass
+    pass  # nothing is cool
 
 
 @step(u"ce n'est pas tout *!*:?")
 def but_wait_there_is_more(context):
-    pass
+    pass  # nothing is cool
