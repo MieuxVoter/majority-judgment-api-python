@@ -7,6 +7,14 @@ from django.contrib.auth.models import User
 from election.models import Election
 
 
+def make_user(context, username):
+    return User.objects.create_user(
+        username=username,
+        email='user@test.mieuxvoter.fr',
+        password=username
+    )
+
+
 def count_users():
     return User.objects.count()
 

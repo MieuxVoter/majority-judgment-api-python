@@ -7,7 +7,7 @@ from behave import given, when, then, step
 from hamcrest import assert_that, equal_to
 
 from tools_nlp import parse_amount
-from tools_dbal import count_users
+from tools_dbal import count_users, make_user
 
 
 ###############################################################################
@@ -24,12 +24,7 @@ from tools_dbal import count_users
 @step(u"un(?:[⋅.-]?e|) citoyen(?:[⋅.-]?ne|) nommé(?:[⋅.-]?e|) (?P<name>.+)")
 def create_citizen_named(context, name):
     print("Creating citizen named `%s'…\n" % name)
-    from django.contrib.auth.models import User
-    user = User.objects.create_user(
-        username=name,
-        email='user@test.mieuxvoter.fr',
-        password=name
-    )
+    user = make_user(context, name)
     context.that_user = user
 
 
