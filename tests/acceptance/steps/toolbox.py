@@ -1,3 +1,8 @@
+"""
+The intent is for toolbox to be a sort of shortcut, providing most tools.
+Not sure this is the python way.
+"""
+
 from django.test import Client
 
 from tools_nlp import *
