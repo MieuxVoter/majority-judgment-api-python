@@ -154,7 +154,7 @@ def build_most_voted_tables(top=10):
     titles = [election["election__title"] for election in votes_qs]
     num_votes = [election["count"] for election in votes_qs]
     return dcc.Graph(
-        go.Figure(
+        figure=go.Figure(
             data=[go.Table(
                 header=dict(values=["Title", "Number of votes"]),
                 cells=dict(values=[titles, num_votes]),
