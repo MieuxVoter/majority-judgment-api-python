@@ -50,4 +50,15 @@ Scénario: Compter les scrutins
   Alors il devrait maintenant y avoir deux scrutins dans la base de données
 
 
-# Scénario: Soumettre un nouveau scrutin
+@new
+Scénario: Soumettre un nouveau scrutin
+  Quand quelqu'un crée un scrutin comme suit:
+  """
+  titre: Les Histoires Canines
+  candidats:
+    - Milou
+    - Laika
+    - Cerbère
+    - Lassie
+  """
+  Alors il devrait maintenant y avoir un scrutin dans la base de données
