@@ -1,21 +1,20 @@
 [behave]
-; perhaps we want some of those?
-;format=plain
-;logging_clear_handlers=yes
-;logging_filter=-suds
+; We are not using the default path to leave room for unit tests ; also, apps.
+paths = tests/acceptance
 
-; We are not using the default path to leave room for unit tests?
-paths=tests/acceptance
+
+# What is going on?  Does this change anything for you? --format=plain works
+;format = plain
+
+; Perhaps we want some of those?
+;logging_clear_handlers = yes
+;logging_filter = -suds
 
 ; Show all print() statements even if tests pass. (bugs! bugs!)
-;stderr_capture=False
-;stdout_capture=False
+;stderr_capture = False
+stdout_capture = False
+;log_capture = False
 
-; Skipped projects clutter the console when using tags such as :
-; $ python manage.py behave --tags=wip
-; You can add a tag to a feature by using its name as descriptor :
-; @wip
-; Feature: Working hard
-; [...]
-; You can also add tags to Scenarios !
-show_skipped=False
+show_skipped = False
+show_snippets = False
+summary = True

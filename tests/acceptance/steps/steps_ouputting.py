@@ -11,4 +11,4 @@ from tools_dbal import find_user
 @step(u"I print(?: the)? user(?: named)? (?P<name>.+)")
 def print_user(context, name):
     user = find_user(name)
-    print(user)
+    print("%s\n" % user)

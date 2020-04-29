@@ -23,7 +23,7 @@ from tools_dbal import count_users
 # @given
 @step(u"un(?:[⋅.-]?e|) citoyen(?:[⋅.-]?ne|) nommé(?:[⋅.-]?e|) (?P<name>.+)")
 def create_citizen_named(context, name):
-    print("Creating citizen named `%s'…" % name)
+    print("Creating citizen named `%s'…\n" % name)
     from django.contrib.auth.models import User
     user = User.objects.create_user(
         username=name,
