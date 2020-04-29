@@ -42,7 +42,8 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'elector_emails',
             'start_at',
             'finish_at',
-            'select_language'
+            'select_language',
+            'restrict_results'
         )
 
 
