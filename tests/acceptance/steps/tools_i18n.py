@@ -209,9 +209,11 @@ languages = [
 ]
 
 
-def guess_language(context):
+# guess_locale()?
+def guess_language(context):  # naive, inefficient
     for language in languages:
-        if language[0] in context.tags:
-            return language[0]
-    raise Exception("No language found.  Use a tag @en or @fr?")
+        for tag in context.tags:
+            if language[0] == tag[0:2]:
+                return tag  # eg: "fr_FR"
+    raise Exception("No language found.  Use a tag @en_US or @fr_FR?")
 

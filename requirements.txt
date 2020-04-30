@@ -14,7 +14,8 @@ nose==1.3.7
 #behave-django==1.3.0
 
 # Assertion library
-pyhamcrest==2.0.2
+#pyhamcrest==2.0.2
+git+git://github.com/domi41/PyHamcrest@hack-i18n#egg=pyhamcrest
 
 # Test Metrics
 coverage>=4.5.1

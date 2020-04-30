@@ -16,7 +16,7 @@ def parse_amount(context, amount_string):
     :param string amount_string:
     :return int|float:
     """
-    language = guess_language(context)
+    language = guess_language(context)[0:2]
     if 'fr' == language:
         if re.match("^aucun(?:[⋅.-]?e)?$", amount_string):
             return 0
@@ -40,7 +40,7 @@ def parse_yaml(context, with_i18n=True):
         language = guess_language(context)
         # Eventually, load these maps from files, perhaps
         yaml_keys_map = {
-            'fr': {
+            'fr_FR': {
                 'titre': 'title',
                 'candidats': 'candidates',
                 'candidates': 'candidates',
