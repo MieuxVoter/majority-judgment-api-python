@@ -1,5 +1,5 @@
 #language: fr
-@fr
+@fr_FR
 Fonctionnalité: Créer un scrutin au jugement majoritaire sur app.mieuxvoter.fr
   Dans le but de décider collectivement
   En tant que collectif démocratique moderne

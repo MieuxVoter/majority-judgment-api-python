@@ -1,5 +1,6 @@
 #language: fr
-@fr
+@fr_FR
+@vigil
 Fonctionnalité: Décrire les comportements des étapes des scénarios
   Dans le but d'expliciter le comportement des étapes des scénarios
   En tant que débogueur⋅es
