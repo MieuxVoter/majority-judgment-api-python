@@ -209,8 +209,7 @@ languages = [
 ]
 
 
-# guess_locale()?
-def guess_language(context):  # naive, inefficient
+def guess_locale(context):  # naive, inefficient
     for language in languages:
         for tag in context.tags:
             if language[0] == tag[0:2]:

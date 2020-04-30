@@ -5,7 +5,7 @@ Natural Language Processing tools
 import re
 from text_to_num import text2num
 
-from tools_i18n import guess_language
+from tools_i18n import guess_locale
 
 
 def parse_amount(context, amount_string):
@@ -16,7 +16,7 @@ def parse_amount(context, amount_string):
     :param string amount_string:
     :return int|float:
     """
-    language = guess_language(context)[0:2]
+    language = guess_locale(context)[0:2]
     if 'fr' == language:
         if re.match("^aucun(?:[⋅.-]?e)?$", amount_string):
             return 0
@@ -37,7 +37,7 @@ def parse_yaml(context, with_i18n=True):
     data = safe_load(context.text)
 
     if with_i18n:
-        language = guess_language(context)
+        language = guess_locale(context)
         # Eventually, load these maps from files, perhaps
         yaml_keys_map = {
             'fr_FR': {
