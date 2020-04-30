@@ -17,11 +17,21 @@ services:
       - "8012:8000"
     depends_on:
       - db
-      - mail
     env_file:
       - .env
       - .env.local
-  mail:
-    image: bytemark/smtp
-    restart: always
-
+  dash:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile_dash
+    image: dash:latest
+    command: docker/wait-for-it.sh db:5432 --strict -- docker/dash.sh
+    volumes:
+      - ./:/code
+    ports:
+      - "8053:8053"
+    depends_on:
+      - db
+    env_file:
+      - .env
+      - .env.local
