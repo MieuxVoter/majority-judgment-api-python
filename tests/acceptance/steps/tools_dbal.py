@@ -23,8 +23,21 @@ def count_polls():  # TBD: "scrutin" translates to "poll"?
     return Election.objects.count()
 
 
-def find_user(identifier):
+def find_user(identifier, relax=False):
     user = User.objects.get(username=identifier)
     if user is not None:
         return user
-    raise ValueError("No user found matching `%s`." % identifier)
+    if not relax:
+        raise ValueError("No user found matching `%s`." % identifier)
+    return None
+
+
+def find_poll(identifier, relax=False):
+    poll = Election.objects.get(title=identifier)
+    if poll is not None:
+        return poll
+    if not relax:
+        raise ValueError("No poll found matching `%s`." % identifier)
+    return None
+
+

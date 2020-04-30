@@ -54,3 +54,36 @@ def parse_yaml(context, with_i18n=True):
                     data[yaml_keys_map[language][key]] = data[key]
 
     return data
+
+
+def parse_grades(context, data, poll):
+    grades = []
+
+    for candidate in poll.candidates:
+        if candidate not in data:
+            raise AssertionError("Candidate `%s' not found in `%s'." % (candidate, data))
+        grade_text = data[candidate]
+
+        grades_database = {  # TBD
+            'fr_FR': {
+                'quality': {
+                    '7': [
+                        ['excellent', 'excellente', 'excellent⋅e', 'excellent-e', 'excellent.e'],
+                        ['très bien'],
+                        ['bien'],
+                        ['assez bien'],
+                        ['passable'],
+                        ['insuffisant', 'insuffisante', 'insuffisant⋅e', 'insuffisant-e', 'insuffisant.e'],
+                        ['à rejeter'],
+                    ],
+                },
+            }
+        }
+        locale = guess_locale(context)
+        grades_in_order = grades_database[locale]['quality']['7']
+        for k, matching_grades in enumerate(grades_in_order):
+            if grade_text in matching_grades:
+                grades.append(k)
+                break
+
+    return grades

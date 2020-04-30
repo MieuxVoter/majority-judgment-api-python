@@ -5,15 +5,22 @@ Not sure this is the python way.
 
 from django.test import Client
 
+
+# Keep these, it is used by those who import toolbox
+from tools_dbal import *
 from tools_nlp import *
 
 
 class Actor(object):
+    """
+    Light wrapper around HTTP clients, where we can put our nitty-gritty.
+    """
 
     def __init__(self, name=None) -> None:
         super().__init__()
         self.name = name
         self.client = Client()
+        self.last_response = None
 
     def adjust_path(self, path):
         if path.startswith('/'):
@@ -21,15 +28,17 @@ class Actor(object):
         return "/api/election/%s" % path
 
     def handle_possible_failure(self, method, path, response):
+        # FIXME: I18N
         if response.status_code >= 400:
-            print("%s %s (%d)" % (method, path, response.status_code))
+            print("%s %s (%d)\n" % (method, path, response.status_code))
             print(response.content)
+            raise AssertionError("Request should succeed.")
         return response
 
     def post(self, path, data, safe_to_fail=False):
         path = self.adjust_path(path)
         response = self.client.post(path=path, data=data)
-        # response = self.client.generic(path=path, method="POST", data=data)
+        self.last_response = response
 
         if not safe_to_fail:
             self.handle_possible_failure('POST', path, response)

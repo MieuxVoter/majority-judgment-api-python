@@ -51,7 +51,7 @@ Scénario: Compter les scrutins
     - Telegram
     - Telegram
   """
-  Alors il devrait maintenant y avoir deux scrutins dans la base de données
+  Alors il devrait maintenant y avoir trente deux scrutins dans la base de données
 
 
 
@@ -69,7 +69,27 @@ Scénario: Soumettre un nouveau scrutin
 
 
 
+# This scenario is expected to fail as soon as we implement any form of security.
+# When that happens, don't hesitate about deleting it.
+@weak
 @new
+Scénario: Voter sur un scrutin
+  Étant donné un scrutin comme suit:
+  """
+  titre: La liberté de la presse
+  candidats:
+    - France
+    - Islande
+  """
+  Et quelqu'un vote comme suit sur ce scrutin:
+  """
+  France: insuffisant
+  Islande: très bien
+  """
+  Alors il devrait maintenant y avoir un scrutin dans la base de données
+
+
+
 Scénario: Afficher un citoyen
   Étant donné un citoyen nommé Michel Balinski
   Alors je débogue le citoyen nommé Michel Balinski
