@@ -91,9 +91,18 @@ class Candidate:
         self.profile = profile
         self.grade = grade
 
-
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
     id = serializers.IntegerField(min_value=0)
     profile = serializers.DictField(child=serializers.IntegerField())
     grade = serializers.IntegerField(min_value=0, max_value=settings.MAX_NUM_GRADES)
+    num_votes = serializers.IntegerField(min_value=0)
+
+class LinkSerializer(serializers.Serializer):
+    election_id=serializers.CharField()
+    select_language = serializers.CharField(max_length=2,required=False)
+    emails = serializers.ListField(
+        child=serializers.EmailField(),
+        write_only=True,
+        required=True
+    )

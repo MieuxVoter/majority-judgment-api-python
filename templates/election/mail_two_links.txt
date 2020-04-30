@@ -1,0 +1,11 @@
+{% load i18n %}
+{% trans "This email was sent to you because your email address was entered to receive the voting and election result links having as subject:" %}
+{{ title }}
+
+{% trans "The voting link to send to all those who wanted to participate in this vote is:
+" %}
+{{ vote_url | safe }}
+
+{% trans "The link to view the results when they are available is:
+" %}
+{{ result_url | safe }}
