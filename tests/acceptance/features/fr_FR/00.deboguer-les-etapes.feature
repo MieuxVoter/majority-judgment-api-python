@@ -1,4 +1,6 @@
 #language: fr
+# These scenario are expected to fail as soon as we implement any form of security.
+# When that happens, don't hesitate about removing them, their purpose will be outlived.
 @fr_FR
 @vigil
 Fonctionnalité: Décrire les comportements des étapes des scénarios
@@ -60,26 +62,23 @@ Scénario: Soumettre un nouveau scrutin
   """
   titre: Les Histoires Canines
   candidats:
-    - Milou
-    - Laika
-    - Cerbère
-    - Lassie
+  - Milou
+  - Laika
+  - Cerbère
+  - Lassie
   """
   Alors il devrait maintenant y avoir un scrutin dans la base de données
 
 
 
-# This scenario is expected to fail as soon as we implement any form of security.
-# When that happens, don't hesitate about deleting it.
 @weak
-@new
 Scénario: Voter sur un scrutin
   Étant donné un scrutin comme suit:
   """
   titre: La liberté de la presse
   candidats:
-    - France
-    - Islande
+  - France
+  - Islande
   """
   Et quelqu'un vote comme suit sur ce scrutin:
   """
@@ -91,5 +90,5 @@ Scénario: Voter sur un scrutin
 
 
 Scénario: Afficher un citoyen
-  Étant donné un citoyen nommé Michel Balinski
-  Alors je débogue le citoyen nommé Michel Balinski
+  Étant donné un citoyen nommé Rida Laraki
+  Alors j'affiche le citoyen nommé Rida Laraki
