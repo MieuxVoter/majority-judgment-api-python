@@ -68,13 +68,13 @@ def parse_grades(context, data, poll):
             'fr_FR': {
                 'quality': {
                     '7': [
-                        ['excellent', 'excellente', 'excellent⋅e', 'excellent-e', 'excellent.e'],
-                        ['très bien'],
-                        ['bien'],
-                        ['assez bien'],
-                        ['passable'],
-                        ['insuffisant', 'insuffisante', 'insuffisant⋅e', 'insuffisant-e', 'insuffisant.e'],
                         ['à rejeter'],
+                        ['insuffisant', 'insuffisante', 'insuffisant⋅e', 'insuffisant-e', 'insuffisant.e'],
+                        ['passable'],
+                        ['assez bien'],
+                        ['bien'],
+                        ['très bien'],
+                        ['excellent', 'excellente', 'excellent⋅e', 'excellent-e', 'excellent.e'],
                     ],
                 },
             }
