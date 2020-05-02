@@ -46,12 +46,8 @@ def actor_judges_candidates_of_that_poll_like_so(context, actor):
 def winner_of_that_poll_should_be(context, candidate):
     actor = parse_actor(context, "C0h4N")
     poll = context.that_poll
-    response = actor.get(f"/results/{poll.id}/")
-    # from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
-    # if HttpResponsePermanentRedirect.status_code == response.status_code \
-    #         or HttpResponseRedirect.status_code == response.status_code:
-    #     print(f"Response: `{response}'\n")
-    #     fail("You cannot check the winners of this poll yet.  Wait until it closes.")
+    # "/results/{poll.id}/"
+    response = actor.get(f"/polls/{poll.id}/results")
 
     # data example :
     # [{'name': 'Islande', 'id': 1,
