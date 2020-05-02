@@ -6,7 +6,7 @@ These steps deal with the REST API, not the database.
 from behave import given, when, then, step
 from hamcrest import assert_that, equal_to
 
-from toolbox import parse_actor, parse_yaml, parse_grades, find_poll
+from toolbox import parse_actor, parse_yaml, parse_grades, find_poll, fail
 
 
 ###############################################################################
@@ -29,13 +29,34 @@ def actor_creates_a_poll_like_so(context, actor):
 
 
 # @when
-@step(u"(?P<actor>.+) vote comme suit sur ce scrutin *:?")
-def actor_votes_on_that_poll_like_so(context, actor):
+@step(u"(?P<actor>.+) (?:vote|juge les candidats)(?: comme suit)? (?:sur|de) ce scrutin(?: comme suit)? *:?")
+def actor_judges_candidates_of_that_poll_like_so(context, actor):
     actor = parse_actor(context, actor)
     data = parse_yaml(context)
     poll = context.that_poll
     grades = parse_grades(context, data, poll)
-    actor.post("/votes", data={
+    actor.post("/judgments", data={
         'election': poll.id,
         'grades_by_candidate': grades,
     })
+
+
+# @when
+@step(u"l[ea] vainqueur(?:[⋅.-]?e)? de ce scrutin devrait être: (?P<candidate>.+)")
+def winner_of_that_poll_should_be(context, candidate):
+    actor = parse_actor(context, "C0h4N")
+    poll = context.that_poll
+    response = actor.get(f"/results/{poll.id}/")
+    # from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect
+    # if HttpResponsePermanentRedirect.status_code == response.status_code \
+    #         or HttpResponseRedirect.status_code == response.status_code:
+    #     print(f"Response: `{response}'\n")
+    #     fail("You cannot check the winners of this poll yet.  Wait until it closes.")
+
+    # data example :
+    # [{'name': 'Islande', 'id': 1,
+    #   'profile': {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 1, '6': 1}, 'grade': 5},
+    #  {'name': 'France', 'id': 0,
+    #   'profile': {'0': 0, '1': 1, '2': 1, '3': 0, '4': 0, '5': 0, '6': 0}, 'grade': 1}]
+    data = response.json()
+    assert_that(data[0]['name'], equal_to(candidate))

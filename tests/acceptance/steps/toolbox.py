@@ -35,6 +35,15 @@ class Actor(object):
             raise AssertionError("Request should succeed.")
         return response
 
+    def get(self, path, data=None, safe_to_fail=False):
+        path = self.adjust_path(path)
+        response = self.client.get(path=path, data=data)
+        self.last_response = response
+
+        if not safe_to_fail:
+            self.handle_possible_failure('GET', path, response)
+        return response
+
     def post(self, path, data, safe_to_fail=False):
         path = self.adjust_path(path)
         response = self.client.post(path=path, data=data)
@@ -42,6 +51,7 @@ class Actor(object):
 
         if not safe_to_fail:
             self.handle_possible_failure('POST', path, response)
+        return response
 
 
 def parse_actor(context, actor_name):
@@ -50,3 +60,7 @@ def parse_actor(context, actor_name):
     if actor_name not in context.actors:
         context.actors[actor_name] = Actor(name=actor_name)
     return context.actors[actor_name]
+
+
+def fail(message):  # TBD; How to I18N AssertionError?
+    raise AssertionError(message)

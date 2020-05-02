@@ -45,6 +45,7 @@ def parse_yaml(context, with_i18n=True):
                 'candidats': 'candidates',
                 'candidates': 'candidates',
                 'candidat⋅es': 'candidates',
+                'durée': 'duration',
             },
         }
         # Naive mapping, not collision-resilient, but it's ok for now

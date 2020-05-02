@@ -91,7 +91,7 @@ Scénario: Voter sur un scrutin
   Islande: excellent
   """
   Alors il devrait maintenant y avoir un scrutin dans la base de données
-  Et le vainqueur de ce scrutin devrait être: France
+  Et le vainqueur de ce scrutin devrait être: Islande
 
 
 

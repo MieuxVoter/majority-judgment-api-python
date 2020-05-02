@@ -24,7 +24,7 @@ def there_is_a_poll_like_so(context):
     poll.title = data.get('title')
     poll.candidates = data.get('candidates')
     poll.num_grades = data.get('grades', 7)
-    poll.finish_at = (timedelta(hours=1) + clock.now()).timestamp()
+    poll.finish_at = (timedelta(seconds=data.get('duration', 3600)) + clock.now()).timestamp()
     poll.save()
     context.that_poll = poll
 
