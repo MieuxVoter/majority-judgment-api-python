@@ -85,7 +85,13 @@ Scénario: Voter sur un scrutin
   France: insuffisant
   Islande: très bien
   """
+  Et quelqu'un d'autre juge les candidats de ce scrutin comme suit:
+  """
+  France: passable
+  Islande: excellent
+  """
   Alors il devrait maintenant y avoir un scrutin dans la base de données
+  Et le vainqueur de ce scrutin devrait être: France
 
 
 
