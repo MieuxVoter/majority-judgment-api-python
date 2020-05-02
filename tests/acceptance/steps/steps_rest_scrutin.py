@@ -49,10 +49,10 @@ def winner_of_that_poll_should_be(context, candidate):
     # "/results/{poll.id}/"
     response = actor.get(f"/polls/{poll.id}/results")
 
-    # data example :
-    # [{'name': 'Islande', 'id': 1,
-    #   'profile': {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 1, '6': 1}, 'grade': 5},
-    #  {'name': 'France', 'id': 0,
-    #   'profile': {'0': 0, '1': 1, '2': 1, '3': 0, '4': 0, '5': 0, '6': 0}, 'grade': 1}]
     data = response.json()
+    # data example :
+    # [{'name': 'Islande', 'id': 1, 'grade': 5,
+    #   'profile': {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 1, '6': 1}},
+    #  {'name': 'France', 'id': 0, 'grade': 1,
+    #   'profile': {'0': 0, '1': 1, '2': 1, '3': 0, '4': 0, '5': 0, '6': 0}}]
     assert_that(data[0]['name'], equal_to(candidate))
