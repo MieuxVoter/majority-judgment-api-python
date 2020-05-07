@@ -23,7 +23,8 @@ msgstr ""
 msgid ""
 "We are happy to send you this email! You will be able to vote using majority "
 "judgment."
-msgstr ""
+msgstr "Nous sommes heureux de vous envoyer ce mail ! Vous pourrez voter avec le jugement"
+"majoritaire."
 
 #: templates/election/mail_invitation.html:100
 #, fuzzy

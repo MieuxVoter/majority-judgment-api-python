@@ -14,7 +14,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SITE_URL = os.environ['SITE_URL']
-DEBUG = os.environ['DJANGO_DEBUG'] == 'true'
+DEBUG = os.environ['DJANGO_DEBUG'] == 'True'
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 MAX_NUM_GRADES = int(os.environ['MAX_NUM_GRADES'])

@@ -1,6 +1,6 @@
 {% load i18n %}
 <!DOCTYPE html>
-<html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
     <head>
     <title></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -39,12 +39,11 @@
         }
         
         /* CLIENT-SPECIFIC STYLES */
-        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        img { -ms-interpolation-mode: bicubic; }
+        body, table, th, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none;}
 
         /* RESET STYLES */
-        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-        table { border-collapse: collapse !important; }
+        table { border-collapse: collapse !important; padding: 0 !important;}
         body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
 
         /* iOS BLUE LINKS */
@@ -73,131 +72,129 @@
 
         <!-- HIDDEN PREHEADER TEXT -->
         <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: 'Lato', Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-            {% trans "We are happy that you have chosen our solution to create your vote!" %}
+            {% trans "We are happy to send you this email! You will be able to vote using majority judgment." %}
         </div>
-
-        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <table border="0" style="margin: 0px auto 0px auto; width: 100%;" aria-describedby="Email">
             <!-- LOGO -->
             <tr>
-                <td bgcolor="#efefff" align="center">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >
+                <th scope="col" style="background-color:#efefff ;">
+                    <table border="0" style="margin: 0px auto 0px auto; width: 100%; max-width: 600px;" aria-describedby="Logo picture">
                         <tr>
-                            <td align="center" valign="top" style="padding: 40px 10px 40px 10px;">
-                                <a href="https://mieuxvoter.fr/" target="_blank">
-                                    <img alt="Logo" src="https://mieuxvoter.fr/wp-content/uploads/2019/10/mieuxvoter_logo.png" width="40" height="40" style="display: block; width: 50%; max-width: 250px; min-width: 40px; height: auto; font-family: 'Lato', Helvetica, Arial, sans-serif; color: #ffffff; font-size: 18px;" border="0">
+                            <th scope="col" style="vertical-align: top; padding: 40px 10px 40px 10px;">
+                                <a href="https://mieuxvoter.fr/" target="_blank" rel="noopener noreferrer">
+                                    <img alt="Logo" src="https://mieuxvoter.fr/wp-content/uploads/2019/10/mieuxvoter_logo.png" width="40" height="40" style="display: block; margin: 0px auto 0px auto; width: 50%; max-width: 250px; min-width: 40px; height: auto; font-family: 'Lato', Helvetica, Arial, sans-serif; color: #ffffff; font-size: 18px;" border="0">
                                 </a>
-                            </td>
+                            </th>
                         </tr>
                     </table>
-                </td>
+                </th>
             </tr>
             <!-- TITLE -->
             <tr>
-                <td bgcolor="#efefff" align="center" style="padding: 0px 10px 0px 10px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >
+                <th scope="col" style="background-color: #efefff; padding: 0px 10px 0px 10px;">
+                    <table border="0" style="margin: 0px auto 0px auto; width: 100%; max-width: 600px;" aria-describedby="email title">
                         <tr>
-                            <td bgcolor="#ffffff" align="center" valign="top" style="padding: 40px 20px 20px 20px; border-radius: 4px 4px 0px 0px; color: #111111; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; letter-spacing: 4px; line-height: 48px;">
+                            <th scope="col" style="vertical-align: top; background-color: #ffffff; padding: 40px 20px 20px 20px; border-radius: 4px 4px 0px 0px; color: #111111; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; letter-spacing: 4px; line-height: 48px;">
 				                <h1 style="font-size: 48px; font-weight: 400; margin: 0;">{% trans "Hello!" %}</h1>
-                            </td>
+                            </th>
                         </tr>
                     </table>
-                </td>
+                </th>
             </tr>
             <!-- BLOCKS -->
             <tr>
-                <td bgcolor="#2a43a0" align="center" style="padding: 0px 10px 0px 10px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >
-                    <!-- BLOCK  SUBTITLE-->
-                    <tr>
-                        <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                            <p style="margin: 0;">
-                                {% trans "We are happy that you have chosen our solution to create your vote!" %}
-                            </p>
-                        </td>
-                    </tr>
-                    <!-- BLOCK  EXPLANATION-->
-                    <tr>
-                        <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                            <p style="margin: 0;">
-                                {% trans "This email was sent to you because your email address was entered to receive the voting and election result links having as subject:" %}
-                                &nbsp;
-                                <b>{{title}}</b>
-                            </p>
-                        </td>
-                    </tr>
-
-                    <!-- BLOCK LINK TO VOTE -->
-                    <tr>
-                        <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                            <p style="margin: 0;">
-                                {% trans "The voting link to send to all those who wanted to participate in this vote is:" %}
-                                &nbsp;
-                                <a  target="_blank" style="color: #2a43a0;">{{vote_url}}</a>
-                            </p>
-                        </td>
-                    </tr>
-                    <!-- BLOCK LINK TO RESULT  -->
-                    <tr>
-                        <td bgcolor="#ffffff" align="left"style="padding: 20px 30px 20px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                            <p style="margin: 0;">
-			                    {% trans "The link to view the results when they are available is:" %}
-			                    &nbsp;
-                                <a  target="_blank" style="color: #2a43a0;">{{result_url}}</a>
-                            </p>
-                        </td>
-                    </tr>
-                    <!-- BLOCK THANKS -->
-                    <tr>
-                        <td bgcolor="#ffffff" align="left" style="padding: 0px 30px 40px 30px; border-radius: 0px 0px 4px 4px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-				            <p style="margin: 0;">{% trans "Good vote" %},<br>{% trans "Mieux Voter" %}</p>
-                        </td>
-                    </tr>
-                    </table>
-                </td>
-            </tr>
-            <!-- SUPPORT CALLOUT -->
-            <tr>
-                <td bgcolor="#f4f4f4" align="center" style="padding: 30px 10px 0px 10px;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >
-                        <!-- HEADLINE -->
+                <th scope="col" style="background-color: #2a43a0; padding: 0px 10px 0px 10px;">
+                    <table border="0" style="margin: 0px auto 0px auto; width: 100%; max-width: 600px;" aria-describedby="email body">
+                        <!-- BLOCK  SUBTITLE-->
                         <tr>
-                            <td bgcolor="#7d8ecf" align="center" style="padding: 30px 30px 30px 30px; border-radius: 4px 4px 4px 4px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
-                                <p style="margin: 0;"><b>
-                                    <a href="https://mieuxvoter.fr/index.php/decouvrir/" target="_blank" style="color: #FFFFFF;">
-                                        {% trans "Need more information?" %}	
-                                    </a></b>
+                            <th scope="col" style="background-color: #ffffff; padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0; text-align: left;">
+                                    {% trans "We are happy to send you this email! You will be able to vote using majority judgment." %}
                                 </p>
-                                <p style="margin: 0;"> <b>
-                                    <a href="https://mieuxvoter.fr/index.php/decouvrir/" target="_blank" style="color: #111111;">
-						                {% trans "Do you want to help us?" %}	
-                                    </a></b>
+                            </th>
+                        </tr>
+                        <!-- BLOCK  EXPLANATION-->
+                        <tr>
+                            <th scope="col" style="background-color: #ffffff; padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0; text-align: left;">
+                                    {% trans "This email was sent to you because your email address was entered to receive the voting and election result links about:" %}
+                                    &nbsp;
+                                    <strong>{{title}}</strong>
+                                </p>
+                            </th>
+                        </tr>
+                        <!-- BLOCK LINK TO VOTE -->
+                        <tr>
+                            <th scope="col" style="background-color: #ffffff; padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0; text-align: left;">
+                                    {% trans "The link that allows you to participate to the vote is:" %}
+                                    &nbsp;
+                                    <a  target="_blank" style="color: #2a43a0;">{{vote_url}}</a>
                                 </p>
                             </td>
                         </tr>
+                        <!-- BLOCK LINK RESULT  -->
+                        <tr>
+                            <th scope="col" style="background-color: #ffffff; padding: 20px 30px 40px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0; text-align: left;">
+                                    {% trans "The link to view the results, when they are available, is:" %}
+                                    &nbsp;
+                                    <a  target="_blank" style="color: #2a43a0;">{{result_url}}</a>
+                                </p>
+                            </th>
+                        </tr>
+                        <!-- BLOCK THANKS -->
+                        <tr>
+                            <th scope="col" style="background-color: #ffffff; padding: 0px 30px 40px 30px; border-radius: 0px 0px 4px 4px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0; text-align: left;">{% trans "Good vote" %},<br>{% trans "Mieux Voter" %}</p>
+                            </th>
+                        </tr>
                     </table>
-                </td>
+                </th>
+            </tr>
+            <!-- SUPPORT CALLOUT -->
+            <tr>
+                <th scope="col" style="background-color: #f4f4f4; padding: 30px 10px 0px 10px;">
+                    <table border="0" style="margin: 0px auto 0px auto; width: 100%; max-width: 600px;" aria-describedby="support callout">
+                        <!-- HEADLINE -->
+                        <tr>
+                            <th scope="col" style="background-color: #7d8ecf; padding: 30px 30px 30px 30px; border-radius: 4px 4px 4px 4px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;" >
+                                <p style="margin: 0;"><strong>
+                                    <a href="https://mieuxvoter.fr/index.php/decouvrir/" target="_blank" style="color: #FFFFFF;" rel="noopener noreferrer">
+                                        {% trans "Need more information?" %}	
+                                    </a></strong>
+                                </p>
+                                <p style="margin: 0;"> <strong>
+                                    <a href="https://mieuxvoter.fr/index.php/decouvrir/" target="_blank" style="color: #111111;" rel="noopener noreferrer">
+						                {% trans "Do you want to help us?" %}	
+                                    </a></strong>
+                                </p>
+                            </th>
+                        </tr>
+                    </table>
+                </th>
             </tr>
             <!-- FOOTER -->
             <tr>
-                <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 0px 10px;">        
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >
-                    <!-- EXPLAIN WHY -->
-                    </br>
-                    <tr>
-                        <td bgcolor="#f4f4f4" align="center" style="padding: 0px 30px 30px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;" >
-				            <p style="margin: 0;">
-				                {% trans "You received this email because someone invited you to vote." %}
-				            </p>
-                        </td>
-                    </tr>
-                    <!-- ADDRESS -->
-                    <tr>
-                        <td bgcolor="#f4f4f4" align="center" style="padding: 0px 30px 30px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;" >
-                        <p style="margin: 0;">{% trans "Mieux Voter" %} - contact@mieuxvoter.fr</p>
-                        </td>
-                    </tr>
+                <th scope="col" style="background-color: #f4f4f4; padding: 0px 10px 0px 10px;">        
+                    <table border="0" style="margin: 0px auto 0px auto; width: 100%; max-width: 600px;" aria-describedby="footer informations">
+                        <!-- EXPLAIN WHY -->
+                        </br>
+                        <tr>
+                            <th scope="col" style="background-color: #f4f4f4; padding: 0px 30px 30px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;" >
+                                <p style="margin: 0;">
+                                    {% trans "You received this email because someone invited you to vote." %}
+                                </p>
+                            </th>
+                        </tr>
+                        <!-- ADDRESS -->
+                        <tr>
+                            <th scope="col" style="background-color: #f4f4f4; padding: 0px 30px 30px 30px; color: #666666; font-family: 'Lato', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;" >
+                            <p style="margin: 0;">{% trans "Mieux Voter" %} - contact@mieuxvoter.fr</p>
+                            </th>
+                        </tr>
                     </table>
-                </td>
+                </th>
             </tr>
         </table>       
     </body>
