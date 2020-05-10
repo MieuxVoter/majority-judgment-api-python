@@ -73,5 +73,4 @@ class Vote(models.Model):
 
 class Token(RandomPrimaryIdModel):
     election = models.ForeignKey(Election, on_delete=models.CASCADE)
-    email = models.EmailField()
     used = models.BooleanField("Used", default=False)

@@ -71,7 +71,6 @@ class ElectionCreateAPIView(CreateAPIView):
         for email in electors_emails:
             token = Token.objects.create(
                 election=election,
-                email=email,
             )
             send_mail_invitation(email, election, token.id)
 
