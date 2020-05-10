@@ -2,10 +2,8 @@
 {% trans "This email was sent to you because your email was filled out to participate in the vote on the subject:" %}
 {{ title }}
 
-{% trans "The link for the vote is as follows:
-" %}
+{% trans "The link for the vote is as follows:" %}
 {{ invitation_url | safe }}
 
-{% trans "The link that will give you the results when they are available is as follows:
-" %}
+{% trans "The link that will give you the results when they are available is as follows:" %}
 {{ result_url | safe }}

@@ -2,6 +2,5 @@
 {% trans "This email was sent to you because your email address was entered to receive the link to the election result about:" %}
 {{ title }}
 
-{% trans "The link to view the results, when they are available, is:
-" %}
+{% trans "The link to view the results, when they are available, is:" %}
 {{ result_url | safe }}
