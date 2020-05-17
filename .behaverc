@@ -2,7 +2,6 @@
 ; We are not using the default path to leave room for unit tests ; also, apps.
 paths = tests/acceptance
 
-
 # What is going on?  Does this change anything for you? --format=plain works
 ;format = plain
 
@@ -11,10 +10,18 @@ paths = tests/acceptance
 ;logging_filter = -suds
 
 ; Show all print() statements even if tests pass. (bugs! bugs!)
-;stderr_capture = False
+stderr_capture = False
 stdout_capture = False
-;log_capture = False
+log_capture = False
 
+
+show_timings = False
+show_source = False
+show_multiline = True
 show_skipped = False
 show_snippets = False
 summary = True
+
+[behave.formatters]
+# We override the buggy "pretty" formatter
+pretty = tests.acceptance.formatter:BeautifulFormatter
