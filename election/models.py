@@ -41,6 +41,14 @@ class Election(RandomPrimaryIdModel):
         if not self.select_language in settings.LANGUAGE_AVAILABLE:
             raise IntegrityError("Election is only available in " + settings.LANGUAGE_AVAILABLE) 
 
+        #check if the end date is not in the past
+        if self.finish_at <= round(time()):
+            raise IntegrityError("The election cannot be over in the past")
+
+        #check if the end date is not before the begin date
+        if self.start_at > self.finish_at:
+            raise IntegrityError("The election can't end until it has started")
+
         return super().save(*args, **kwargs)
 
 
