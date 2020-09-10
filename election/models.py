@@ -39,8 +39,7 @@ class Election(RandomPrimaryIdModel):
 
         # check that the language is known
         if not self.select_language in settings.LANGUAGE_AVAILABLE:
-            string_language =  ', '.join(settings.LANGUAGE_AVAILABLE)
-            raise IntegrityError("Election is only available in " + string_language) 
+            raise IntegrityError("Election is only available in " + settings.LANGUAGE_AVAILABLE) 
 
         return super().save(*args, **kwargs)
 
