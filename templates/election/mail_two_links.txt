@@ -1,9 +1,9 @@
 {% load i18n %}
-{% trans "This email was sent to you because your email address was entered to receive the voting and election result links about:" %}
+{% translate "This email was sent to you because your email address was entered to receive the voting and election result links about:" %}
 {{ title }}
 
-{% trans "The link that allows you to participate to the vote is:" %}
+{% translate "The link that allows you to participate to the vote is:" %}
 {{ vote_url | safe }}
 
-{% trans "The link to view the results, when they are available, is:" %}
+{% translate "The link to view the results, when they are available, is:" %}
 {{ result_url | safe }}
