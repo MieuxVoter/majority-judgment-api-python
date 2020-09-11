@@ -8,11 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-05-09 12:47+0000\n"
+"POT-Creation-Date: 2020-09-11 10:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: english\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: templates/election/mail_invitation.html:75
 #: templates/election/mail_invitation.html:112
 #: templates/election/mail_one_link.html:75
-#: templates/election/mail_one_link.html:114
+#: templates/election/mail_one_link.html:112
 #: templates/election/mail_two_links.html:75
 #: templates/election/mail_two_links.html:112
 msgid ""
@@ -32,7 +32,7 @@ msgstr ""
 "judgment."
 
 #: templates/election/mail_invitation.html:98
-#: templates/election/mail_one_link.html:99
+#: templates/election/mail_one_link.html:98
 #: templates/election/mail_two_links.html:98
 msgid "Hello!"
 msgstr "Hello!"
@@ -68,34 +68,34 @@ msgstr ""
 "finished:"
 
 #: templates/election/mail_invitation.html:165
-#: templates/election/mail_one_link.html:141
+#: templates/election/mail_one_link.html:139
 #: templates/election/mail_two_links.html:149
 msgid "Good vote"
 msgstr "Good vote"
 
 #: templates/election/mail_invitation.html:165
 #: templates/election/mail_invitation.html:209
-#: templates/election/mail_one_link.html:141
-#: templates/election/mail_one_link.html:185
+#: templates/election/mail_one_link.html:139
+#: templates/election/mail_one_link.html:183
 #: templates/election/mail_two_links.html:149
 #: templates/election/mail_two_links.html:193
 msgid "Mieux Voter"
 msgstr "Better Vote"
 
 #: templates/election/mail_invitation.html:180
-#: templates/election/mail_one_link.html:156
+#: templates/election/mail_one_link.html:154
 #: templates/election/mail_two_links.html:164
 msgid "Need more information?"
 msgstr "Need more information?"
 
 #: templates/election/mail_invitation.html:185
-#: templates/election/mail_one_link.html:161
+#: templates/election/mail_one_link.html:159
 #: templates/election/mail_two_links.html:169
 msgid "Do you want to help us?"
 msgstr "Do you want to help us?"
 
 #: templates/election/mail_invitation.html:202
-#: templates/election/mail_one_link.html:178
+#: templates/election/mail_one_link.html:176
 #: templates/election/mail_two_links.html:186
 msgid "You received this email because someone invited you to vote."
 msgstr "You received this email because someone invited you to vote."
@@ -110,15 +110,17 @@ msgstr ""
 
 #: templates/election/mail_invitation.txt:5
 msgid "The link for the vote is as follows:"
-msgstr ""
+msgstr "The link for the vote is as follows:"
 
 #: templates/election/mail_invitation.txt:8
 msgid ""
 "The link that will give you the results when they are available is as "
 "follows:"
 msgstr ""
+"The link that will give you the results when they are available is as "
+"follows:"
 
-#: templates/election/mail_one_link.html:122
+#: templates/election/mail_one_link.html:120
 #: templates/election/mail_one_link.txt:2
 #, fuzzy
 #| msgid ""
@@ -131,12 +133,12 @@ msgstr ""
 "This email was sent to you because your email was filled out to participate "
 "in the vote on the subject:"
 
-#: templates/election/mail_one_link.html:132
+#: templates/election/mail_one_link.html:130
 #: templates/election/mail_one_link.txt:5
 #: templates/election/mail_two_links.html:140
 #: templates/election/mail_two_links.txt:8
 msgid "The link to view the results, when they are available, is:"
-msgstr ""
+msgstr "The link to view the results, when they are available, is:"
 
 #: templates/election/mail_two_links.html:120
 #: templates/election/mail_two_links.txt:2
@@ -154,4 +156,4 @@ msgstr ""
 #: templates/election/mail_two_links.html:130
 #: templates/election/mail_two_links.txt:5
 msgid "The link that allows you to participate to the vote is:"
-msgstr ""
+msgstr "The link that allows you to participate to the vote is:"

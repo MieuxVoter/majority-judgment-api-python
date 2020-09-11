@@ -41,11 +41,10 @@ def send_mail_invitation(
         "title": election.title,
     }
 
-    activate(
-        election.select_language
-        if election.select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
-        else "en"
-    )
+    if election.select_language not in os.environ.get("LANGUAGE_AVAILABLE", []):
+        activate("en")
+    else:
+        activate(election.select_language)
 
     text_body = render_to_string("election/mail_invitation.txt", merge_data)
     html_body = render_to_string("election/mail_invitation.html", merge_data)   
@@ -110,6 +109,10 @@ class ElectionDetailsAPIView(RetrieveAPIView):
         
 
 class VoteAPIView(CreateAPIView):
+    """
+    View to vote in an election
+    """
+
     serializer_class = serializers.VoteSerializer
 
     def create(self, request: Request, *args, **kwargs) -> Response:
@@ -164,8 +167,6 @@ class VoteAPIView(CreateAPIView):
             )
         headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_201_CREATED, headers=headers)
-
-
 
 
 class ResultAPIView(APIView):
@@ -225,6 +226,7 @@ class ResultAPIView(APIView):
         serializer = serializers.CandidateSerializer(candidates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class LinkAPIView(CreateAPIView):
     """
         View to send the result and vote links if it is an open election
@@ -244,8 +246,6 @@ class LinkAPIView(CreateAPIView):
                 WRONG_ELECTION_ERROR,
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if select_language == None:
-            select_language = election.select_language
 
         emails = serializer.validated_data.get("emails",[])  
 
@@ -254,12 +254,11 @@ class LinkAPIView(CreateAPIView):
             "title": election.title,
             }
 
-        activate(
-            select_language
-            if select_language in os.environ.get("LANGUAGE_AVAILABLE", [])
-            else "en"
-            )     
-        
+        if select_language == None or select_language not in os.environ.get("LANGUAGE_AVAILABLE", []):
+            select_language = election.select_language
+
+        activate(select_language)
+
         if election.on_invitation_only:
             text_body = render_to_string("election/mail_one_link.txt", merge_data)
             html_body = render_to_string("election/mail_one_link.html", merge_data)
