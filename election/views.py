@@ -41,8 +41,8 @@ def send_mail_invitation(
         "title": election.title,
     }
 
-    if election.select_language not in os.environ.get("LANGUAGE_AVAILABLE", []):
-        activate("en")
+    if election.select_language not in settings.LANGUAGE_AVAILABLE:
+        activate(settings.DEFAULT_LANGUAGE)
     else:
         activate(election.select_language)
 
@@ -254,7 +254,7 @@ class LinkAPIView(CreateAPIView):
             "title": election.title,
             }
 
-        if select_language == None or select_language not in os.environ.get("LANGUAGE_AVAILABLE", []):
+        if select_language == None or select_language not in settings.LANGUAGE_AVAILABLE:
             select_language = election.select_language
 
         activate(select_language)

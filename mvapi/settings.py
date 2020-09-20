@@ -19,6 +19,7 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 MAX_NUM_GRADES = int(os.environ['MAX_NUM_GRADES'])
 LANGUAGE_AVAILABLE = os.environ['LANGUAGE_AVAILABLE']
+DEFAULT_LANGUAGE = "en"
 
 # Application definition
 
