@@ -4,6 +4,18 @@ This API allows you to create elections, vote and obtain results with [majority 
 
 You can use our server at [demo.mieuxvoter.fr/api/](demo.mieuxvoter.fr/api/).
 
+## Table of contentes
+1. [Installation with Docker](#installation-with-docker)
+    - [Configuration](#configuration)
+        - [SMTP server configuration](#smtp-server-configuration)
+            - [Gmail](#gmail)
+            - [MailGun](#mailgun)
+    - [Fist launch](#first-launch)
+2. [Browse the admin](#browse-the-admin)
+3. [Run the tests](#run-the-tests)
+4. [Create databases migrations](#create-databases-migrations)
+
+
 
 ## Installation with Docker
 
