@@ -7,13 +7,20 @@ You can use our server at [demo.mieuxvoter.fr/api/](demo.mieuxvoter.fr/api/).
 
 ## Installation with Docker
 
+### Configuration
+
 Edit the `.env` with your own settings. A secret key can be generated in Python REPL:
 
 ```
 >>> from django.core.management.utils import get_random_secret_key
 >>> get_random_secret_key()
 ```
-Create a `.env.local` with :
+
+#### SMTP server configuration
+
+##### Gmail
+
+If you want to use Gmail to send emails, create a `.env.local` with :
 
 ```
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
@@ -28,14 +35,46 @@ EMAIL_HOST_PASSWORD=gmail account password
 For the gmail account, it is better to create one specially for this.
 In "Manage your google account" / "security" activated the option "Less secure access of applications"
 
+##### Mailgun
 
-Then launch the dockers with:
+If you want to use MailGun to send emails, create a `.env.local` with :
 
-`sudo docker-compose up -d`
+```
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.mailgun.org
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_PORT=587
+EMAIL_HOST_USER= Username provided by Mailgun
+EMAIL_HOST_PASSWORD= Password provided by Mailgun
+```
+### First launch
 
-You certainly want to apply databases migrations with:
+Launch the dockers with:
 
-`sudo docker/migrate.sh`
+```
+sudo docker-compose up --build
+```
+
+Next in another terminal apply databases migrations with:
+
+```
+sudo docker/migrate.sh
+```
+
+Then create and apply the traduction with :
+
+```
+sudo docker exec -it mvapi_web_1 django-admin makemessages -a
+sudo docker exec -it mvapi_web_1 django-admin compilemessages
+```
+You can now stop the dockers with : `Crtl + C` 
+
+Finally launch the docker with :
+
+```
+sudo docker-compose up -d
+```
 
 ## Browse the admin
 
