@@ -1,9 +1,8 @@
-import os
+import os,requests
 from typing import Optional, Dict, Tuple, List
 from time import time
 from django.db import IntegrityError
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import activate, gettext
 from rest_framework import status
@@ -33,7 +32,10 @@ Grade = int
 
 def send_mail_invitation(
         email: str, election: str, token_id: int
-    ):   
+    ):
+    """
+    Def to send the election invitation
+    """ 
     token_get: str = f"?token={token_id}"
     merge_data: Dict[str, str] = {
         "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
@@ -47,15 +49,23 @@ def send_mail_invitation(
         activate(election.select_language)
 
     text_body = render_to_string("election/mail_invitation.txt", merge_data)
-    html_body = render_to_string("election/mail_invitation.html", merge_data)   
+    html_body = render_to_string("election/mail_invitation.html", merge_data)
 
-    msg = EmailMultiAlternatives(
-        f"[{gettext('Mieux Voter')}] {election.title}",
-        text_body,
-        settings.EMAIL_HOST_USER,
-        [email])
-    msg.attach_alternative(html_body, "text/html")
-    msg.send()
+    send_status = requests.post(
+        "https://api.eu.mailgun.net/v3/" + settings.EMAIL_API_DOMAIN + "/messages",
+        auth=("api", settings.EMAIL_API_KEY),
+        data={"from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
+              "to": email,
+              "subject": f"[{gettext('Mieux Voter')}] {election.title}",
+              "text": text_body,
+              "html": html_body,
+              "o:tracking": False,
+              "o:tag":"Invitation",
+              "o:require-tls": settings.EMAIL_USE_TLS,
+              "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+              }
+        )
+    return(send_status)
 
 
 class ElectionCreateAPIView(CreateAPIView):
@@ -267,19 +277,19 @@ class LinkAPIView(CreateAPIView):
             merge_data["vote_url"]=(f"{settings.SITE_URL}/vote/{election.id}")
             text_body = render_to_string("election/mail_two_links.txt", merge_data)
             html_body = render_to_string("election/mail_two_links.html", merge_data)
-
-        try:
-            msg = EmailMultiAlternatives(
-                f"[{gettext('Mieux Voter')}] {election.title}",
-                text_body,
-                settings.EMAIL_HOST_USER,
-                bcc=emails)
-            msg.attach_alternative(html_body, "text/html")
-            msg.send()
-        except:
-            Response(
-                SEND_MAIL_ERROR,
-                status=status.HTTP_400_BAD_REQUEST,
-                )
-        headers = self.get_success_headers(serializer.data)
-        return Response(status=status.HTTP_200_OK, headers=headers)
+        
+        send_status = requests.post(
+            "https://api.eu.mailgun.net/v3/" + settings.EMAIL_API_DOMAIN + "/messages",
+            auth=("api", settings.EMAIL_API_KEY),
+            data={"from":"Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + "/>",
+                  "to": emails,
+                  "subject":f"[{gettext('Mieux Voter')}] {election.title}",
+                  "text": text_body,
+                  "html": html_body,
+                  "o:tracking": False,
+                  "o:tag":"Invitation",
+                  "o:require-tls": settings.EMAIL_USE_TLS,
+                  "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+                 }
+        )
+        return Response(status=send_status.status_code)

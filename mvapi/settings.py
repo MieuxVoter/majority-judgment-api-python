@@ -136,9 +136,8 @@ if os.environ['EMAIL_USE_TLS'] in ("True", "true", "on", "1"):
 else:
     EMAIL_USE_TLS = False
 
-#Pour test avec compte Gmail
-EMAIL_BACKEND=os.environ['EMAIL_BACKEND']
-EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
-EMAIL_PORT=os.environ['EMAIL_PORT']
-EMAIL_HOST=os.environ['EMAIL_HOST']
+#To use the Mailgun's API
+EMAIL_API_KEY=os.environ['EMAIL_API_KEY']
+EMAIL_API_DOMAIN=os.environ['EMAIL_API_DOMAIN']
+DEFAULT_FROM_EMAIL=os.environ['DEFAULT_FROM_EMAIL']
+EMAIL_SKIP_VERIFICATION=os.environ['EMAIL_SKIP_VERIFICATION'] 
