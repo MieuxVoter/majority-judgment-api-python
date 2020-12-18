@@ -1,4 +1,7 @@
-import os,requests
+import os
+import urllib
+import base64
+
 from typing import Optional, Dict, Tuple, List
 from time import time
 from django.db import IntegrityError
@@ -30,9 +33,7 @@ SEND_MAIL_ERROR = "E10: Error sending email"
 # A Grade is always given a int
 Grade = int 
 
-def send_mail_invitation(
-        email: str, election: str, token_id: int
-    ):
+def send_mail_invitation(email: str, election: str, token_id: int):
     """
     Def to send the election invitation
     """ 
@@ -51,21 +52,37 @@ def send_mail_invitation(
     text_body = render_to_string("election/mail_invitation.txt", merge_data)
     html_body = render_to_string("election/mail_invitation.html", merge_data)
 
-    send_status = requests.post(
-        "https://api.eu.mailgun.net/v3/" + settings.EMAIL_API_DOMAIN + "/messages",
-        auth=("api", settings.EMAIL_API_KEY),
-        data={"from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
-              "to": email,
-              "subject": f"[{gettext('Mieux Voter')}] {election.title}",
-              "text": text_body,
-              "html": html_body,
-              "o:tracking": False,
-              "o:tag":"Invitation",
-              "o:require-tls": settings.EMAIL_USE_TLS,
-              "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
-              }
-        )
-    return(send_status)
+    return(send_mail(email,text_body,html_body,election.title))
+
+ 
+def send_mail(email, text_body, html_body, title):
+    """
+    Def to send mails
+    """
+    data= urllib.parse.urlencode({
+        "from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
+        "to": email,
+        "subject": f"[{gettext('Mieux Voter')}] {title}",
+        "text": text_body,
+        "html": html_body,
+        "o:tracking": False,
+        "o:tag":"Invitation",
+        "o:require-tls": settings.EMAIL_USE_TLS,
+        "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+        }, doseq=True).encode()
+
+    #request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
+    request = urllib.request.Request("https://api.eu.mailgun.net/v3/mg.app.mieuxvoter.fr/messages", data=data)
+    encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
+    request.add_header("Authorization","Basic {}".format(encoded_token))
+    try:
+        response = urllib.request.urlopen(request)
+        print(response.getcode())
+        return(response.getcode())
+    except Exception as err:
+        print("erreur")
+        return(err)
+
 
 
 class ElectionCreateAPIView(CreateAPIView):
@@ -278,18 +295,6 @@ class LinkAPIView(CreateAPIView):
             text_body = render_to_string("election/mail_two_links.txt", merge_data)
             html_body = render_to_string("election/mail_two_links.html", merge_data)
         
-        send_status = requests.post(
-            "https://api.eu.mailgun.net/v3/" + settings.EMAIL_API_DOMAIN + "/messages",
-            auth=("api", settings.EMAIL_API_KEY),
-            data={"from":"Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + "/>",
-                  "to": emails,
-                  "subject":f"[{gettext('Mieux Voter')}] {election.title}",
-                  "text": text_body,
-                  "html": html_body,
-                  "o:tracking": False,
-                  "o:tag":"Invitation",
-                  "o:require-tls": settings.EMAIL_USE_TLS,
-                  "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
-                 }
-        )
-        return Response(status=send_status.status_code)
+        send_status = send_mail(emails,text_body,html_body,election.title)
+
+        return Response(status=send_status)
