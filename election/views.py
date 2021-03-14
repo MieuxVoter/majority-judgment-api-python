@@ -143,7 +143,7 @@ class ElectionCreateAPIView(CreateAPIView):
             token = Token.objects.create(
                 election=election,
             )
-            list_email_token.append(email,token.id)
+            list_email_token.append([email,token.id])
 
         if settings.EMAIL_TYPE == "API":
             send_mails_invitation_api(list_email_token, election)
