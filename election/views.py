@@ -34,7 +34,7 @@ SEND_MAIL_ERROR = "E10: Error sending email"
 # A Grade is always given a int
 Grade = int
 
-def send_mails_invitation_API(list_email_token: list, election: str):
+def send_mails_invitation_api(list_email_token: list, election: str):
     """
     Def to send the election invitation by API
     """ 
@@ -91,8 +91,7 @@ def send_mail(email: str, text_body, html_body, title):
         "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
         }, doseq=True).encode()
 
-    #request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
-    request = urllib.request.Request("https://api.eu.mailgun.net/v3/mg.app.mieuxvoter.fr/messages", data=data)
+    request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
     encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
     request.add_header("Authorization","Basic {}".format(encoded_token))
     try:
@@ -100,7 +99,7 @@ def send_mail(email: str, text_body, html_body, title):
     except Exception as err:
         return(err)
 
-def send_mails_invitation_SMTP(list_email_token: list, election: str):
+def send_mails_invitation_smtp(list_email_token: list, election: str):
     """
     Def to send the election invitation by SMTP
     """
@@ -139,19 +138,17 @@ class ElectionCreateAPIView(CreateAPIView):
         election = serializer.save()
         electors_emails = serializer.validated_data.get("elector_emails", [])
 
-        tokens = []
+        list_email_token = []
         for email in electors_emails:
             token = Token.objects.create(
                 election=election,
             )
-            tokens.append(token.id)
-        
-        list_email_token = list(zip(electors_emails,tokens))
+            list_email_token.append(email,token.id)
 
         if settings.EMAIL_TYPE == "API":
-            send_mails_invitation_API(list_email_token, election)
+            send_mails_invitation_api(list_email_token, election)
         else:
-            send_mails_invitation_SMTP(list_email_token, election)
+            send_mails_invitation_smtp(list_email_token, election)
         
         headers = self.get_success_headers(serializer.data)
         return Response(
