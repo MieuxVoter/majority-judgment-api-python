@@ -31,59 +31,51 @@ WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 SEND_MAIL_ERROR = "E10: Error sending email"
 
 # A Grade is always given a int
-Grade = int 
+Grade = int
 
-def send_mail_invitation(email: str, election: str, token_id: int):
+def send_mails_invitation(liste_email_token: list,election: str):
     """
     Def to send the election invitation
     """ 
-    token_get: str = f"?token={token_id}"
-    merge_data: Dict[str, str] = {
-        "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
-        "result_url": f"{settings.SITE_URL}/result/{election.id}",
-        "title": election.title,
-    }
+    print(type(liste_email_token))
 
-    if election.select_language not in settings.LANGUAGE_AVAILABLE:
-        activate(settings.DEFAULT_LANGUAGE)
-    else:
-        activate(election.select_language)
+    for couple in liste_email_token:
+        token_get: str = f"?token={couple[1]}"
+        merge_data: Dict[str, str] = {
+            "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
+            "result_url": f"{settings.SITE_URL}/result/{election.id}",
+            "title": election.title,
+        }
 
-    text_body = render_to_string("election/mail_invitation.txt", merge_data)
-    html_body = render_to_string("election/mail_invitation.html", merge_data)
+        if election.select_language not in settings.LANGUAGE_AVAILABLE:
+            activate(settings.DEFAULT_LANGUAGE)
+        else:
+            activate(election.select_language)
 
-    return(send_mail(email,text_body,html_body,election.title))
+        text_body = render_to_string("election/mail_invitation.txt", merge_data)
+        html_body = render_to_string("election/mail_invitation.html", merge_data)
 
- 
-def send_mail(email, text_body, html_body, title):
-    """
-    Def to send mails
-    """
-    data= urllib.parse.urlencode({
-        "from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
-        "to": email,
-        "subject": f"[{gettext('Mieux Voter')}] {title}",
-        "text": text_body,
-        "html": html_body,
-        "o:tracking": False,
-        "o:tag":"Invitation",
-        "o:require-tls": settings.EMAIL_USE_TLS,
-        "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
-        }, doseq=True).encode()
+        data= urllib.parse.urlencode({
+            "from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
+            "to": couple[0],
+            "subject": f"[{gettext('Mieux Voter')}] {election.title}",
+            "text": text_body,
+            "html": html_body,
+            "o:tracking": False,
+            "o:tag":"Invitation",
+            "o:require-tls": settings.EMAIL_USE_TLS,
+            "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+            }, doseq=True).encode()
 
-    #request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
-    request = urllib.request.Request("https://api.eu.mailgun.net/v3/mg.app.mieuxvoter.fr/messages", data=data)
-    encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
-    request.add_header("Authorization","Basic {}".format(encoded_token))
-    try:
-        response = urllib.request.urlopen(request)
-        print(response.getcode())
-        return(response.getcode())
-    except Exception as err:
-        print("erreur")
-        return(err)
-
-
+        request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
+        encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
+        request.add_header("Authorization","Basic {}".format(encoded_token))
+        try:
+            response = urllib.request.urlopen(request)
+            print(response.getcode())
+        except Exception as err:
+            return(err)
+        
 
 class ElectionCreateAPIView(CreateAPIView):
     serializer_class = serializers.ElectionCreateSerializer
@@ -94,11 +86,19 @@ class ElectionCreateAPIView(CreateAPIView):
 
         election = serializer.save()
         electors_emails = serializer.validated_data.get("elector_emails", [])
+
+        tokens = []
         for email in electors_emails:
             token = Token.objects.create(
                 election=election,
             )
-            send_mail_invitation(email, election, token.id)
+            tokens.append(token.id)
+        
+        liste_email_token = list(zip(electors_emails,tokens))
+
+        send_mails_invitation(liste_email_token, election)
+        
+        del tokens, electors_emails, liste_email_token
 
         headers = self.get_success_headers(serializer.data)
         return Response(
