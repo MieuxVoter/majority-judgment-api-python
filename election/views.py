@@ -67,15 +67,9 @@ def send_mails_invitation_api(list_email_token: list, election: str):
             "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
             }, doseq=True).encode()
 
-        request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
-        encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
-        request.add_header("Authorization","Basic {}".format(encoded_token))
-        try:
-            urllib.request.urlopen(request)
-        except Exception as err:
-            return(err)
+        send_api(data)
 
-def send_mail(email: str, text_body, html_body, title):
+def send_mail_api(email: str, text_body, html_body, title):
     """
     Def to send mails by API
     """
@@ -90,7 +84,13 @@ def send_mail(email: str, text_body, html_body, title):
         "o:require-tls": settings.EMAIL_USE_TLS,
         "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
         }, doseq=True).encode()
+    send_api(data)
 
+
+def send_api(data):
+    """
+    def to do api request
+    """
     request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
     encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
     request.add_header("Authorization","Basic {}".format(encoded_token))
@@ -345,6 +345,6 @@ class LinkAPIView(CreateAPIView):
             text_body = render_to_string("election/mail_two_links.txt", merge_data)
             html_body = render_to_string("election/mail_two_links.html", merge_data)
         
-        send_status = send_mail(emails,text_body,html_body,election.title)
+        send_status = send_mail_api(emails,text_body,html_body,election.title)
 
         return Response(status=send_status)
