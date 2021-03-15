@@ -10,6 +10,8 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 
+from django.http.request import RAISE_ERROR
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -136,9 +138,21 @@ if os.environ['EMAIL_USE_TLS'] in ("True", "true", "on", "1"):
 else:
     EMAIL_USE_TLS = False
 
-#Pour test avec compte Gmail
-EMAIL_BACKEND=os.environ['EMAIL_BACKEND']
-EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
-EMAIL_PORT=os.environ['EMAIL_PORT']
-EMAIL_HOST=os.environ['EMAIL_HOST']
+EMAIL_TYPE = os.environ['EMAIL_TYPE']
+if EMAIL_TYPE == "API":
+    #To use the Mailgun's API
+    EMAIL_API_KEY=os.environ['EMAIL_API_KEY']
+    EMAIL_API_DOMAIN=os.environ['EMAIL_API_DOMAIN']
+    DEFAULT_FROM_EMAIL=os.environ['DEFAULT_FROM_EMAIL']
+    EMAIL_SKIP_VERIFICATION=os.environ['EMAIL_SKIP_VERIFICATION']
+
+elif EMAIL_TYPE == "SMTP":
+    #To use with a SMTP service
+    EMAIL_BACKEND=os.environ['EMAIL_BACKEND']
+    EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
+    EMAIL_PORT=os.environ['EMAIL_PORT']
+    EMAIL_HOST=os.environ['EMAIL_HOST']
+
+else:
+    raise ValueError('API and SMTP are only available')

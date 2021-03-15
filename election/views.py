@@ -1,4 +1,7 @@
 import os
+import urllib
+import base64
+
 from typing import Optional, Dict, Tuple, List
 from time import time
 from django.db import IntegrityError
@@ -29,33 +32,100 @@ WRONG_ELECTION_ERROR = "E9: Parameters for the election are incorrect"
 SEND_MAIL_ERROR = "E10: Error sending email"
 
 # A Grade is always given a int
-Grade = int 
+Grade = int
 
-def send_mail_invitation(
-        email: str, election: str, token_id: int
-    ):   
-    token_get: str = f"?token={token_id}"
-    merge_data: Dict[str, str] = {
-        "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
-        "result_url": f"{settings.SITE_URL}/result/{election.id}",
-        "title": election.title,
-    }
+def send_mails_invitation_api(list_email_token: list, election: str):
+    """
+    Def to send the election invitation by API
+    """ 
 
-    if election.select_language not in settings.LANGUAGE_AVAILABLE:
-        activate(settings.DEFAULT_LANGUAGE)
-    else:
-        activate(election.select_language)
+    for couple in list_email_token:
+        token_get: str = f"?token={couple[1]}"
+        merge_data: Dict[str, str] = {
+            "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
+            "result_url": f"{settings.SITE_URL}/result/{election.id}",
+            "title": election.title,
+        }
 
-    text_body = render_to_string("election/mail_invitation.txt", merge_data)
-    html_body = render_to_string("election/mail_invitation.html", merge_data)   
+        if election.select_language not in settings.LANGUAGE_AVAILABLE:
+            activate(settings.DEFAULT_LANGUAGE)
+        else:
+            activate(election.select_language)
 
-    msg = EmailMultiAlternatives(
-        f"[{gettext('Mieux Voter')}] {election.title}",
-        text_body,
-        settings.EMAIL_HOST_USER,
-        [email])
-    msg.attach_alternative(html_body, "text/html")
-    msg.send()
+        text_body = render_to_string("election/mail_invitation.txt", merge_data)
+        html_body = render_to_string("election/mail_invitation.html", merge_data)
+
+        data= urllib.parse.urlencode({
+            "from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
+            "to": couple[0],
+            "subject": f"[{gettext('Mieux Voter')}] {election.title}",
+            "text": text_body,
+            "html": html_body,
+            "o:tracking": False,
+            "o:tag":"Invitation",
+            "o:require-tls": settings.EMAIL_USE_TLS,
+            "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+            }, doseq=True).encode()
+
+        send_api(data)
+
+def send_mail_api(email: str, text_body, html_body, title):
+    """
+    Def to send mails by API
+    """
+    data= urllib.parse.urlencode({
+        "from": "Mieux Voter <" + settings.DEFAULT_FROM_EMAIL + ">",
+        "to": email,
+        "subject": f"[{gettext('Mieux Voter')}] {title}",
+        "text": text_body,
+        "html": html_body,
+        "o:tracking": False,
+        "o:tag":"Invitation",
+        "o:require-tls": settings.EMAIL_USE_TLS,
+        "o:skip-verification": settings.EMAIL_SKIP_VERIFICATION
+        }, doseq=True).encode()
+    send_api(data)
+
+
+def send_api(data):
+    """
+    def to do api request
+    """
+    request = urllib.request.Request(settings.EMAIL_API_DOMAIN, data=data)
+    encoded_token = base64.b64encode(("api:" + settings.EMAIL_API_KEY).encode("ascii")).decode("ascii")
+    request.add_header("Authorization","Basic {}".format(encoded_token))
+    try:
+        urllib.request.urlopen(request)
+    except Exception as err:
+        return(err)
+
+def send_mails_invitation_smtp(list_email_token: list, election: str):
+    """
+    Def to send the election invitation by SMTP
+    """
+    for couple in list_email_token:
+        token_get: str = f"?token={couple[1]}"
+        merge_data: Dict[str, str] = {
+            "invitation_url": f"{settings.SITE_URL}/vote/{election.id}{token_get}",
+            "result_url": f"{settings.SITE_URL}/result/{election.id}",
+            "title": election.title,
+        }
+
+        if election.select_language not in settings.LANGUAGE_AVAILABLE:
+            activate(settings.DEFAULT_LANGUAGE)
+        else:
+            activate(election.select_language)
+
+        text_body = render_to_string("election/mail_invitation.txt", merge_data)
+        html_body = render_to_string("election/mail_invitation.html", merge_data)   
+
+        msg = EmailMultiAlternatives(
+            f"[{gettext('Mieux Voter')}] {election.title}",
+            text_body,
+            settings.EMAIL_HOST_USER,
+            [couple[0]])
+        msg.attach_alternative(html_body, "text/html")
+        msg.send()
 
 
 class ElectionCreateAPIView(CreateAPIView):
@@ -67,12 +137,19 @@ class ElectionCreateAPIView(CreateAPIView):
 
         election = serializer.save()
         electors_emails = serializer.validated_data.get("elector_emails", [])
+
+        list_email_token = []
         for email in electors_emails:
             token = Token.objects.create(
                 election=election,
             )
-            send_mail_invitation(email, election, token.id)
+            list_email_token.append([email,token.id])
 
+        if settings.EMAIL_TYPE == "API":
+            send_mails_invitation_api(list_email_token, election)
+        else:
+            send_mails_invitation_smtp(list_email_token, election)
+        
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
@@ -267,19 +344,7 @@ class LinkAPIView(CreateAPIView):
             merge_data["vote_url"]=(f"{settings.SITE_URL}/vote/{election.id}")
             text_body = render_to_string("election/mail_two_links.txt", merge_data)
             html_body = render_to_string("election/mail_two_links.html", merge_data)
+        
+        send_status = send_mail_api(emails,text_body,html_body,election.title)
 
-        try:
-            msg = EmailMultiAlternatives(
-                f"[{gettext('Mieux Voter')}] {election.title}",
-                text_body,
-                settings.EMAIL_HOST_USER,
-                bcc=emails)
-            msg.attach_alternative(html_body, "text/html")
-            msg.send()
-        except:
-            Response(
-                SEND_MAIL_ERROR,
-                status=status.HTTP_400_BAD_REQUEST,
-                )
-        headers = self.get_success_headers(serializer.data)
-        return Response(status=status.HTTP_200_OK, headers=headers)
+        return Response(status=send_status)
