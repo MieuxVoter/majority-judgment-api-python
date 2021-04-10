@@ -16,6 +16,7 @@ class Election(RandomPrimaryIdModel):
     num_grades = models.PositiveSmallIntegerField("Num. grades", null=False)
     start_at = models.IntegerField("Start date", default=time)
     finish_at = models.IntegerField("End date",default=time)
+    send_mail = models.BooleanField(default=True)
     # Language preference is used for emailing voters
     select_language = models.CharField("Language", max_length=2,default="en")
     # If results are restricted, one can see them only when the election is finished

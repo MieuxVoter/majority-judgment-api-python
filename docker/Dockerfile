@@ -4,6 +4,7 @@ RUN mkdir /code
 WORKDIR /code
 RUN apt-get update && apt-get install -y \
     gettext  \
-    python3-pip
+    python3-pip \
+    postgresql-client
 COPY requirements.txt /code/
 RUN pip install -r requirements.txt

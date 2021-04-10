@@ -20,8 +20,8 @@ DEBUG = os.environ['DJANGO_DEBUG'] == 'True'
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 ALLOWED_HOSTS = os.environ['DJANGO_ALLOWED_HOSTS'].split(',')
 MAX_NUM_GRADES = int(os.environ['MAX_NUM_GRADES'])
-LANGUAGE_AVAILABLE = os.environ['LANGUAGE_AVAILABLE']
 DEFAULT_LANGUAGE = "en"
+LANGUAGE_AVAILABLE = os.environ.get('LANGUAGE_AVAILABLE', DEFAULT_LANGUAGE)
 
 # Application definition
 
@@ -33,10 +33,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'dbbackup',  # django-dbbackup
     'rest_framework',
     'corsheaders',
     'election'
 ]
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': 'backup'}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

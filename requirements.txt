@@ -4,6 +4,7 @@ django-nose==1.4.7
 django-extensions==3.0.8
 django-cors-headers==3.5
 djangorestframework==3.11.1
+django-dbbackup==3.3.0
 nose==1.3.7
 psycopg2==2.8.6
 dash==1.11.0

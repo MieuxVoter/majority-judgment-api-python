@@ -145,10 +145,11 @@ class ElectionCreateAPIView(CreateAPIView):
             )
             list_email_token.append([email,token.id])
 
-        if settings.EMAIL_TYPE == "API":
-            send_mails_invitation_api(list_email_token, election)
-        else:
-            send_mails_invitation_smtp(list_email_token, election)
+        if election.send_mail:
+            if settings.EMAIL_TYPE == "API":
+                send_mails_invitation_api(list_email_token, election)
+            else:
+                send_mails_invitation_smtp(list_email_token, election)
         
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -297,7 +298,6 @@ class ResultAPIView(APIView):
                 merit_profiles[idx],
                 value.grade,
             )
-            # for idx in sorted_indexes
             for idx, value in indexed_values
         ]
         serializer = serializers.CandidateSerializer(candidates, many=True)

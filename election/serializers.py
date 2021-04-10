@@ -1,20 +1,12 @@
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from election.models import Election, Vote
+from election.models import Election, Vote, Token
 from django.conf import settings
 
 
-class ElectionViewMixin:
 
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        ret["slug"] = slugify(instance.title)
-        ret["id"] = instance.id
-        return ret
-
-
-class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
+class ElectionCreateSerializer(serializers.ModelSerializer):
 
     elector_emails = serializers.ListField(
         child=serializers.EmailField(),
@@ -43,15 +35,31 @@ class ElectionCreateSerializer(ElectionViewMixin, serializers.ModelSerializer):
             'start_at',
             'finish_at',
             'select_language',
-            'restrict_results'
+            'restrict_results',
+            'send_mail',
         )
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret["slug"] = slugify(instance.title)
+        ret["id"] = instance.id
+        ret["tokens"] = [token.id for token in Token.objects.filter(election=instance)]
+        return ret
 
-class ElectionViewSerializer(ElectionViewMixin, serializers.ModelSerializer):
+
+
+
+class ElectionViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Election
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret["slug"] = slugify(instance.title)
+        ret["id"] = instance.id
+        return ret
 
 
 class VoteSerializer(serializers.ModelSerializer):
