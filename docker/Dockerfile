@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.11
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
 WORKDIR /code
@@ -7,4 +7,11 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     postgresql-client
 COPY requirements.txt /code/
-RUN pip install -r requirements.txt
+RUN pip install -U pip && \
+    pip install -r requirements.txt
+EXPOSE 5000
+CMD bash entrypoint.sh
+
+COPY app /app
+
+WORKDIR /app
