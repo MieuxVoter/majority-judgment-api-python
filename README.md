@@ -54,3 +54,8 @@ Visit the admin page at [http://localhost:8012/admin/](http://localhost:8012/adm
 ## Create databases migrations
 
 `sudo docker/makemigrations.sh`
+
+
+## TODO
+
+[] Clean up nginx.conf

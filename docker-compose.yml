@@ -1,50 +1,48 @@
 version: '3.8'
 
 services:
-  mieuxvoter_db:
+  mj_db:
     image: postgres:15
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${DB_USER:-mv}
+      - POSTGRES_USER=${DB_USER:-mj}
       - POSTGRES_PASSWORD=$DB_PASS
-      - POSTGRES_DB=${DB_NAME:-mv}
+      - POSTGRES_DB=${DB_NAME:-mj}
       - TZ=${TIMEZONE:-Europe/Paris}
     networks:
       - lan
     volumes:
-      - db:/var/lib/mysql
+      - data/db:/var/lib/mysql
 
-  mieuxvoter_api:
+  mj_api:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: mieuxvoter/api-python:latest
+    image: majority-judgment/api-python:latest
     restart: unless-stopped
     healthcheck:
       start_period: 30s
-      test: ['CMD-SHELL', 'curl localhost:8000/liveness -s -f -o /dev/null || exit 1']
+      test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
       interval: 30s
-    volumes:
-      - ./:/code
     depends_on:
-      - mieuxvoter_db
+      - mj_db
     ports:
-      - 8877:8000
+      - 8877:8877
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
-      - "traefik.http.routers.mieuxvoter.entrypoints=web,websecure"
-      - "traefik.http.routers.mieuxvoter.rule=Host(${MIEUXVOTER_PREFIX:-openapi}.`${DOMAIN}`)"
-      - "traefik.http.services.mieuxvoter.loadbalancer.server.port=8000"
-      - "traefik.http.routers.mieuxvoter.tls=true"
-      - "traefik.http.routers.mieuxvoter.tls.certresolver=leresolver"
+      - "traefik.http.routers.mj.entrypoints=web,websecure"
+      - "traefik.http.routers.mj.rule=Host(${API_PREFIX:-openapi}.`${DOMAIN}`)"
+      - "traefik.http.services.mj.loadbalancer.server.port=8877"
+      - "traefik.http.routers.mj.tls=true"
+      - "traefik.http.routers.mj.tls.certresolver=leresolver"
 
-  mieuxvoter_restic:
+  mj_restic:
     profiles:
       - backup
       - all
     depends_on:
-      - mieuxvoter_db
+      - mj_db
     image: restic
     container_name: nextcloud_restic
     build:
@@ -55,7 +53,7 @@ services:
         RESTIC_PASSWORD: $RESTIC_PASSWORD
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}/data:/data
+      - data:/data
     environment:
       - PUID=$PUID
       - PGID=$PUID
@@ -67,7 +65,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
       - MAILX_ARGS=-r '${RESTIC_SEND_MAIL}' -s 'Result of the last restic backup run' -S smtp='${SMTP_HOST}:${SMTP_PORT;-587}' -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user='${SMTP_USER}' -S smtp-auth-password='${SMTP_PASS}' '${RESTIC_DEST_MAIL}'
 
-  mieuxvoter_imgpush:
+  mj_imgpush:
     profiles:
       - image
       - all
@@ -94,7 +92,7 @@ services:
       - lan
       - traefik_network
     volumes:
-      - ${DATA_DIR}:/images
+      - data/imgpush:/images
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -104,24 +102,24 @@ services:
       - "traefik.http.routers.imgpush.tls=true"
       - "traefik.http.routers.imgpush.tls.certresolver=leresolver"
 
-  mieuxvoter_metabase:
+  mj_metabase:
     image: metabase/metabase
     restart: unless-stopped
     profiles:
       - dashboard
       - all
     depends_on:
-      - mieuxvoter_db
+      - mj_db
     networks:
       - lan
       - traefik_network
     environment:
       MB_DB_TYPE: postgres
-      MB_DB_DBNAME: ${DB_NAME:-mv}
+      MB_DB_DBNAME: ${DB_NAME:-mj}
       MB_DB_PORT: ${DB_PORT:-5432}
-      MB_DB_USER: ${DB_USER:-mv}
+      MB_DB_USER: ${DB_USER:-mj}
       MB_DB_PASS: $DB_PASS
-      MB_DB_HOST: mieuxvoter_db
+      MB_DB_HOST: mj_db
       TZ: ${TIMEZONE:Europe/Paris}
     labels:
       - "traefik.enable=true"
@@ -134,7 +132,7 @@ services:
 
 
 volumes:
-  db:
+  data:
 
 networks:
   lan:
