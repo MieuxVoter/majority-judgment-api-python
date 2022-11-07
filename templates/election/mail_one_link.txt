@@ -1,6 +1,0 @@
-{% load i18n %}
-{% translate "This email was sent to you because your email address was entered to receive the link to the election result about:" %}
-{{ title }}
-
-{% translate "The link to view the results, when they are available, is:" %}
-{{ result_url | safe }}
