@@ -3,5 +3,7 @@ __pycache__/
 *.mo
 .#*
 .ipynb_checkpoints/
+.env
 .env.local
 backup
+.venv/

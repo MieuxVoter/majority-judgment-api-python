@@ -20,12 +20,19 @@ services:
       dockerfile: docker/Dockerfile
     image: majority-judgment/api-python:latest
     restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8877 --proxy-headers
     healthcheck:
       start_period: 30s
       test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
       interval: 30s
     depends_on:
       - mj_db
+    environment:
+      - POSTGRES_USER=${DB_USER:-mj}
+      - POSTGRES_PASSWORD=$DB_PASS
+      - POSTGRES_DB=${DB_NAME:-mj}
+      - POSTGRES_HOST=mj_db
+      - TZ=${TIMEZONE:-Europe/Paris}
     ports:
       - 8877:8877
     labels:
@@ -55,11 +62,9 @@ services:
     volumes:
       - data:/data
     environment:
-      - PUID=$PUID
-      - PGID=$PUID
-      - TZ=$TIMEZONE
+      - TZ=${TIMEZONE:-Europe/Paris}
       - RESTIC_REPOSITORY=$RESTIC_REPOSITORY
-      - BACKUP_CRON=${RESTIC_BACKUP_CRON:-0 */12 * * *}
+      - BACKUP_CRON=${RESTIC_BACKUP_CRON:-0 0 0 ? * * *}
       - RESTIC_FORGET_ARGS=--prune --keep-last 1 --keep-daily 1
       - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
