@@ -11,9 +11,11 @@ import django
 def load_mvapi():
     import os
     import sys
-    sys.path.append('../')
+
+    sys.path.append("../")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mvapi.settings")
     django.setup()
+
 
 load_mvapi()
 from election.models import Election, Vote, Token
@@ -40,4 +42,11 @@ if __name__ == "__main__":
         # send_mail_invitation(email, election, token.id)
 
     with open(args.output, "w") as fid:
-        fid.write("\n".join([f"https://app.mieuxvoter.fr/vote/{args.election_id}/?token={t}" for t in tokens]))
+        fid.write(
+            "\n".join(
+                [
+                    f"https://app.mieuxvoter.fr/vote/{args.election_id}/?token={t}"
+                    for t in tokens
+                ]
+            )
+        )

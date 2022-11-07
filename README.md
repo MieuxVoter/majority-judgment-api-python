@@ -104,6 +104,24 @@ http://127.0.0.1:8000/redoc
 ```
 
 
+
+## API
+
+POST elections: creation election
+  --> return a JWT token for administration
+  --> and the election link
+  --> and eventually a series of JWT tokens for voting
+GET elections/[election-id] get all data about a specific election. Might need a JWT token
+PUT elections/[election-id] get all data about a specific election. Might need a JWT token
+    --> might return new invites
+GET elections/[election-id]/proposals: only get the proposals. Might need a JWT token
+GET elections/[election-id]/candidates: only get the candidates. Might need a JWT token
+GET elections/[election-id]/votes: only get the votes. Might need a JWT token
+POST elections/[election-id]/votes: to vote. Might need a JWT token
+
+
+GET /metrics a few metrics, among them the number of elections, number of voters and number of votes.
+
 ## TODO
 
 [] Clean up nginx.conf

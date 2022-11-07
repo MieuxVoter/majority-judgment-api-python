@@ -5,7 +5,6 @@ from election.models import Election, Vote, Token
 from django.conf import settings
 
 
-
 class ElectionCreateSerializer(serializers.ModelSerializer):
 
     elector_emails = serializers.ListField(
@@ -27,16 +26,16 @@ class ElectionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Election
         fields = (
-            'title',
-            'candidates',
-            'on_invitation_only',
-            'num_grades',
-            'elector_emails',
-            'start_at',
-            'finish_at',
-            'select_language',
-            'restrict_results',
-            'send_mail',
+            "title",
+            "candidates",
+            "on_invitation_only",
+            "num_grades",
+            "elector_emails",
+            "start_at",
+            "finish_at",
+            "select_language",
+            "restrict_results",
+            "send_mail",
         )
 
     def to_representation(self, instance):
@@ -47,13 +46,10 @@ class ElectionCreateSerializer(serializers.ModelSerializer):
         return ret
 
 
-
-
 class ElectionViewSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Election
-        fields = '__all__'
+        fields = "__all__"
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -86,10 +82,11 @@ class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
         fields = (
-            'grades_by_candidate',
-            'election',
-            'token',
+            "grades_by_candidate",
+            "election",
+            "token",
         )
+
 
 # See https://github.com/MieuxVoter/mvapi/pull/5#discussion_r291891403 for explanations
 class Candidate:
@@ -99,17 +96,17 @@ class Candidate:
         self.profile = profile
         self.grade = grade
 
+
 class CandidateSerializer(serializers.Serializer):
     name = serializers.CharField()
     id = serializers.IntegerField(min_value=0)
     profile = serializers.DictField(child=serializers.IntegerField())
     grade = serializers.IntegerField(min_value=0, max_value=settings.MAX_NUM_GRADES)
 
+
 class LinkSerializer(serializers.Serializer):
-    election_id=serializers.CharField()
-    select_language = serializers.CharField(max_length=2,required=False)
+    election_id = serializers.CharField()
+    select_language = serializers.CharField(max_length=2, required=False)
     emails = serializers.ListField(
-        child=serializers.EmailField(),
-        write_only=True,
-        required=True
+        child=serializers.EmailField(), write_only=True, required=True
     )
