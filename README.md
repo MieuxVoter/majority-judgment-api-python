@@ -56,6 +56,54 @@ Visit the admin page at [http://localhost:8012/admin/](http://localhost:8012/adm
 `sudo docker/makemigrations.sh`
 
 
+
+## Local development
+
+1. Install [postgresql](https://www.postgresql.org/download/).
+2. Install `python-dotenv` and `virtualenv`:
+
+```bash
+pip install python-dotenv virtualenv
+```
+
+3. Create a new virtual environment and activate it:
+
+
+```bash
+virtualenv --python python3.11 .venv
+source .venv/bin/activate
+```
+
+4. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+5. Edit a `.env` with environment variables: 
+
+```
+# All variables are described in app/settings.py
+POSTGRES_PASSWORD=
+POSTGRES_DB=mv
+POSTGRES_NAME=postgresql
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+```
+
+6. Start the server:
+
+```
+uvicorn app.main:app --reload
+```
+
+7. Visit the generated documentation:
+
+```
+http://127.0.0.1:8000/redoc
+```
+
+
 ## TODO
 
 [] Clean up nginx.conf
