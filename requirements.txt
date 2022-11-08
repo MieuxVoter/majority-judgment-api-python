@@ -2,3 +2,4 @@ uvicorn[standard]==0.19.0
 fastapi==0.86.0
 sqlalchemy==2.0.0b3
 pydantic==1.10.2
+psycopg2==2.9.5

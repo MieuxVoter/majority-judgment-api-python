@@ -60,10 +60,10 @@ Visit the admin page at [http://localhost:8012/admin/](http://localhost:8012/adm
 ## Local development
 
 1. Install [postgresql](https://www.postgresql.org/download/).
-2. Install `python-dotenv` and `virtualenv`:
+2. Install `virtualenv`:
 
 ```bash
-pip install python-dotenv virtualenv
+pip install virtualenv
 ```
 
 3. Create a new virtual environment and activate it:
@@ -78,6 +78,7 @@ source .venv/bin/activate
 
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 5. Edit a `.env` with environment variables: 
