@@ -1,6 +1,6 @@
 import typing as t
-from datetime import datetime
-from pydantic import BaseModel, Field, validator, ConstrainedSet, ConstrainedStr
+from datetime import datetime, timedelta
+from pydantic import BaseModel, Field, validator
 from pydantic.fields import ModelField
 from .settings import settings
 
@@ -12,11 +12,15 @@ def _empty_string():
     return ""
 
 
+class ArgumentsSchemaError(Exception):
+    """
+    An error occured on the arguments provided to a schema
+    """
+
 Name = t.Annotated[str, Field(min_length=1, max_length=255)]
 Ref = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
 Image = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
 Description = t.Annotated[str, Field(default_factory=_empty_string, max_length=1024)]
-GradeValue = t.Annotated[int, Field(ge=0, lt=settings.max_grades)]
 Color = t.Annotated[str, Field(min_length=3, max_length=10)]
 
 
@@ -25,7 +29,7 @@ def _causal_dates_validator(*fields: str):
     Create a validator to assess the temporal logic for a list of field
     """
 
-    def _validator_fn(value: datetime, values: dict[str, datetime], field: ModelField):
+    def validator_fn(cls, value: datetime, values: dict[str, datetime], field):
         """
         Check that the field date_created happens before the field date_modified.
         """
@@ -38,9 +42,9 @@ def _causal_dates_validator(*fields: str):
         idx_field = fields.index(field.name)
         for i, f in enumerate(fields):
             if i < idx_field and values[f] > value:
-                raise ValueError(f"{f} is after {field.name}")
+                raise ArgumentsSchemaError(f"{f} is after {field.name}")
             if i > idx_field and values[f] < value:
-                raise ValueError(f"{f} is before {field.name}")
+                raise ArgumentsSchemaError(f"{f} is before {field.name}")
 
         return value
 
@@ -48,41 +52,42 @@ def _causal_dates_validator(*fields: str):
         *fields,
         allow_reuse=True,
         always=True,
-    )(_validator_fn)
+    )(validator_fn)
 
 
 class Candidate(BaseModel):
     name: Name
     description: Description
     image: Image
-    date_created: datetime
-    date_modified: datetime
+    date_created: datetime= Field(default_factory=datetime.now)
+    date_modified: datetime= Field(default_factory=datetime.now)
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
+        frozen = True  # for hashability
 
 
 class Grade(BaseModel):
     name: Name
-    value: GradeValue
+    value: int = Field(ge=0, lt=settings.max_grades, pre=True)
     description: Description
-    date_created: datetime
-    date_modified: datetime
+    date_created: datetime = Field(default_factory=datetime.now)
+    date_modified: datetime = Field(default_factory=datetime.now)
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
-        frozen = True  # to allow set
+        frozen = True  # for hashability
 
 
 class Vote(BaseModel):
     candidate: Candidate
     grade: Grade
-    date_created: datetime
-    date_modified: datetime
+    date_created: datetime= Field(default_factory=datetime.now)
+    date_modified: datetime= Field(default_factory=datetime.now)
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
 
@@ -90,29 +95,24 @@ class Vote(BaseModel):
         orm_mode = True
 
 
-class SetGrades(ConstrainedSet):
-    item_item = Grade
-    min_items = 2
-    max_items = settings.max_grades
 
-
-class SetCandidates(ConstrainedSet):
-    item_item = Candidate
-    min_items = 2
-    max_items = settings.max_candidates
-
+def _in_a_long_time() -> datetime:
+    """
+    Provides the date in the future
+    """
+    return datetime.now() + timedelta(weeks=10 * 52)
 
 class Election(BaseModel):
     name: Name
+    grades: set[Grade] # = Field(default_factory=set, min_items=2, max_items=settings.max_grades)
+    candidates: set[Candidate] = Field(default_factory=set, min_items=2, max_items=settings.max_candidates)
     description: Description
     ref: Ref
-    grades: SetGrades
-    candidates: SetCandidates
-    date_created: datetime
-    date_modified: datetime
-    num_voters: int = Field(..., ge=0, le=settings.max_voters)
-    date_start: datetime | None = None
-    date_end: datetime | None = None
+    date_created: datetime= Field(default_factory=datetime.now)
+    date_modified: datetime= Field(default_factory=datetime.now)
+    num_voters: int = Field(0, ge=0, le=settings.max_voters)
+    date_start: datetime = Field(default_factory=datetime.now)
+    date_end: datetime = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     force_close: bool = False
     private: bool = False
@@ -147,7 +147,27 @@ class Election(BaseModel):
             return value
 
         if hide_results and num_voters == 0 and date_end is None:
-            raise ValueError("This election can not end")
+            raise ArgumentsSchemaError("This election can not end")
+
+    @validator("grades")
+    def all_grades_have_unique_values_and_names(cls, grades: set[Grade]):
+        values = [g.value for g in grades]
+        if len(set(values)) != len(grades):
+            raise ArgumentsSchemaError("Two grades have the same value")
+   
+        names = [g.name for g in grades]
+        if len(set(names)) != len(grades):
+            raise ArgumentsSchemaError("Two grades have the same name")
+
+        return grades
+
+    @validator("candidates")
+    def all_candidates_have_unique_names(cls, candidates: set[Grade]):
+        names = [c.name for c in candidates]
+        if len(set(names)) != len(candidates):
+            raise ArgumentsSchemaError("Two candidates have the same name")
+   
+        return candidates
 
     class Config:
         orm_mode = True
