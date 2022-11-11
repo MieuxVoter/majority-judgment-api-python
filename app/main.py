@@ -35,6 +35,12 @@ async def inconsistent_database_exception_handler(
 def read_root():
     return "OK"
 
+# from pydantic import BaseModel
+# 
+# class BasicSh
+@app.post("/liveness", response_model=schemas.Election)
+def post_anything(election: schemas.Election, db: Session = Depends(get_db)):
+    return election
 
 @app.get("/elections/{election_id}", response_model=schemas.Election)
 def read_election_all_details(election_id: int, db: Session = Depends(get_db)):
@@ -42,6 +48,6 @@ def read_election_all_details(election_id: int, db: Session = Depends(get_db)):
     return db_election
 
 
-@app.post("/elections/", response_model=schemas.Election)
-def create_election(election: models.Election, db: Session = Depends(get_db)):
+@app.post("/elections", response_model=schemas.ElectionCreate)
+def create_election(election: schemas.Election, db: Session = Depends(get_db)):
     return crud.create_election(db=db, election=election)

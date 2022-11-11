@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from ..database import Base
+from ..  import schemas
 from ..main import app, get_db
 
 test_database_url = "sqlite:///./test.db"
@@ -28,30 +29,41 @@ client = TestClient(app)
 def test_liveness():
     response = client.get("/liveness")
     assert response.status_code == 200, response.status_code
-    assert response.text == "OK", response.text
+    assert response.text == '"OK"', response.text
 
-# def test_read_election():
-#     response = client.get("/elections/foo", headers={"X-Token": "coneofsilence"})
-#     assert response.status_code == 200
-#     assert response.json() == {
-#         "id": "foo",
-#         "title": "Foo",
-#         "description": "There goes my hero",
-#     }
-# 
-# def test_create_user():
-#     response = client.post(
-#         "/users/",
-#         json={"email": "deadpool@example.com", "password": "chimichangas4life"},
-#     )
-#     assert response.status_code == 200, response.text
-#     data = response.json()
-#     assert data["email"] == "deadpool@example.com"
-#     assert "id" in data
-#     user_id = data["id"]
-# 
-#     response = client.get(f"/users/{user_id}")
-#     assert response.status_code == 200, response.text
-#     data = response.json()
-#     assert data["email"] == "deadpool@example.com"
-#     assert data["id"] == user_id
+def test_read_a_missing_election():
+    response = client.get("/elections/foo")
+    assert response.status_code == 422
+
+    # assert response.json() == {
+    #     "id": "foo",
+    #     "title": "Foo",
+    #     "description": "There goes my hero",
+    # }
+ 
+
+def test_create_election():
+    grades= [
+        dict(name="foo", value=0),
+        dict(name="bar", value=1),
+        ]
+    candidates =  [
+        dict(name="foo"),
+        dict(name="bar"),
+        ]
+    body = {"name": "foo", "grades": grades, "candidates": candidates}
+    response = client.post(
+        "/elections",
+        json=body
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["name"] == "foo"
+    assert "id" in data
+    election_id = data["id"]
+
+    response = client.get(f"/elections/{election_id}")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["name"] == "foo"
+    assert data["id"] == election_id

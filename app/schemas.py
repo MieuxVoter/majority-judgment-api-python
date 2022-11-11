@@ -104,8 +104,8 @@ def _in_a_long_time() -> datetime:
 
 class Election(BaseModel):
     name: Name
-    grades: set[Grade] # = Field(default_factory=set, min_items=2, max_items=settings.max_grades)
-    candidates: set[Candidate] = Field(default_factory=set, min_items=2, max_items=settings.max_candidates)
+    grades: list[Grade] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[Candidate] = Field(..., min_items=2, max_items=settings.max_candidates)
     description: Description
     ref: Ref
     date_created: datetime= Field(default_factory=datetime.now)
@@ -149,29 +149,47 @@ class Election(BaseModel):
         if hide_results and num_voters == 0 and date_end is None:
             raise ArgumentsSchemaError("This election can not end")
 
-    @validator("grades")
-    def all_grades_have_unique_values_and_names(cls, grades: set[Grade]):
-        values = [g.value for g in grades]
-        if len(set(values)) != len(grades):
-            raise ArgumentsSchemaError("Two grades have the same value")
-   
-        names = [g.name for g in grades]
-        if len(set(names)) != len(grades):
-            raise ArgumentsSchemaError("Two grades have the same name")
+        return value
 
-        return grades
-
-    @validator("candidates")
-    def all_candidates_have_unique_names(cls, candidates: set[Grade]):
-        names = [c.name for c in candidates]
-        if len(set(names)) != len(candidates):
-            raise ArgumentsSchemaError("Two candidates have the same name")
-   
-        return candidates
-
+#     @validator("grades")
+#     def all_grades_have_unique_values_and_names(cls, grades: list[Grade]):
+#         values = [g.value for g in grades]
+#         if len(set(values)) != len(grades):
+#             raise ArgumentsSchemaError("Two grades have the same value")
+#    
+#         names = [g.name for g in grades]
+#         if len(set(names)) != len(grades):
+#             raise ArgumentsSchemaError("Two grades have the same name")
+# 
+#         return grades
+# 
+#     @validator("candidates")
+#     def all_candidates_have_unique_names(cls, candidates: list[Grade]):
+#         names = [c.name for c in candidates]
+#         if len(set(names)) != len(candidates):
+#             raise ArgumentsSchemaError("Two candidates have the same name")
+#    
+#         return candidates
+# 
     class Config:
         orm_mode = True
+        arbitrary_types_allowed = True
 
 
 class ElectionCreate(Election):
-    pass
+    invites: list[str] = []
+    admin: str = ""
+
+    def dict(self, *args, **kwargs):
+        """
+        Convert set into list to avoid an issue with SQLAlchemy
+        """
+        orig = super().dict(*args, **kwargs)
+        adapted = {
+            **orig,
+           # "grades": list(orig["grades"]),
+           # "candidates": list(orig["candidates"]),
+        }
+                
+        assert "votes" not in adapted
+        return adapted

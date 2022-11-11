@@ -8,9 +8,9 @@ class Election(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     ref = Column(String(64), default="")
-    title = Column(String(255))
+    name = Column(String(255))
     description = Column(String(1024))
-    num_invites = Column(Integer, default=0)
+    num_voters = Column(Integer, default=0)
     date_created = Column(DateTime)
     date_modified = Column(DateTime)
     date_start = Column(DateTime)
@@ -21,10 +21,8 @@ class Election(Base):
     grades = relationship("Grade", back_populates="election")
     candidates = relationship("Candidate", back_populates="election")
     votes = relationship("Vote", back_populates="election")
+    force_close: bool = False
 
-
-class ElectionCreate(Election):
-    pass
 
 
 class Candidate(Base):
@@ -68,3 +66,6 @@ class Vote(Base):
     candidate = relationship("Candidate", back_populates="votes")
 
     grade_id = Column(Integer, ForeignKey("grades.id"))
+
+    election_id = Column(Integer, ForeignKey("elections.id"))
+    election = relationship("Election", back_populates="votes")
