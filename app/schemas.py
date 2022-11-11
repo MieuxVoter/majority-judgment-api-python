@@ -66,8 +66,10 @@ class Candidate(BaseModel):
 
     class Config:
         orm_mode = True
-        frozen = True  # for hashability
 
+
+class CandidateRelational(Candidate):
+    election_id: int
 
 class Grade(BaseModel):
     name: Name
@@ -80,8 +82,10 @@ class Grade(BaseModel):
 
     class Config:
         orm_mode = True
-        frozen = True  # for hashability
 
+
+class GradeRelational(Grade):
+    election_id: int
 
 class Vote(BaseModel):
     candidate: Candidate
@@ -187,8 +191,8 @@ class ElectionCreate(Election):
         orig = super().dict(*args, **kwargs)
         adapted = {
             **orig,
-           # "grades": list(orig["grades"]),
-           # "candidates": list(orig["candidates"]),
+           "grades": list(orig["grades"]),
+           "candidates": list(orig["candidates"]),
         }
                 
         assert "votes" not in adapted
