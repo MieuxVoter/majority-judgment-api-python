@@ -36,8 +36,12 @@ def get_election(db: Session, election_id: int):
     raise errors.NotFoundError("elections")
 
 
-def create_election(db: Session, election: schemas.ElectionCreate):
-    db_election = models.Election(**election.dict())
+
+def create_election(db: Session, election: schemas.Election) -> schemas.ElectionCreate:
+    params = election.dict()
+    print(params)
+    db_election = models.Election(**params)
+    print("post")
     db.add(db_election)
     db.commit()
     db.refresh(db_election)
@@ -48,4 +52,8 @@ def create_election(db: Session, election: schemas.ElectionCreate):
     # TODO JWT token for admin panel
     admin = ""
 
-    return db_election, invites, admin
+    created_election = schemas.ElectionCreate.from_orm(db_election)
+    created_election.invites = invites
+    created_election.admin = admin
+
+    return created_election

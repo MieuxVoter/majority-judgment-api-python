@@ -7,3 +7,5 @@ __pycache__/
 .env.local
 backup
 .venv/
+test.db
+main.db
