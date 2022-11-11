@@ -46,8 +46,8 @@ class Grade(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    description = Column(String)
     value = Column(Integer)
-    color = Column(String(10), default="")
     date_created = Column(DateTime)
     date_modified = Column(DateTime)
 

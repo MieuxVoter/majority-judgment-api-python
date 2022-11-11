@@ -9,3 +9,4 @@ backup
 .venv/
 test.db
 main.db
+.mypy_cache

@@ -17,6 +17,7 @@ class ArgumentsSchemaError(Exception):
     An error occured on the arguments provided to a schema
     """
 
+
 Name = t.Annotated[str, Field(min_length=1, max_length=255)]
 Ref = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
 Image = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
@@ -59,8 +60,8 @@ class Candidate(BaseModel):
     name: Name
     description: Description
     image: Image
-    date_created: datetime= Field(default_factory=datetime.now)
-    date_modified: datetime= Field(default_factory=datetime.now)
+    date_created: datetime = Field(default_factory=datetime.now)
+    date_modified: datetime = Field(default_factory=datetime.now)
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
 
@@ -70,6 +71,7 @@ class Candidate(BaseModel):
 
 class CandidateRelational(Candidate):
     election_id: int
+
 
 class Grade(BaseModel):
     name: Name
@@ -87,17 +89,17 @@ class Grade(BaseModel):
 class GradeRelational(Grade):
     election_id: int
 
+
 class Vote(BaseModel):
     candidate: Candidate
     grade: Grade
-    date_created: datetime= Field(default_factory=datetime.now)
-    date_modified: datetime= Field(default_factory=datetime.now)
+    date_created: datetime = Field(default_factory=datetime.now)
+    date_modified: datetime = Field(default_factory=datetime.now)
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
-
 
 
 def _in_a_long_time() -> datetime:
@@ -106,14 +108,17 @@ def _in_a_long_time() -> datetime:
     """
     return datetime.now() + timedelta(weeks=10 * 52)
 
-class Election(BaseModel):
+
+class ElectionBase(BaseModel):
     name: Name
     grades: list[Grade] = Field(..., min_items=2, max_items=settings.max_grades)
-    candidates: list[Candidate] = Field(..., min_items=2, max_items=settings.max_candidates)
+    candidates: list[Candidate] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
     description: Description
     ref: Ref
-    date_created: datetime= Field(default_factory=datetime.now)
-    date_modified: datetime= Field(default_factory=datetime.now)
+    date_created: datetime = Field(default_factory=datetime.now)
+    date_modified: datetime = Field(default_factory=datetime.now)
     num_voters: int = Field(0, ge=0, le=settings.max_voters)
     date_start: datetime = Field(default_factory=datetime.now)
     date_end: datetime = Field(default_factory=_in_a_long_time)
@@ -155,45 +160,36 @@ class Election(BaseModel):
 
         return value
 
-#     @validator("grades")
-#     def all_grades_have_unique_values_and_names(cls, grades: list[Grade]):
-#         values = [g.value for g in grades]
-#         if len(set(values)) != len(grades):
-#             raise ArgumentsSchemaError("Two grades have the same value")
-#    
-#         names = [g.name for g in grades]
-#         if len(set(names)) != len(grades):
-#             raise ArgumentsSchemaError("Two grades have the same name")
-# 
-#         return grades
-# 
-#     @validator("candidates")
-#     def all_candidates_have_unique_names(cls, candidates: list[Grade]):
-#         names = [c.name for c in candidates]
-#         if len(set(names)) != len(candidates):
-#             raise ArgumentsSchemaError("Two candidates have the same name")
-#    
-#         return candidates
-# 
+    @validator("grades")
+    def all_grades_have_unique_values_and_names(cls, grades: list[Grade]):
+        values = [g.value for g in grades]
+        if len(set(values)) != len(grades):
+            raise ArgumentsSchemaError("Two grades have the same value")
+
+        names = [g.name for g in grades]
+        if len(set(names)) != len(grades):
+            raise ArgumentsSchemaError("Two grades have the same name")
+
+        return grades
+
+    @validator("candidates")
+    def all_candidates_have_unique_names(cls, candidates: list[Grade]):
+        names = [c.name for c in candidates]
+        if len(set(names)) != len(candidates):
+            raise ArgumentsSchemaError("Two candidates have the same name")
+
+        return candidates
+
     class Config:
         orm_mode = True
         arbitrary_types_allowed = True
 
 
-class ElectionCreate(Election):
+class ElectionGet(ElectionBase):
+    id: int
+
+
+class ElectionCreate(ElectionBase):
     invites: list[str] = []
     admin: str = ""
-
-    def dict(self, *args, **kwargs):
-        """
-        Convert set into list to avoid an issue with SQLAlchemy
-        """
-        orig = super().dict(*args, **kwargs)
-        adapted = {
-            **orig,
-           "grades": list(orig["grades"]),
-           "candidates": list(orig["candidates"]),
-        }
-                
-        assert "votes" not in adapted
-        return adapted
+    id: int
