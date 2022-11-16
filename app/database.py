@@ -12,9 +12,9 @@ if settings.sqlite:
 else:
     database_url = (
         "postgresql+psycopg2://"
-        f"{settings.postgres_name}:{quote(settings.postgres_password)}"
+        f"{settings.postgres_user}:{quote(settings.postgres_password)}"
         f"@{settings.postgres_host}:{settings.postgres_port}"
-        f"/{settings.postgres_db}"
+        f"/{settings.postgres_name}"
     )
     engine = create_engine(database_url)
 

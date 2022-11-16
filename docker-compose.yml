@@ -4,6 +4,7 @@ services:
   mj_db:
     image: postgres:15
     restart: unless-stopped
+    hostname: mj_db
     environment:
       - POSTGRES_USER=${DB_USER:-mj}
       - POSTGRES_PASSWORD=$DB_PASS
@@ -12,7 +13,7 @@ services:
     networks:
       - lan
     volumes:
-      - data/db:/var/lib/mysql
+      - db:/var/lib/mysql
 
   mj_api:
     build:
@@ -20,13 +21,18 @@ services:
       dockerfile: docker/Dockerfile
     image: majority-judgment/api-python:latest
     restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 --port 8877 --proxy-headers
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8877 --proxy-headers --env-file ${ENV_FILE:-.env.local}
     healthcheck:
       start_period: 30s
       test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
       interval: 30s
     depends_on:
       - mj_db
+    volumes:
+      - .:/code
+    networks:
+      - lan
+      - traefik_network
     environment:
       - POSTGRES_USER=${DB_USER:-mj}
       - POSTGRES_PASSWORD=$DB_PASS
@@ -39,7 +45,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
       - "traefik.http.routers.mj.entrypoints=web,websecure"
-      - "traefik.http.routers.mj.rule=Host(${API_PREFIX:-api}.`${DOMAIN}`)"
+      - "traefik.http.routers.mj.rule=Host(`${API_PREFIX:-apiv2}.${DOMAIN}`)"
       - "traefik.http.services.mj.loadbalancer.server.port=8877"
       - "traefik.http.routers.mj.tls=true"
       - "traefik.http.routers.mj.tls.certresolver=leresolver"
@@ -59,7 +65,8 @@ services:
         RESTIC_PASSWORD: $RESTIC_PASSWORD
     restart: unless-stopped
     volumes:
-      - data:/data
+      - db:/data/db
+      - imgpush:/data/images
     environment:
       - TZ=${TIMEZONE:-Europe/Paris}
       - RESTIC_REPOSITORY=$RESTIC_REPOSITORY
@@ -74,12 +81,11 @@ services:
       - image
       - all
     image: hauxir/imgpush:latest
-    container_name: imgpush
     restart: unless-stopped
     environment:
       PUID: $PUID
       PGID: $PUID
-      TZ: ${TIMEZONE:Europe/Paris}
+      TZ: ${TIMEZONE:-Europe/Paris}
       IMAGES_DIR: /images
       MAX_SIZE_MB: 16
       MAX_UPLOADS_PER_DAY: 100
@@ -96,7 +102,7 @@ services:
       - lan
       - traefik_network
     volumes:
-      - data/imgpush:/images
+      - imgpush:/images
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -124,19 +130,20 @@ services:
       MB_DB_USER: ${DB_USER:-mj}
       MB_DB_PASS: $DB_PASS
       MB_DB_HOST: mj_db
-      TZ: ${TIMEZONE:Europe/Paris}
+      TZ: ${TIMEZONE:-Europe/Paris}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
       - "traefik.http.routers.metabase.entrypoints=web,websecure"
-      - "traefik.http.routers.metabase.rule=Host(${METABASE_PREFIX:-metabase}.`${DOMAIN}`)"
+      - "traefik.http.routers.metabase.rule=Host(`${METABASE_PREFIX:-metabase}.${DOMAIN}`)"
       - "traefik.http.services.metabase.loadbalancer.server.port=3000"
       - "traefik.http.routers.metabase.tls=true"
       - "traefik.http.routers.metabase.tls.certresolver=leresolver"
 
 
 volumes:
-  data:
+  imgpush:
+  db:
 
 networks:
   lan:
