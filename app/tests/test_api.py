@@ -108,8 +108,6 @@ def test_get_election():
     req_grade_names = {c["name"] for c in body["grades"]}
     assert db_grade_names == req_grade_names, db_grade_names
 
-    assert len(data["votes"]) == 0
-
 
 def _generate_votes_from_response(
     mode: t.Literal["id", "name", "value"],
@@ -143,6 +141,7 @@ def test_create_vote():
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
+    vote_ids = []
     for vote in votes:
         response = client.post(f"/votes", json=vote)
         assert response.status_code == 200, response.text
@@ -150,3 +149,32 @@ def test_create_vote():
         assert data["grade"]["id"] == vote["grade_id"]
         assert data["candidate"]["id"] == vote["candidate_id"]
         assert data["election_id"] == election_id
+        vote_ids.append(data["id"])
+
+    # Now, we check that we can correctly read them
+    for vote_id, vote in zip(vote_ids, votes):
+        response = client.get(f"/votes/{vote_id}")
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["grade"]["id"] == vote["grade_id"]
+        assert data["candidate"]["id"] == vote["candidate_id"]
+        assert data["election_id"] == election_id
+
+
+def test_get_results():
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    data = response.json()
+    election_id = data["id"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    for vote in votes * 2:
+        response = client.post(f"/votes", json=vote)
+        data = response.json()
+
+    # Now we get the results
+    response = client.get(f"/results/{election_id}")
+    assert response.status_code == 200, response.text
+    data = response.json()

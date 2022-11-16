@@ -1,5 +1,7 @@
+from collections import defaultdict
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
+from majority_judgment import majority_judgment
 from . import models, schemas, errors
 
 
@@ -122,4 +124,58 @@ def create_vote(db: Session, vote: schemas.VoteCreate) -> schemas.VoteGet:
     db.commit()
     db.refresh(db_vote)
 
-    return schemas.VoteGet.from_orm(db_vote)
+    return db_vote
+
+
+def get_vote(db: Session, vote_id: int) -> schemas.VoteGet:
+    # TODO check with JWT tokens the authorization
+    votes_by_id = db.query(models.Vote).filter(models.Vote.id == vote_id)
+
+    if votes_by_id.count() > 1:
+        raise errors.InconsistentDatabaseError(
+            "votes", f"Several votes have the same primary keys {vote_id}"
+        )
+
+    if votes_by_id.count() == 1:
+        return votes_by_id.first()
+
+    votes_by_ref = db.query(models.Vote).filter(models.Vote.ref == vote_id)
+
+    if votes_by_ref.count() > 1:
+        raise errors.InconsistentDatabaseError(
+            "votes", f"Several votes have the same reference {vote_id}"
+        )
+
+    if votes_by_ref.count() == 1:
+        return votes_by_ref.first()
+
+    raise errors.NotFoundError("votes")
+
+
+def get_results(db: Session, election_id: int) -> schemas.ResultsGet:
+    db_election = get_election(db, election_id)
+
+    query = db.query(
+        models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)
+    )
+    db_votes = (
+        query.join(models.Vote.grade)
+        .filter(models.Vote.election_id == election_id)
+        .group_by(models.Vote.candidate_id, models.Vote.grade_id)
+        .all()
+    )
+    ballots = defaultdict(dict)
+    for candidate_id, grade_value, num_votes in db_votes:
+        ballots[candidate_id][grade_value] = num_votes
+    merit_profile = {
+        c: [votes[value] for value in sorted(votes.keys(), reverse=True)]
+        for c, votes in ballots.items()
+    }
+
+    ranking = majority_judgment(merit_profile)
+
+    results = schemas.ResultsGet.from_orm(db_election)
+
+    results.ranking = ranking
+
+    return results

@@ -50,3 +50,14 @@ def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_
 @app.post("/votes", response_model=schemas.VoteGet)
 def create_vote(vote: schemas.VoteCreate, db: Session = Depends(get_db)):
     return crud.create_vote(db=db, vote=vote)
+
+
+@app.get("/votes/{vote_id}", response_model=schemas.VoteGet)
+def get_vote(vote_id: int, db: Session = Depends(get_db)):
+    # TODO assert with a JWT token that we are allowed to read the vote
+    return crud.get_vote(db=db, vote_id=vote_id)
+
+
+@app.get("/results/{election_id}", response_model=schemas.ResultsGet)
+def get_results(election_id: int, db: Session = Depends(get_db)):
+    return crud.get_results(db=db, election_id=election_id)
