@@ -56,7 +56,7 @@ def _causal_dates_validator(*fields: str):
     )(validator_fn)
 
 
-class Candidate(BaseModel):
+class CandidateBase(BaseModel):
     name: Name
     description: Description
     image: Image
@@ -69,11 +69,15 @@ class Candidate(BaseModel):
         orm_mode = True
 
 
-class CandidateRelational(Candidate):
+class CandidateRelational(CandidateBase):
     election_id: int
 
 
-class Grade(BaseModel):
+class CandidateGet(CandidateBase):
+    id: int
+
+
+class GradeBase(BaseModel):
     name: Name
     value: int = Field(ge=0, lt=settings.max_grades, pre=True)
     description: Description
@@ -86,13 +90,35 @@ class Grade(BaseModel):
         orm_mode = True
 
 
-class GradeRelational(Grade):
+class GradeGet(GradeBase):
+    id: int
+
+
+class GradeRelational(GradeBase):
     election_id: int
 
 
-class Vote(BaseModel):
-    candidate: Candidate
-    grade: Grade
+class VoteBase(BaseModel):
+    candidate: CandidateGet
+    grade: GradeGet
+    date_created: datetime = Field(default_factory=datetime.now)
+    date_modified: datetime = Field(default_factory=datetime.now)
+
+    _valid_date = _causal_dates_validator("date_created", "date_modified")
+
+    class Config:
+        orm_mode = True
+
+
+class VoteGet(VoteBase):
+    id: int
+    election_id: int
+
+
+class VoteCreate(BaseModel):
+    election_id: int
+    candidate_id: int
+    grade_id: int
     date_created: datetime = Field(default_factory=datetime.now)
     date_modified: datetime = Field(default_factory=datetime.now)
 
@@ -111,10 +137,6 @@ def _in_a_long_time() -> datetime:
 
 class ElectionBase(BaseModel):
     name: Name
-    grades: list[Grade] = Field(..., min_items=2, max_items=settings.max_grades)
-    candidates: list[Candidate] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
-    )
     description: Description
     ref: Ref
     date_created: datetime = Field(default_factory=datetime.now)
@@ -160,8 +182,33 @@ class ElectionBase(BaseModel):
 
         return value
 
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+class ElectionGet(ElectionBase):
+    id: int
+    votes: list[VoteBase] = []
+    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[CandidateGet] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+
+
+class ElectionAndInvitesGet(ElectionGet):
+    invites: list[str] = []
+    admin: str = ""
+
+
+class ElectionCreate(ElectionBase):
+    grades: list[GradeBase] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[CandidateBase] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+
     @validator("grades")
-    def all_grades_have_unique_values_and_names(cls, grades: list[Grade]):
+    def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
             raise ArgumentsSchemaError("Two grades have the same value")
@@ -173,23 +220,9 @@ class ElectionBase(BaseModel):
         return grades
 
     @validator("candidates")
-    def all_candidates_have_unique_names(cls, candidates: list[Grade]):
+    def all_candidates_have_unique_names(cls, candidates: list[GradeBase]):
         names = [c.name for c in candidates]
         if len(set(names)) != len(candidates):
             raise ArgumentsSchemaError("Two candidates have the same name")
 
         return candidates
-
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
-
-
-class ElectionGet(ElectionBase):
-    id: int
-
-
-class ElectionCreate(ElectionBase):
-    invites: list[str] = []
-    admin: str = ""
-    id: int
