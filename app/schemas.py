@@ -5,13 +5,6 @@ from pydantic.fields import ModelField
 from .settings import settings
 
 
-def _empty_string():
-    """
-    Using the default factory for field
-    """
-    return ""
-
-
 class ArgumentsSchemaError(Exception):
     """
     An error occured on the arguments provided to a schema
@@ -19,9 +12,9 @@ class ArgumentsSchemaError(Exception):
 
 
 Name = t.Annotated[str, Field(min_length=1, max_length=255)]
-Ref = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
-Image = t.Annotated[str, Field(default_factory=_empty_string, max_length=255)]
-Description = t.Annotated[str, Field(default_factory=_empty_string, max_length=1024)]
+Ref = t.Annotated[str, Field(..., max_length=255)]
+Image = t.Annotated[str, Field(..., max_length=255)]
+Description = t.Annotated[str, Field(..., max_length=1024)]
 Color = t.Annotated[str, Field(min_length=3, max_length=10)]
 
 
@@ -58,8 +51,8 @@ def _causal_dates_validator(*fields: str):
 
 class CandidateBase(BaseModel):
     name: Name
-    description: Description
-    image: Image
+    description: Description = ""
+    image: Image = ""
     date_created: datetime = Field(default_factory=datetime.now)
     date_modified: datetime = Field(default_factory=datetime.now)
 
@@ -80,7 +73,7 @@ class CandidateGet(CandidateBase):
 class GradeBase(BaseModel):
     name: Name
     value: int = Field(ge=0, lt=settings.max_grades, pre=True)
-    description: Description
+    description: Description = ""
     date_created: datetime = Field(default_factory=datetime.now)
     date_modified: datetime = Field(default_factory=datetime.now)
 
@@ -137,8 +130,8 @@ def _in_a_long_time() -> datetime:
 
 class ElectionBase(BaseModel):
     name: Name
-    description: Description
-    ref: Ref
+    description: Description = ""
+    ref: Ref = ""
     date_created: datetime = Field(default_factory=datetime.now)
     date_modified: datetime = Field(default_factory=datetime.now)
     num_voters: int = Field(0, ge=0, le=settings.max_voters)

@@ -24,14 +24,14 @@ def test_grade_default_values():
     assert grade.date_modified >= grade.date_created
 
     # Automatic conversion helps to load data from the payload
-    grade = GradeBase(name="foo", value=1.2, description="bar foo")
+    grade = GradeBase(name="foo", value=1.2, description="bar foo")  # type: ignore
     assert grade.value == 1
 
-    grade = GradeBase(name="foo", value="1", description="bar foo")
+    grade = GradeBase(name="foo", value="1", description="bar foo")  # type: ignore
     assert grade.value == 1
 
     # Any field name is accepted
-    grade = GradeBase(name="foo", value=1, foo="bar")
+    grade = GradeBase(name="foo", value=1, foo="bar")  # type: ignore
 
 
 def test_grade_validation_value():
@@ -40,7 +40,7 @@ def test_grade_validation_value():
     """
     with pytest.raises(ValidationError):
         # value must be a positive integer
-        GradeBase(name="foo", value="bar", description="bar foo")
+        GradeBase(name="foo", value="bar", description="bar foo")  # type: ignore
 
     with pytest.raises(ValidationError):
         GradeBase(name="foo", value=-1, description="bar foo")

@@ -2,6 +2,8 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
+    sqlite: bool = False
+
     postgres_password: str = ""
     postgres_db: str = "mj"
     postgres_name: str = "mj"
