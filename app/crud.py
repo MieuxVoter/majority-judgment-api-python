@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import DefaultDict
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from majority_judgment import majority_judgment
@@ -127,7 +128,7 @@ def create_vote(db: Session, vote: schemas.VoteCreate) -> schemas.VoteGet:
     return db_vote
 
 
-def get_vote(db: Session, vote_id: int) -> schemas.VoteGet:
+def get_vote(db: Session, vote_id: int) -> models.Vote:
     # TODO check with JWT tokens the authorization
     votes_by_id = db.query(models.Vote).filter(models.Vote.id == vote_id)
 
@@ -136,8 +137,9 @@ def get_vote(db: Session, vote_id: int) -> schemas.VoteGet:
             "votes", f"Several votes have the same primary keys {vote_id}"
         )
 
-    if votes_by_id.count() == 1:
-        return votes_by_id.first()
+    vote = votes_by_id.first()
+    if vote is not None:
+        return vote
 
     votes_by_ref = db.query(models.Vote).filter(models.Vote.ref == vote_id)
 
@@ -146,8 +148,9 @@ def get_vote(db: Session, vote_id: int) -> schemas.VoteGet:
             "votes", f"Several votes have the same reference {vote_id}"
         )
 
-    if votes_by_ref.count() == 1:
-        return votes_by_ref.first()
+    vote = votes_by_ref.first()
+    if vote is not None:
+        return vote
 
     raise errors.NotFoundError("votes")
 
@@ -164,7 +167,7 @@ def get_results(db: Session, election_id: int) -> schemas.ResultsGet:
         .group_by(models.Vote.candidate_id, models.Vote.grade_id)
         .all()
     )
-    ballots = defaultdict(dict)
+    ballots: DefaultDict[int, dict[int, int]] = defaultdict(dict)
     for candidate_id, grade_value, num_votes in db_votes:
         ballots[candidate_id][grade_value] = num_votes
     merit_profile = {

@@ -5,15 +5,15 @@ import random
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from ..database import Base
+from ..database import Base, get_db
 from .. import schemas
-from ..main import app, get_db
+from ..main import app
 
 test_database_url = "sqlite:///./test.db"
 test_engine = create_engine(
     test_database_url, connect_args={"check_same_thread": False}
 )
-TestingSessionLocal: sessionmaker = sessionmaker(
+TestingSessionLocal: sessionmaker = sessionmaker(  # type: ignore
     autocommit=False, autoflush=False, bind=test_engine
 )
 
@@ -58,8 +58,10 @@ def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
     """
     Generate an election with random names
     """
-    grades = [dict(name=_random_string(10), value=i) for i in range(num_grades)]
-    candidates = [dict(name=_random_string(10)) for i in range(num_candidates)]
+    grades: list[dict[str, int | str]] = [
+        {"name": _random_string(10), "value": i} for i in range(num_grades)
+    ]
+    candidates = [{"name": _random_string(10)} for i in range(num_candidates)]
     name = _random_string(10)
     return {"candidates": candidates, "grades": grades, "name": name}
 
