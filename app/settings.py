@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     sqlite: bool = False
 
     postgres_password: str = ""
-    postgres_db: str = "mj"
+    postgres_user: str = "mj"
     postgres_name: str = "mj"
     postgres_host: str = "mj_db"
     postgres_port: int = 5432
