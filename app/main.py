@@ -42,6 +42,11 @@ def read_election_all_details(election_id: int, db: Session = Depends(get_db)):
     return db_election
 
 
-@app.post("/elections", response_model=schemas.ElectionCreate)
-def create_election(election: schemas.ElectionBase, db: Session = Depends(get_db)):
+@app.post("/elections", response_model=schemas.ElectionGet)
+def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_db)):
     return crud.create_election(db=db, election=election)
+
+
+@app.post("/votes", response_model=schemas.VoteGet)
+def create_vote(vote: schemas.VoteCreate, db: Session = Depends(get_db)):
+    return crud.create_vote(db=db, vote=vote)

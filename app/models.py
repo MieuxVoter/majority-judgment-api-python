@@ -24,7 +24,6 @@ class Election(Base):
     force_close: bool = False
 
 
-
 class Candidate(Base):
     __tablename__ = "candidates"
 
@@ -54,6 +53,8 @@ class Grade(Base):
     election_id = Column(Integer, ForeignKey("elections.id"))
     election = relationship("Election", back_populates="grades")
 
+    votes = relationship("Vote", back_populates="grade")
+
 
 class Vote(Base):
     __tablename__ = "votes"
@@ -66,6 +67,7 @@ class Vote(Base):
     candidate = relationship("Candidate", back_populates="votes")
 
     grade_id = Column(Integer, ForeignKey("grades.id"))
+    grade = relationship("Grade", back_populates="votes")
 
     election_id = Column(Integer, ForeignKey("elections.id"))
     election = relationship("Election", back_populates="votes")

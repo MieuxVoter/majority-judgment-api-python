@@ -1,29 +1,37 @@
 from datetime import datetime
 import pytest
 from pydantic.error_wrappers import ValidationError
-from ..schemas import Grade, Election, Candidate, Vote, ArgumentsSchemaError
+from ..schemas import (
+    GradeBase,
+    GradeGet,
+    ElectionCreate,
+    CandidateBase,
+    CandidateGet,
+    VoteBase,
+    ArgumentsSchemaError,
+)
 from ..settings import settings
 
 
 def test_grade_default_values():
     """
-    Can create a simple Grade
+    Can create a simple GradeBase
     """
     now = datetime.now()
-    grade = Grade(name="foo", value=1)
+    grade = GradeBase(name="foo", value=1)
     assert grade.name == "foo"
     assert grade.date_modified > now
     assert grade.date_modified >= grade.date_created
 
     # Automatic conversion helps to load data from the payload
-    grade = Grade(name="foo", value=1.2, description="bar foo")
+    grade = GradeBase(name="foo", value=1.2, description="bar foo")
     assert grade.value == 1
 
-    grade = Grade(name="foo", value="1", description="bar foo")
+    grade = GradeBase(name="foo", value="1", description="bar foo")
     assert grade.value == 1
 
     # Any field name is accepted
-    grade = Grade(name="foo", value=1, foo="bar")
+    grade = GradeBase(name="foo", value=1, foo="bar")
 
 
 def test_grade_validation_value():
@@ -32,13 +40,13 @@ def test_grade_validation_value():
     """
     with pytest.raises(ValidationError):
         # value must be a positive integer
-        Grade(name="foo", value="bar", description="bar foo")
+        GradeBase(name="foo", value="bar", description="bar foo")
 
     with pytest.raises(ValidationError):
-        Grade(name="foo", value=-1, description="bar foo")
+        GradeBase(name="foo", value=-1, description="bar foo")
 
     with pytest.raises(ValidationError):
-        Grade(name="foo", value=settings.max_grades + 1, description="bar foo")
+        GradeBase(name="foo", value=settings.max_grades + 1, description="bar foo")
 
 
 def test_grade_validation_description_name():
@@ -47,19 +55,19 @@ def test_grade_validation_description_name():
     """
     with pytest.raises(ValidationError):
         # name should be less than 256 characters
-        Grade(name="f"*256, value=1, description="bar foo")
+        GradeBase(name="f" * 256, value=1, description="bar foo")
 
     with pytest.raises(ValidationError):
         # name should be less than 1024 characters
-        Grade(name="foo", value=1, description="b"*1025)
+        GradeBase(name="foo", value=1, description="b" * 1025)
 
 
 def test_candidate_defaults():
     """
-    Can create a simple Candidate
+    Can create a simple CandidateBase
     """
     now = datetime.now()
-    candidate = Candidate(name="foo")
+    candidate = CandidateBase(name="foo")
     assert candidate.name == "foo"
     assert candidate.description == ""
     assert candidate.image == ""
@@ -69,12 +77,12 @@ def test_candidate_defaults():
 
 def test_vote():
     """
-    Can create a simple Vote
+    Can create a simple VoteBase
     """
     now = datetime.now()
-    candidate = Candidate(name="foo")
-    grade = Grade(name="bar", value=1)
-    vote = Vote(candidate=candidate, grade=grade)
+    candidate = CandidateGet(name="foo", id=1)
+    grade = GradeGet(name="bar", value=1, id=2)
+    vote = VoteBase(candidate=candidate, grade=grade)
     assert vote.candidate == candidate
     assert vote.grade == grade
     assert vote.date_modified > now
@@ -83,15 +91,17 @@ def test_vote():
 
 def test_election():
     """
-    Can create a simple Vote
+    Can create a simple VoteBase
     """
     now = datetime.now()
-    candidate0 = Candidate(name="bar")
-    candidate1 = Candidate(name="foo")
-    grade1 = Grade(name="very good", value=2)
-    grade0 = Grade(name="fair enough", value=1)
-    election = Election(name="test", grades={grade0, grade1}, candidates={candidate1, candidate0})
-    assert election.candidates == {candidate1, candidate0}
+    candidate0 = CandidateBase(name="bar")
+    candidate1 = CandidateBase(name="foo")
+    grade1 = GradeBase(name="very good", value=2)
+    grade0 = GradeBase(name="fair enough", value=1)
+    election = ElectionCreate(
+        name="test", grades=[grade0, grade1], candidates=[candidate1, candidate0]
+    )
+    assert election.candidates == [candidate1, candidate0]
     assert len(election.grades) == 2
     assert election.date_modified > now
     assert election.date_modified > election.date_created
@@ -100,10 +110,14 @@ def test_election():
 
     with pytest.raises(ArgumentsSchemaError):
         # grades should have different value
-        grade2 = Grade(name="good", value=1)
-        Election(name="test", grades={grade0, grade2}, candidates={candidate1, candidate0})
+        grade2 = GradeBase(name="good", value=1)
+        ElectionCreate(
+            name="test", grades=[grade0, grade2], candidates=[candidate1, candidate0]
+        )
 
     with pytest.raises(ArgumentsSchemaError):
         # candidates should have different names
-        candidate2 = Candidate(name="foo")
-        Election(name="test", grades={grade0, grade1}, candidates={candidate1, candidate2})
+        candidate2 = CandidateBase(name="foo")
+        ElectionCreate(
+            name="test", grades=[grade0, grade1], candidates=[candidate1, candidate2]
+        )
