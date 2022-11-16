@@ -189,11 +189,19 @@ class ElectionBase(BaseModel):
 
 class ElectionGet(ElectionBase):
     id: int
-    votes: list[VoteBase] = []
     grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
     candidates: list[CandidateGet] = Field(
         ..., min_items=2, max_items=settings.max_candidates
     )
+
+
+class ResultsGet(ElectionGet):
+    id: int
+    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[CandidateGet] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+    ranking: dict[int, int] = {}
 
 
 class ElectionAndInvitesGet(ElectionGet):
