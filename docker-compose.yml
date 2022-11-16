@@ -39,7 +39,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
       - "traefik.http.routers.mj.entrypoints=web,websecure"
-      - "traefik.http.routers.mj.rule=Host(${API_PREFIX:-openapi}.`${DOMAIN}`)"
+      - "traefik.http.routers.mj.rule=Host(${API_PREFIX:-api}.`${DOMAIN}`)"
       - "traefik.http.services.mj.loadbalancer.server.port=8877"
       - "traefik.http.routers.mj.tls=true"
       - "traefik.http.routers.mj.tls.certresolver=leresolver"
@@ -51,10 +51,9 @@ services:
     depends_on:
       - mj_db
     image: restic
-    container_name: nextcloud_restic
     build:
-      context: ../restic
-      dockerfile: Dockerfile
+      context: ./docker
+      dockerfile: Dockerfile.restic
       args:
         RESTIC_INIT_ARGS: $RESTIC_INIT_ARGS
         RESTIC_PASSWORD: $RESTIC_PASSWORD
