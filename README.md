@@ -13,7 +13,7 @@ Copy the `.env` into `.env.local` with your own settings.
 
 Then launch the dockers with:
 
-`sudo docker-compose up -d --profiles all`
+`sudo docker-compose --profile all --env-file .env.local up -d `
 
 You certainly want to apply databases migrations with:
 
