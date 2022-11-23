@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     max_candidates: int = 1000
     max_voters: int = 1_000_000
 
+    allowed_origins: list[str] = ["http://localhost"]
+
     class Config:
         env_file = ".env"
 
