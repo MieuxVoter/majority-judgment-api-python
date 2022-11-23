@@ -140,6 +140,7 @@ class ElectionBase(BaseModel):
     hide_results: bool = True
     force_close: bool = False
     private: bool = False
+    random_order: bool = False
 
     _valid_date = _causal_dates_validator("date_created", "date_modified")
     _valid_date = _causal_dates_validator("date_start", "date_end")
