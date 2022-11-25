@@ -13,11 +13,13 @@ Copy the `.env` into `.env.local` with your own settings.
 
 Then launch the dockers with:
 
-`sudo docker-compose --profile all --env-file .env.local up -d `
+`docker compose --profile all --env-file .env.local up -d`
+
+Note that you can use the `profile` called `dashboard` if you only need Metabase, `image` if you only need to store images, or `backup` for restic.
 
 You certainly want to apply databases migrations with:
 
-`sudo docker/migrate.sh`
+`docker/migrate.sh`
 
 
 ## Run the tests
