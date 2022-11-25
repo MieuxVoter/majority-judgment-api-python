@@ -17,7 +17,6 @@ class Election(Base):
     date_end = Column(DateTime)
     hide_results = Column(Boolean, default=False)
     private = Column(Boolean, default=False)
-    random_order = Column(Boolean, default=False)
 
     grades = relationship("Grade", back_populates="election")
     candidates = relationship("Candidate", back_populates="election")
