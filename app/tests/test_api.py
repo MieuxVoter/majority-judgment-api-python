@@ -143,24 +143,31 @@ def test_create_vote():
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    vote_ids = []
-    for vote in votes:
-        response = client.post(f"/votes", json=vote)
-        assert response.status_code == 200, response.text
-        data = response.json()
-        assert data["grade"]["id"] == vote["grade_id"]
-        assert data["candidate"]["id"] == vote["candidate_id"]
-        assert data["election_id"] == election_id
-        vote_ids.append(data["id"])
+    response = client.post(f"/votes", json={"votes": votes})
+    assert response.status_code == 200, response.text
+    data = response.json()
+    for v1, v2 in zip(votes, data["votes"]):
+        assert v2["grade"]["id"] == v1["grade_id"]
+        assert v2["candidate"]["id"] == v1["candidate_id"]
+        assert v2["election_id"] == election_id
 
-    # Now, we check that we can correctly read them
-    for vote_id, vote in zip(vote_ids, votes):
-        response = client.get(f"/votes/{vote_id}")
-        assert response.status_code == 200, response.text
-        data = response.json()
-        assert data["grade"]["id"] == vote["grade_id"]
-        assert data["candidate"]["id"] == vote["candidate_id"]
-        assert data["election_id"] == election_id
+    token = data["token"]
+
+    # Now, we check that we need the righ token to read the votes
+    response = client.get(f"/votes/{token}WRONG")
+    assert response.status_code == 401, response.text
+
+    response = client.get(f"/votes/{token}")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    for v1, v2 in zip(votes, data["votes"]):
+        assert v2["grade"]["id"] == v1["grade_id"]
+        assert v2["candidate"]["id"] == v1["candidate_id"]
+        assert v2["election_id"] == election_id
+
+
+def test_cannot_create_vote_on_private_election():
+    assert False
 
 
 def test_get_results():

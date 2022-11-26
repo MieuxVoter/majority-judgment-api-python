@@ -92,8 +92,8 @@ class GradeRelational(GradeBase):
 
 
 class VoteBase(BaseModel):
-    candidate: CandidateGet
-    grade: GradeGet
+    candidate: CandidateGet | None = Field(default=None)
+    grade: GradeGet | None = Field(default=None)
     date_created: datetime = Field(default_factory=datetime.now)
     date_modified: datetime = Field(default_factory=datetime.now)
 
@@ -106,6 +106,7 @@ class VoteBase(BaseModel):
 class VoteGet(VoteBase):
     id: int
     election_id: int
+    token: str = ""
 
 
 class VoteCreate(BaseModel):
@@ -119,6 +120,25 @@ class VoteCreate(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class VoteUpdate(VoteCreate):
+    id: int | None = None
+    token: str = ""
+
+
+class BallotGet(BaseModel):
+    votes: list[VoteGet]
+    token: str
+
+
+class BallotCreate(BaseModel):
+    votes: list[VoteCreate]
+
+
+class BallotUpdate(BaseModel):
+    votes: list[VoteUpdate]
+    token: str
 
 
 def _in_a_long_time() -> datetime:
