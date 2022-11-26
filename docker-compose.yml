@@ -41,6 +41,7 @@ services:
       POSTGRES_HOST: mj_db
       TZ: ${TIMEZONE:-Europe/Paris}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["*"]}
+      SECRET: $SECRET
     ports:
       - 8877:8877
     labels:
