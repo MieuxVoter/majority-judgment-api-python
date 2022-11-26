@@ -130,7 +130,6 @@ def create_election(
         db, int(str(db_election.id)), len(election.candidates), election.num_voters
     )
 
-    # TODO JWT token for admin panel
     admin = create_admin_token(int(str(db_election.id)))
 
     election_and_invites = schemas.ElectionAndInvitesGet.from_orm(db_election)
@@ -157,6 +156,7 @@ def create_vote(db: Session, vote: schemas.BallotCreate) -> schemas.BallotGet:
             "The election is restricted. You can not create new votes"
         )
 
+    # Ideally, we would use RETURNING but it does not work yet for SQLite
     db_votes = [models.Vote(**v.dict()) for v in vote.votes]
     db.add_all(db_votes)
     db.commit()
