@@ -1,6 +1,6 @@
 from datetime import datetime
 from collections import defaultdict
-from typing import DefaultDict
+import typing as t
 from sqlalchemy.orm import Session
 from sqlalchemy import func, insert
 from majority_judgment import majority_judgment
@@ -41,9 +41,13 @@ def get_election(db: Session, election_id: int):
 
 
 def create_candidate(
-    db: Session, candidate: schemas.CandidateRelational, commit: bool = False
+    db: Session,
+    candidate: schemas.CandidateCreate,
+    election_id: int,
+    commit: bool = False,
 ) -> models.Candidate:
     params = candidate.dict()
+    params["election_id"] = election_id
     db_candidate = models.Candidate(**params)
     db.add(db_candidate)
 
@@ -55,9 +59,10 @@ def create_candidate(
 
 
 def create_grade(
-    db: Session, grade: schemas.GradeRelational, commit: bool = False
+    db: Session, grade: schemas.GradeCreate, election_id: int, commit: bool = False
 ) -> models.Grade:
     params = grade.dict()
+    params["election_id"] = election_id
     db_grade = models.Grade(**params)
     db.add(db_grade)
 
@@ -97,7 +102,7 @@ def create_invite_tokens(
     db.bulk_save_objects(db_votes, return_defaults=True)
     vote_ids = [int(str(v.id)) for v in db_votes]
     tokens = [
-        create_ballot_token(vote_ids[i::num_candidates], election_id)
+        create_ballot_token(vote_ids[i::num_voters], election_id)
         for i in range(num_voters)
     ]
     return tokens
@@ -109,19 +114,18 @@ def create_election(
     # We create first the election
     # without candidates and grades
     db_election = _create_election_without_candidates_or_grade(db, election, True)
+    election_id = int(str(db_election.id))
 
     # Then, we add separatly candidates and grades
     for candidate in election.candidates:
         params = candidate.dict()
-        params["election_id"] = db_election.id
-        candidate_rel = schemas.CandidateRelational(**params)
-        create_candidate(db, candidate_rel, False)
+        candidate = schemas.CandidateCreate(**params)
+        create_candidate(db, candidate, election_id, False)
 
     for grade in election.grades:
         params = grade.dict()
-        params["election_id"] = db_election.id
-        grade_rel = schemas.GradeRelational(**params)
-        create_grade(db, grade_rel, False)
+        grade = schemas.GradeCreate(**params)
+        create_grade(db, grade, election_id, False)
 
     db.commit()
     db.refresh(db_election)
@@ -139,14 +143,34 @@ def create_election(
     return election_and_invites
 
 
-def create_vote(db: Session, vote: schemas.BallotCreate) -> schemas.BallotGet:
-    votes = vote.votes
-
-    if votes == []:
+def create_vote(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGet:
+    if ballot.votes == []:
         raise errors.BadRequestError("The ballot contains no vote")
 
-    election_id = votes[0].election_id
+    _check_public_election(db, ballot.election_id)
+    _check_item_in_election(
+        db, [v.candidate_id for v in ballot.votes], ballot.election_id, models.Candidate
+    )
+    _check_item_in_election(
+        db, [v.grade_id for v in ballot.votes], ballot.election_id, models.Grade
+    )
 
+    # Ideally, we would use RETURNING but it does not work yet for SQLite
+    db_votes = [
+        models.Vote(**v.dict(), election_id=ballot.election_id) for v in ballot.votes
+    ]
+    db.add_all(db_votes)
+    db.commit()
+    for v in db_votes:
+        db.refresh(v)
+
+    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
+    vote_ids = [v.id for v in votes_get]
+    token = create_ballot_token(vote_ids, ballot.election_id)
+    return schemas.BallotGet(votes=votes_get, token=token)
+
+
+def _check_public_election(db: Session, election_id: int):
     # Check if the election is open
     db_election = get_election(db, election_id)
     if db_election is None:
@@ -155,39 +179,68 @@ def create_vote(db: Session, vote: schemas.BallotCreate) -> schemas.BallotGet:
         raise errors.BadRequestError(
             "The election is restricted. You can not create new votes"
         )
-
-    # Ideally, we would use RETURNING but it does not work yet for SQLite
-    db_votes = [models.Vote(**v.dict()) for v in vote.votes]
-    db.add_all(db_votes)
-    db.commit()
-    for v in db_votes:
-        db.refresh(v)
-
-    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
-    vote_ids = [v.id for v in votes_get]
-    token = create_ballot_token(vote_ids, election_id)
-    return schemas.BallotGet(votes=votes_get, token=token)
+    return db_election
 
 
-def update_vote(db: Session, vote: schemas.BallotUpdate) -> schemas.BallotGet:
-    votes = vote.votes
-    token = vote.token
+def _check_item_in_election(
+    db: Session,
+    ids: t.Sequence[int],
+    election_id: int,
+    model: t.Type[models.Grade | models.Candidate],
+):
+    """
+    Check the items are related to the election.
+    """
+    unique_ids = list(set(ids))
+    num_items = (
+        db.query(model)
+        .filter(model.id.in_(unique_ids) & (model.election_id == election_id))
+        .count()
+    )
+    if num_items != len(unique_ids):
+        raise errors.BadRequestError(
+            "Asking for resources related to a different election"
+        )
 
-    if votes == []:
+
+def update_vote(db: Session, ballot: schemas.BallotUpdate) -> schemas.BallotGet:
+    if ballot.votes == []:
         raise errors.BadRequestError("The ballot contains no vote")
 
-    election_id = votes[0].election_id
+    payload = jws_verify(ballot.token)
+    election_id = payload["election"]
+    vote_ids: list[int] = list(set(payload["votes"]))
 
     # Check if the election exists
     db_election = get_election(db, election_id)
     if db_election is None:
         raise errors.NotFoundError("Unknown election.")
 
-    db_votes = [models.Vote(**v.dict()) for v in vote.votes]
-    db.bulk_save_objects(db_votes, return_defaults=True)
+    if len(ballot.votes) != len(vote_ids):
+        raise errors.BadRequestError("Edit all votes at once.")
+
+    _check_item_in_election(
+        db, [v.candidate_id for v in ballot.votes], election_id, models.Candidate
+    )
+    _check_item_in_election(
+        db, [v.grade_id for v in ballot.votes], election_id, models.Grade
+    )
+
+    # TODO Can we optimize it with a bulk update?
+    db_votes = db.query(models.Vote).filter(models.Vote.id.in_(vote_ids)).all()
+    for vote, db_vote in zip(ballot.votes, db_votes):
+        if db_vote.election_id != election_id:
+            raise errors.BadRequestError("Wrong election id")
+
+        db_vote.update(
+            {
+                "candidate_id": vote.candidate_id,
+                "grade_id": vote.grade_id,
+            }
+        )
+    db.commit()
 
     votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
-    vote_ids = [v.id for v in votes_get]
     token = create_ballot_token(vote_ids, election_id)
     return schemas.BallotGet(votes=votes_get, token=token)
 
@@ -218,7 +271,7 @@ def get_results(db: Session, election_id: int) -> schemas.ResultsGet:
         .group_by(models.Vote.candidate_id, models.Vote.grade_id)
         .all()
     )
-    ballots: DefaultDict[int, dict[int, int]] = defaultdict(dict)
+    ballots: t.DefaultDict[int, dict[int, int]] = defaultdict(dict)
     for candidate_id, grade_value, num_votes in db_votes:
         ballots[candidate_id][grade_value] = num_votes
     merit_profile = {

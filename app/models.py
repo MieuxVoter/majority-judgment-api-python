@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -11,9 +12,9 @@ class Election(Base):
     name = Column(String(255))
     description = Column(String(1024))
     num_voters = Column(Integer, default=0)
-    date_created = Column(DateTime)
-    date_modified = Column(DateTime)
-    date_start = Column(DateTime)
+    date_created = Column(DateTime, server_default=func.now())
+    date_modified = Column(DateTime, onupdate=func.now())
+    date_start = Column(DateTime, server_default=func.now())
     date_end = Column(DateTime)
     hide_results = Column(Boolean, default=False)
     restricted = Column(Boolean, default=False)
@@ -31,8 +32,8 @@ class Candidate(Base):
     name = Column(String(255), unique=False)
     description = Column(String(1024), default="")
     image = Column(String(100), default="")
-    date_created = Column(DateTime)
-    date_modified = Column(DateTime)
+    date_created = Column(DateTime, server_default=func.now())
+    date_modified = Column(DateTime, onupdate=func.now())
 
     election_id = Column(Integer, ForeignKey("elections.id"))
     election = relationship("Election", back_populates="candidates")
@@ -47,9 +48,8 @@ class Grade(Base):
     name = Column(String)
     description = Column(String)
     value = Column(Integer)
-    date_created = Column(DateTime)
-    date_modified = Column(DateTime)
-
+    date_created = Column(DateTime, server_default=func.now())
+    date_modified = Column(DateTime, onupdate=func.now())
     election_id = Column(Integer, ForeignKey("elections.id"))
     election = relationship("Election", back_populates="grades")
 
@@ -60,9 +60,8 @@ class Vote(Base):
     __tablename__ = "votes"
 
     id = Column(Integer, primary_key=True, index=True)
-    date_created = Column(DateTime)
-    date_modified = Column(DateTime)
-
+    date_created = Column(DateTime, server_default=func.now())
+    date_modified = Column(DateTime, onupdate=func.now())
     candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=True)
     candidate = relationship("Candidate", back_populates="votes")
 
