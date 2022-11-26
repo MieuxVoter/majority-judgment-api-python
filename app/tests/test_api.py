@@ -52,6 +52,7 @@ class RandomElection(t.TypedDict):
     name: str
     candidates: list[dict[str, str]]
     grades: list[dict[str, int | str]]
+    restricted: t.NotRequired[bool]
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -166,8 +167,21 @@ def test_create_vote():
         assert v2["election_id"] == election_id
 
 
-def test_cannot_create_vote_on_private_election():
-    assert False
+def test_cannot_create_vote_on_restricted_election():
+    """
+    On a restricted election, we are not allowed to create new votes
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    response = client.post("/elections", json=body)
+    data = response.json()
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(f"/votes", json={"votes": votes})
+    data = response.json()
+    assert response.status_code == 400, data
 
 
 def test_get_results():
@@ -179,9 +193,9 @@ def test_get_results():
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    for vote in votes * 2:
-        response = client.post(f"/votes", json=vote)
-        data = response.json()
+    response = client.post(f"/votes", json={"votes": votes})
+    data = response.json()
+    assert response.status_code == 200, data
 
     # Now we get the results
     response = client.get(f"/results/{election_id}")

@@ -152,13 +152,16 @@ def create_vote(db: Session, vote: schemas.BallotCreate) -> schemas.BallotGet:
     db_election = get_election(db, election_id)
     if db_election is None:
         raise errors.NotFoundError("Unknown election.")
-    if db_election.private:
+    if db_election.restricted:
         raise errors.BadRequestError(
-            "The election is private. You can not create new votes"
+            "The election is restricted. You can not create new votes"
         )
 
     db_votes = [models.Vote(**v.dict()) for v in vote.votes]
-    db.bulk_save_objects(db_votes, return_defaults=True)
+    db.add_all(db_votes)
+    db.commit()
+    for v in db_votes:
+        db.refresh(v)
 
     votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
     vote_ids = [v.id for v in votes_get]
