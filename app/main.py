@@ -1,6 +1,6 @@
 import typing as t
 import json
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Body
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -75,15 +75,18 @@ def read_election_all_details(election_id: int, db: Session = Depends(get_db)):
     return db_election
 
 
-@app.post("/elections", response_model=schemas.ElectionGet)
+@app.post("/elections", response_model=schemas.ElectionAndInvitesGet)
 def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_db)):
     return crud.create_election(db=db, election=election)
 
 
 @app.post("/votes", response_model=schemas.BallotGet)
-def create_vote(vote: schemas.BallotCreate, db: Session = Depends(get_db)):
+def create_vote(
+    ballot: schemas.BallotCreate,
+    db: Session = Depends(get_db),
+):
     try:
-        return crud.create_vote(db=db, vote=vote)
+        return crud.create_vote(db=db, ballot=ballot)
     except JWSError:
         raise errors.UnauthorizedError("Unverified token")
 
@@ -91,7 +94,7 @@ def create_vote(vote: schemas.BallotCreate, db: Session = Depends(get_db)):
 @app.put("/votes", response_model=schemas.BallotGet)
 def update_vote(vote: schemas.BallotUpdate, db: Session = Depends(get_db)):
     try:
-        return crud.update_vote(db=db, vote=vote)
+        return crud.update_vote(db=db, ballot=vote)
     except JWSError:
         raise errors.UnauthorizedError("Unverified token")
 

@@ -5,6 +5,8 @@ import random
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from app.auth import jws_verify
 from ..database import Base, get_db
 from .. import schemas
 from ..main import app
@@ -53,6 +55,7 @@ class RandomElection(t.TypedDict):
     candidates: list[dict[str, str]]
     grades: list[dict[str, int | str]]
     restricted: t.NotRequired[bool]
+    num_voters: t.NotRequired[int]
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -126,7 +129,6 @@ def _generate_votes_from_response(
         {
             "candidate_id": c[candidate_key],
             "grade_id": g[grade_key],
-            "election_id": data["id"],
         }
         for c, g in itertools.product(data["candidates"], data["grades"])
     ]
@@ -144,7 +146,7 @@ def test_create_vote():
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    response = client.post(f"/votes", json={"votes": votes})
+    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
     assert response.status_code == 200, response.text
     data = response.json()
     for v1, v2 in zip(votes, data["votes"]):
@@ -174,26 +176,64 @@ def test_cannot_create_vote_on_restricted_election():
     # Create a random election
     body = _random_election(10, 5)
     body["restricted"] = True
+    body["num_voters"] = 1
     response = client.post("/elections", json=body)
     data = response.json()
+    assert response.status_code == 200, data
+    assert len(data["invites"]) == 1
+    election_id = data["id"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    response = client.post(f"/votes", json={"votes": votes})
+    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
     data = response.json()
     assert response.status_code == 400, data
+
+
+def test_can_vote_on_restricted_election():
+    """
+    On a restricted election, we need to update votes.
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    data = response.json()
+    assert response.status_code == 200, data
+    tokens = data["invites"]
+    assert len(tokens) == 1
+    token = tokens[0]
+
+    # Check that the token makes sense
+    payload = jws_verify(token)
+    assert len(payload["votes"]) == len(data["candidates"])
+    assert payload["election"] == data["id"]
+
+    # We create votes using the token
+    grade_id = data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": candidate["id"], "grade_id": grade_id}
+        for candidate in data["candidates"]
+    ]
+    response = client.put(f"/votes", json={"votes": votes, "token": token})
+    data = response.json()
+    assert response.status_code == 200, data
+    assert data["token"] == token
 
 
 def test_get_results():
     # Create a random election
     body = _random_election(10, 5)
     response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
     data = response.json()
     election_id = data["id"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    response = client.post(f"/votes", json={"votes": votes})
+    # print(data, votes)
+    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
     data = response.json()
     assert response.status_code == 200, data
 

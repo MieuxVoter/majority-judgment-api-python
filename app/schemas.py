@@ -53,78 +53,56 @@ class CandidateBase(BaseModel):
     name: Name
     description: Description = ""
     image: Image = ""
-    date_created: datetime = Field(default_factory=datetime.now)
-    date_modified: datetime = Field(default_factory=datetime.now)
-
-    _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
 
 
-class CandidateRelational(CandidateBase):
-    election_id: int
-
-
 class CandidateGet(CandidateBase):
+    election_id: int
     id: int
+
+
+class CandidateCreate(CandidateBase):
+    #  When creating an election, we don't have access yet to the Candidate id
+    pass
 
 
 class GradeBase(BaseModel):
     name: Name
     value: int = Field(ge=0, lt=settings.max_grades, pre=True)
     description: Description = ""
-    date_created: datetime = Field(default_factory=datetime.now)
-    date_modified: datetime = Field(default_factory=datetime.now)
-
-    _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
 
 
 class GradeGet(GradeBase):
+    election_id: int
     id: int
 
 
-class GradeRelational(GradeBase):
+class GradeCreate(GradeBase):
+    #  When creating an election, we don't have access yet to the Candidate id
+    pass
+
+
+class VoteGet(BaseModel):
+    id: int
     election_id: int
-
-
-class VoteBase(BaseModel):
     candidate: CandidateGet | None = Field(default=None)
     grade: GradeGet | None = Field(default=None)
-    date_created: datetime = Field(default_factory=datetime.now)
-    date_modified: datetime = Field(default_factory=datetime.now)
-
-    _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
-
-
-class VoteGet(VoteBase):
-    id: int
-    election_id: int
-    token: str = ""
 
 
 class VoteCreate(BaseModel):
-    election_id: int
     candidate_id: int
     grade_id: int
-    date_created: datetime = Field(default_factory=datetime.now)
-    date_modified: datetime = Field(default_factory=datetime.now)
-
-    _valid_date = _causal_dates_validator("date_created", "date_modified")
 
     class Config:
         orm_mode = True
-
-
-class VoteUpdate(VoteCreate):
-    id: int | None = None
-    token: str = ""
 
 
 class BallotGet(BaseModel):
@@ -134,11 +112,12 @@ class BallotGet(BaseModel):
 
 class BallotCreate(BaseModel):
     votes: list[VoteCreate]
+    election_id: int
 
 
 class BallotUpdate(BaseModel):
-    votes: list[VoteUpdate]
     token: str
+    votes: list[VoteCreate]
 
 
 def _in_a_long_time() -> datetime:
@@ -152,17 +131,12 @@ class ElectionBase(BaseModel):
     name: Name
     description: Description = ""
     ref: Ref = ""
-    date_created: datetime = Field(default_factory=datetime.now)
-    date_modified: datetime = Field(default_factory=datetime.now)
     num_voters: int = Field(0, ge=0, le=settings.max_voters)
     date_start: datetime = Field(default_factory=datetime.now)
     date_end: datetime = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     force_close: bool = False
     restricted: bool = False
-
-    _valid_date = _causal_dates_validator("date_created", "date_modified")
-    _valid_date = _causal_dates_validator("date_start", "date_end")
 
     @validator("hide_results", "num_voters", "date_end")
     def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
