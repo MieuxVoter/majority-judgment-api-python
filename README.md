@@ -26,10 +26,6 @@ You certainly want to apply databases migrations with:
 
 `docker/test.sh`
 
-## Create databases migrations
-
-`sudo docker/makemigrations.sh`
-
 
 
 ## Local development
@@ -68,6 +64,7 @@ uvicorn app.main:app --reload --env-file .env.local
 http://127.0.0.1:8000/redoc
 ```
 
+If you need to alter the database, you can create new migrations using [alembic](https://alembic.sqlalchemy.org/en/latest/index.html).
 
 
 ## TODO

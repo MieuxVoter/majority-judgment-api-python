@@ -1,8 +1,11 @@
 import typing as t
+import json
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from jose import jwe, jws
+from jose.exceptions import JWEError, JWSError
 
 from . import crud, models, schemas, errors
 from .database import get_db, engine
@@ -34,6 +37,21 @@ async def not_found_exception_handler(request: Request, exc: errors.NotFoundErro
     )
 
 
+@app.exception_handler(errors.UnauthorizedError)
+async def unauthorized_exception_handler(request: Request, exc: errors.NotFoundError):
+    return JSONResponse(
+        status_code=401, content={"message": "Unautorized", "details": exc.name}
+    )
+
+
+@app.exception_handler(errors.BadRequestError)
+async def bad_request_exception_handler(request: Request, exc: errors.NotFoundError):
+    return JSONResponse(
+        status_code=400,
+        content={"message": f"Bad Request", "details": exc.name},
+    )
+
+
 @app.exception_handler(errors.InconsistentDatabaseError)
 async def inconsistent_database_exception_handler(
     request: Request, exc: errors.InconsistentDatabaseError
@@ -62,15 +80,25 @@ def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_
     return crud.create_election(db=db, election=election)
 
 
-@app.post("/votes", response_model=schemas.VoteGet)
-def create_vote(vote: schemas.VoteCreate, db: Session = Depends(get_db)):
-    return crud.create_vote(db=db, vote=vote)
+@app.post("/votes", response_model=schemas.BallotGet)
+def create_vote(vote: schemas.BallotCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_vote(db=db, vote=vote)
+    except JWSError:
+        raise errors.UnauthorizedError("Unverified token")
 
 
-@app.get("/votes/{vote_id}", response_model=schemas.VoteGet)
-def get_vote(vote_id: int, db: Session = Depends(get_db)):
-    # TODO assert with a JWT token that we are allowed to read the vote
-    return crud.get_vote(db=db, vote_id=vote_id)
+@app.put("/votes", response_model=schemas.BallotGet)
+def update_vote(vote: schemas.BallotUpdate, db: Session = Depends(get_db)):
+    try:
+        return crud.update_vote(db=db, vote=vote)
+    except JWSError:
+        raise errors.UnauthorizedError("Unverified token")
+
+
+@app.get("/votes/{token}", response_model=schemas.BallotGet)
+def get_vote(token: str, db: Session = Depends(get_db)):
+    return crud.get_votes(db=db, token=token)
 
 
 @app.get("/results/{election_id}", response_model=schemas.ResultsGet)

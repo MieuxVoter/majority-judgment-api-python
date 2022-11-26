@@ -63,10 +63,10 @@ class Vote(Base):
     date_created = Column(DateTime)
     date_modified = Column(DateTime)
 
-    candidate_id = Column(Integer, ForeignKey("candidates.id"))
+    candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=True)
     candidate = relationship("Candidate", back_populates="votes")
 
-    grade_id = Column(Integer, ForeignKey("grades.id"))
+    grade_id = Column(Integer, ForeignKey("grades.id"), nullable=True)
     grade = relationship("Grade", back_populates="votes")
 
     election_id = Column(Integer, ForeignKey("elections.id"))

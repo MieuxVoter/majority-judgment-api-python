@@ -1,9 +1,12 @@
+from datetime import datetime
 from collections import defaultdict
 from typing import DefaultDict
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, insert
 from majority_judgment import majority_judgment
 from . import models, schemas, errors
+from .settings import settings
+from .auth import create_ballot_token, create_admin_token, jws_verify
 
 
 def get_election(db: Session, election_id: int):
@@ -82,6 +85,24 @@ def _create_election_without_candidates_or_grade(
     return db_election
 
 
+def create_invite_tokens(
+    db: Session,
+    election_id: int,
+    num_candidates: int,
+    num_voters: int,
+) -> list[str]:
+    now = datetime.now()
+    params = {"date_created": now, "date_modified": now, "election_id": election_id}
+    db_votes = [models.Vote(**params) for _ in range(num_voters * num_candidates)]
+    db.bulk_save_objects(db_votes, return_defaults=True)
+    vote_ids = [int(str(v.id)) for v in db_votes]
+    tokens = [
+        create_ballot_token(vote_ids[i::num_candidates], election_id)
+        for i in range(num_voters)
+    ]
+    return tokens
+
+
 def create_election(
     db: Session, election: schemas.ElectionCreate
 ) -> schemas.ElectionGet:
@@ -91,25 +112,26 @@ def create_election(
 
     # Then, we add separatly candidates and grades
     for candidate in election.candidates:
-        candidate_rel = schemas.CandidateRelational(
-            **{**candidate.dict(), "election_id": db_election.id}
-        )
+        params = candidate.dict()
+        params["election_id"] = db_election.id
+        candidate_rel = schemas.CandidateRelational(**params)
         create_candidate(db, candidate_rel, False)
 
     for grade in election.grades:
-        grade_rel = schemas.GradeRelational(
-            **{**grade.dict(), "election_id": db_election.id}
-        )
+        params = grade.dict()
+        params["election_id"] = db_election.id
+        grade_rel = schemas.GradeRelational(**params)
         create_grade(db, grade_rel, False)
 
     db.commit()
     db.refresh(db_election)
-    # create_
-    # TODO JWT token for invites
-    invites: list[str] = []
+
+    invites: list[str] = create_invite_tokens(
+        db, int(str(db_election.id)), len(election.candidates), election.num_voters
+    )
 
     # TODO JWT token for admin panel
-    admin = ""
+    admin = create_admin_token(int(str(db_election.id)))
 
     election_and_invites = schemas.ElectionAndInvitesGet.from_orm(db_election)
     election_and_invites.invites = invites
@@ -118,41 +140,67 @@ def create_election(
     return election_and_invites
 
 
-def create_vote(db: Session, vote: schemas.VoteCreate) -> schemas.VoteGet:
-    db_vote = models.Vote(**vote.dict())
-    db.add(db_vote)
+def create_vote(db: Session, vote: schemas.BallotCreate) -> schemas.BallotGet:
+    votes = vote.votes
 
-    db.commit()
-    db.refresh(db_vote)
+    if votes == []:
+        raise errors.BadRequestError("The ballot contains no vote")
 
-    return db_vote
+    election_id = votes[0].election_id
 
-
-def get_vote(db: Session, vote_id: int) -> models.Vote:
-    # TODO check with JWT tokens the authorization
-    votes_by_id = db.query(models.Vote).filter(models.Vote.id == vote_id)
-
-    if votes_by_id.count() > 1:
-        raise errors.InconsistentDatabaseError(
-            "votes", f"Several votes have the same primary keys {vote_id}"
+    # Check if the election is open
+    db_election = get_election(db, election_id)
+    if db_election is None:
+        raise errors.NotFoundError("Unknown election.")
+    if db_election.private:
+        raise errors.BadRequestError(
+            "The election is private. You can not create new votes"
         )
 
-    vote = votes_by_id.first()
-    if vote is not None:
-        return vote
+    db_votes = [models.Vote(**v.dict()) for v in vote.votes]
+    db.bulk_save_objects(db_votes, return_defaults=True)
 
-    votes_by_ref = db.query(models.Vote).filter(models.Vote.ref == vote_id)
+    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
+    vote_ids = [v.id for v in votes_get]
+    token = create_ballot_token(vote_ids, election_id)
+    return schemas.BallotGet(votes=votes_get, token=token)
 
-    if votes_by_ref.count() > 1:
-        raise errors.InconsistentDatabaseError(
-            "votes", f"Several votes have the same reference {vote_id}"
-        )
 
-    vote = votes_by_ref.first()
-    if vote is not None:
-        return vote
+def update_vote(db: Session, vote: schemas.BallotUpdate) -> schemas.BallotGet:
+    votes = vote.votes
+    token = vote.token
 
-    raise errors.NotFoundError("votes")
+    if votes == []:
+        raise errors.BadRequestError("The ballot contains no vote")
+
+    election_id = votes[0].election_id
+
+    # Check if the election exists
+    db_election = get_election(db, election_id)
+    if db_election is None:
+        raise errors.NotFoundError("Unknown election.")
+
+    db_votes = [models.Vote(**v.dict()) for v in vote.votes]
+    db.bulk_save_objects(db_votes, return_defaults=True)
+
+    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
+    vote_ids = [v.id for v in votes_get]
+    token = create_ballot_token(vote_ids, election_id)
+    return schemas.BallotGet(votes=votes_get, token=token)
+
+
+def get_votes(db: Session, token: str) -> schemas.BallotGet:
+    data = jws_verify(token)
+    vote_ids = data["votes"]
+    election_id = data["election"]
+
+    votes = db.query(models.Vote).filter(
+        models.Vote.id.in_((vote_ids))
+        & (models.Vote.candidate_id.is_not(None))
+        & (models.Vote.election_id == election_id)
+    )
+    votes_get = [schemas.VoteGet.from_orm(v) for v in votes.all()]
+    return schemas.BallotGet(token=token, votes=votes_get)
 
 
 def get_results(db: Session, election_id: int) -> schemas.ResultsGet:
@@ -175,7 +223,7 @@ def get_results(db: Session, election_id: int) -> schemas.ResultsGet:
         for c, votes in ballots.items()
     }
 
-    ranking = majority_judgment(merit_profile)
+    ranking = majority_judgment(merit_profile)  # pyright: ignore
 
     results = schemas.ResultsGet.from_orm(db_election)
 

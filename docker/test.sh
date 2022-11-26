@@ -1,1 +1,7 @@
-docker exec -it majority-judgment-api-python-mj_api-1 pytest
+tmpfile=$(mktemp /tmp/mj-api.XXXX)
+echo "SECRET=mysecrettoken" >> $tmpfile
+echo "SQLITE=True" >> $tmpfile
+
+docker run --env-file $tmpfile  \
+	majority-judgment/api-python:latest \
+	pytest

@@ -1,8 +1,13 @@
+import random
+import sys
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
     sqlite: bool = False
+
+    secret: str = ""
+    aes_key: bytes = b""
 
     postgres_password: str = ""
     postgres_user: str = "mj"
@@ -20,4 +25,21 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 
+def get_random_key(length: int, rng: random.Random) -> bytes:
+    """
+    Inspired from https://stackoverflow.com/a/37357035/4986615
+    """
+    if length == 0:
+        return b""
+    integer = rng.getrandbits(length * 8)
+    result = integer.to_bytes(length, sys.byteorder)
+    return result
+
+
 settings = Settings()
+
+if settings.secret == "":
+    raise RuntimeError("Please generate a secret key")
+
+rng = random.Random(settings.secret)
+settings.aes_key = get_random_key(16, rng)
