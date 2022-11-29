@@ -43,7 +43,7 @@ def test_liveness():
 
 def test_read_a_missing_election():
     response = client.get("/elections/foo")
-    assert response.status_code == 422
+    assert response.status_code == 404
 
 
 def _random_string(length: int) -> str:
@@ -76,7 +76,7 @@ def test_create_election():
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["name"] == body["name"]
-    assert "id" in data
+    assert "ref" in data
 
     assert len(data["candidates"]) == 2
     db_candidate_names = {c["name"] for c in data["candidates"]}
@@ -95,14 +95,14 @@ def test_get_election():
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["name"] == body["name"]
-    assert "id" in data
+    assert "ref" in data
 
-    election_id = data["id"]
-    response = client.get(f"/elections/{election_id}")
+    election_ref = data["ref"]
+    response = client.get(f"/elections/{election_ref}")
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["name"] == body["name"]
-    assert data["id"] == election_id
+    assert data["ref"] == election_ref
 
     assert len(data["candidates"]) == 3
     db_candidate_names = {c["name"] for c in data["candidates"]}
@@ -134,39 +134,41 @@ def _generate_votes_from_response(
     ]
 
 
-def test_create_vote():
+def test_create_ballot():
     # Create a random election
     body = _random_election(10, 5)
     response = client.post("/elections", json=body)
     assert response.status_code == 200, response.text
     data = response.json()
 
-    assert "id" in data
-    election_id = data["id"]
+    assert "ref" in data
+    election_ref = data["ref"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
     assert response.status_code == 200, response.text
     data = response.json()
     for v1, v2 in zip(votes, data["votes"]):
         assert v2["grade"]["id"] == v1["grade_id"]
         assert v2["candidate"]["id"] == v1["candidate_id"]
-        assert v2["election_id"] == election_id
+        assert v2["election_ref"] == election_ref
 
     token = data["token"]
 
     # Now, we check that we need the righ token to read the votes
-    response = client.get(f"/votes/{token}WRONG")
+    response = client.get(f"/ballots/{token}WRONG")
     assert response.status_code == 401, response.text
 
-    response = client.get(f"/votes/{token}")
+    response = client.get(f"/ballots/{token}")
     assert response.status_code == 200, response.text
     data = response.json()
     for v1, v2 in zip(votes, data["votes"]):
         assert v2["grade"]["id"] == v1["grade_id"]
         assert v2["candidate"]["id"] == v1["candidate_id"]
-        assert v2["election_id"] == election_id
+        assert v2["election_ref"] == election_ref
 
 
 def test_cannot_create_vote_on_restricted_election():
@@ -181,11 +183,13 @@ def test_cannot_create_vote_on_restricted_election():
     data = response.json()
     assert response.status_code == 200, data
     assert len(data["invites"]) == 1
-    election_id = data["id"]
+    election_ref = data["ref"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
     data = response.json()
     assert response.status_code == 400, data
 
@@ -208,7 +212,7 @@ def test_can_vote_on_restricted_election():
     # Check that the token makes sense
     payload = jws_verify(token)
     assert len(payload["votes"]) == len(data["candidates"])
-    assert payload["election"] == data["id"]
+    assert payload["election"] == data["ref"]
 
     # We create votes using the token
     grade_id = data["grades"][0]["id"]
@@ -216,10 +220,12 @@ def test_can_vote_on_restricted_election():
         {"candidate_id": candidate["id"], "grade_id": grade_id}
         for candidate in data["candidates"]
     ]
-    response = client.put(f"/votes", json={"votes": votes, "token": token})
+    response = client.put(f"/ballots", json={"votes": votes, "token": token})
     data = response.json()
     assert response.status_code == 200, data
-    assert data["token"] == token
+
+    payload2 = jws_verify(data["token"])
+    assert payload2 == payload
 
 
 def test_get_results():
@@ -228,16 +234,18 @@ def test_get_results():
     response = client.post("/elections", json=body)
     assert response.status_code == 200, response.content
     data = response.json()
-    election_id = data["id"]
+    election_ref = data["ref"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
     # print(data, votes)
-    response = client.post(f"/votes", json={"votes": votes, "election_id": election_id})
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
     data = response.json()
     assert response.status_code == 200, data
 
     # Now we get the results
-    response = client.get(f"/results/{election_id}")
+    response = client.get(f"/results/{election_ref}")
     assert response.status_code == 200, response.text
     data = response.json()

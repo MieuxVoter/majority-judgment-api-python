@@ -17,8 +17,7 @@ def test_grade_default_values():
     """
     Can create a simple GradeBase
     """
-    now = datetime.now()
-    grade = GradeCreate(name="foo", value=1, election_id=0)
+    grade = GradeCreate(name="foo", value=1)
     assert grade.name == "foo"
 
     # Automatic conversion helps to load data from the payload
@@ -45,7 +44,6 @@ def test_grade_validation_value():
 
     with pytest.raises(ValidationError):
         GradeCreate(
-            election_id=0,
             name="foo",
             value=settings.max_grades + 1,
             description="bar foo",
@@ -69,7 +67,6 @@ def test_candidate_defaults():
     """
     Can create a simple CandidateBase
     """
-    now = datetime.now()
     candidate = CandidateCreate(name="foo")
     assert candidate.name == "foo"
     assert candidate.description == ""
@@ -80,10 +77,9 @@ def test_vote():
     """
     Can create a simple VoteGet
     """
-    now = datetime.now()
-    candidate = CandidateGet(name="foo", id=1, election_id=0)
-    grade = GradeGet(name="bar", value=1, id=2, election_id=0)
-    vote = VoteGet(candidate=candidate, grade=grade, id=1, election_id=0)
+    candidate = CandidateGet(name="foo", id=1, election_ref="bar")
+    grade = GradeGet(name="bar", value=1, id=2, election_ref="bar")
+    vote = VoteGet(candidate=candidate, grade=grade, id=1, election_ref="bar")
     assert vote.candidate == candidate
     assert vote.grade == grade
 
