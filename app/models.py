@@ -8,7 +8,7 @@ class Election(Base):
     __tablename__ = "elections"
 
     id = Column(Integer, primary_key=True, index=True)
-    ref = Column(String(64), default="")
+    ref = Column(String(20), default="", unique=True)
     name = Column(String(255))
     description = Column(String(1024))
     num_voters = Column(Integer, default=0)
@@ -35,7 +35,7 @@ class Candidate(Base):
     date_created = Column(DateTime, server_default=func.now())
     date_modified = Column(DateTime, onupdate=func.now())
 
-    election_ref = Column(String, ForeignKey("elections.ref"))
+    election_ref = Column(String(20), ForeignKey("elections.ref"))
     election = relationship("Election", back_populates="candidates")
 
     votes = relationship("Vote", back_populates="candidate")
@@ -51,7 +51,7 @@ class Grade(Base):
     date_created = Column(DateTime, server_default=func.now())
     date_modified = Column(DateTime, onupdate=func.now())
 
-    election_ref = Column(String, ForeignKey("elections.ref"))
+    election_ref = Column(String(20), ForeignKey("elections.ref"))
     election = relationship("Election", back_populates="grades")
 
     votes = relationship("Vote", back_populates="grade")
@@ -69,5 +69,5 @@ class Vote(Base):
     grade_id = Column(Integer, ForeignKey("grades.id"), nullable=True)
     grade = relationship("Grade", back_populates="votes")
 
-    election_ref = Column(Integer, ForeignKey("elections.ref"))
+    election_ref = Column(String(20), ForeignKey("elections.ref"))
     election = relationship("Election", back_populates="votes")
