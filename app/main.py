@@ -69,9 +69,9 @@ def read_root():
     return "OK"
 
 
-@app.get("/elections/{election_id}", response_model=schemas.ElectionGet)
-def read_election_all_details(election_id: int, db: Session = Depends(get_db)):
-    db_election = crud.get_election(db, election_id=election_id)
+@app.get("/elections/{election_ref}", response_model=schemas.ElectionGet)
+def read_election_all_details(election_ref: str, db: Session = Depends(get_db)):
+    db_election = crud.get_election(db, election_ref)
     return db_election
 
 
@@ -80,30 +80,30 @@ def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_
     return crud.create_election(db=db, election=election)
 
 
-@app.post("/votes", response_model=schemas.BallotGet)
-def create_vote(
+@app.post("/ballots", response_model=schemas.BallotGet)
+def create_ballot(
     ballot: schemas.BallotCreate,
     db: Session = Depends(get_db),
 ):
     try:
-        return crud.create_vote(db=db, ballot=ballot)
+        return crud.create_ballot(db=db, ballot=ballot)
     except JWSError:
         raise errors.UnauthorizedError("Unverified token")
 
 
-@app.put("/votes", response_model=schemas.BallotGet)
-def update_vote(vote: schemas.BallotUpdate, db: Session = Depends(get_db)):
+@app.put("/ballots", response_model=schemas.BallotGet)
+def update_ballot(vote: schemas.BallotUpdate, db: Session = Depends(get_db)):
     try:
-        return crud.update_vote(db=db, ballot=vote)
+        return crud.update_ballot(db=db, ballot=vote)
     except JWSError:
         raise errors.UnauthorizedError("Unverified token")
 
 
-@app.get("/votes/{token}", response_model=schemas.BallotGet)
-def get_vote(token: str, db: Session = Depends(get_db)):
-    return crud.get_votes(db=db, token=token)
+@app.get("/ballots/{token}", response_model=schemas.BallotGet)
+def get_ballot(token: str, db: Session = Depends(get_db)):
+    return crud.get_ballot(db=db, token=token)
 
 
-@app.get("/results/{election_id}", response_model=schemas.ResultsGet)
-def get_results(election_id: int, db: Session = Depends(get_db)):
-    return crud.get_results(db=db, election_id=election_id)
+@app.get("/results/{election_ref}", response_model=schemas.ResultsGet)
+def get_results(election_ref: str, db: Session = Depends(get_db)):
+    return crud.get_results(db=db, election_ref=election_ref)

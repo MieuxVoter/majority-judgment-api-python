@@ -59,7 +59,7 @@ class CandidateBase(BaseModel):
 
 
 class CandidateGet(CandidateBase):
-    election_id: int
+    election_ref: str
     id: int
 
 
@@ -78,7 +78,7 @@ class GradeBase(BaseModel):
 
 
 class GradeGet(GradeBase):
-    election_id: int
+    election_ref: str
     id: int
 
 
@@ -89,7 +89,7 @@ class GradeCreate(GradeBase):
 
 class VoteGet(BaseModel):
     id: int
-    election_id: int
+    election_ref: str
     candidate: CandidateGet | None = Field(default=None)
     grade: GradeGet | None = Field(default=None)
 
@@ -103,16 +103,6 @@ class VoteCreate(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-class BallotGet(BaseModel):
-    votes: list[VoteGet]
-    token: str
-
-
-class BallotCreate(BaseModel):
-    votes: list[VoteCreate]
-    election_id: int
 
 
 class BallotUpdate(BaseModel):
@@ -175,7 +165,7 @@ class ElectionBase(BaseModel):
 
 
 class ElectionGet(ElectionBase):
-    id: int
+    ref: str
     grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
     candidates: list[CandidateGet] = Field(
         ..., min_items=2, max_items=settings.max_candidates
@@ -221,3 +211,14 @@ class ElectionCreate(ElectionBase):
             raise ArgumentsSchemaError("Two candidates have the same name")
 
         return candidates
+
+
+class BallotGet(BaseModel):
+    votes: list[VoteGet]
+    election: ElectionGet
+    token: str
+
+
+class BallotCreate(BaseModel):
+    votes: list[VoteCreate]
+    election_ref: str
