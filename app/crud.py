@@ -229,11 +229,13 @@ def _check_item_in_election(
         )
 
 
-def update_ballot(db: Session, ballot: schemas.BallotUpdate) -> schemas.BallotGet:
+def update_ballot(
+    db: Session, ballot: schemas.BallotUpdate, token: str
+) -> schemas.BallotGet:
     if ballot.votes == []:
         raise errors.BadRequestError("The ballot contains no vote")
 
-    payload = jws_verify(ballot.token)
+    payload = jws_verify(token)
     election_ref = payload["election"]
     vote_ids: list[int] = list(set(payload["votes"]))
 

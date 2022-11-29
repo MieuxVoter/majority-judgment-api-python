@@ -1,6 +1,6 @@
 import typing as t
 import json
-from fastapi import Depends, FastAPI, HTTPException, Request, Body
+from fastapi import Depends, FastAPI, HTTPException, Request, Body, Header
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -85,22 +85,22 @@ def create_ballot(
     ballot: schemas.BallotCreate,
     db: Session = Depends(get_db),
 ):
-    try:
-        return crud.create_ballot(db=db, ballot=ballot)
-    except JWSError:
-        raise errors.UnauthorizedError("Unverified token")
+    return crud.create_ballot(db=db, ballot=ballot)
 
 
 @app.put("/ballots", response_model=schemas.BallotGet)
-def update_ballot(vote: schemas.BallotUpdate, db: Session = Depends(get_db)):
-    try:
-        return crud.update_ballot(db=db, ballot=vote)
-    except JWSError:
-        raise errors.UnauthorizedError("Unverified token")
+def update_ballot(
+    ballot: schemas.BallotUpdate,
+    authorization: str = Header(),
+    db: Session = Depends(get_db),
+):
+    token = authorization.split("Bearer ")[1]
+    return crud.update_ballot(db=db, ballot=ballot, token=token)
 
 
-@app.get("/ballots/{token}", response_model=schemas.BallotGet)
-def get_ballot(token: str, db: Session = Depends(get_db)):
+@app.get("/ballots/", response_model=schemas.BallotGet)
+def get_ballot(authorization: str = Header(), db: Session = Depends(get_db)):
+    token = authorization.split("Bearer ")[1]
     return crud.get_ballot(db=db, token=token)
 
 

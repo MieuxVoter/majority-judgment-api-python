@@ -105,11 +105,6 @@ class VoteCreate(BaseModel):
         orm_mode = True
 
 
-class BallotUpdate(BaseModel):
-    token: str
-    votes: list[VoteCreate]
-
-
 def _in_a_long_time() -> datetime:
     """
     Provides the date in the future
@@ -222,3 +217,7 @@ class BallotGet(BaseModel):
 class BallotCreate(BaseModel):
     votes: list[VoteCreate]
     election_ref: str
+
+
+class BallotUpdate(BaseModel):
+    votes: list[VoteCreate]
