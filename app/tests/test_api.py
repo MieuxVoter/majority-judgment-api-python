@@ -159,10 +159,12 @@ def test_create_ballot():
     token = data["token"]
 
     # Now, we check that we need the righ token to read the votes
-    response = client.get(f"/ballots/{token}WRONG")
+    response = client.get(
+        f"/ballots/", headers={"Authorization": f"Bearer {token}WRONG"}
+    )
     assert response.status_code == 401, response.text
 
-    response = client.get(f"/ballots/{token}")
+    response = client.get(f"/ballots/", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200, response.text
     data = response.json()
     for v1, v2 in zip(votes, data["votes"]):
@@ -188,7 +190,8 @@ def test_cannot_create_vote_on_restricted_election():
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
     response = client.post(
-        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+        f"/ballots",
+        json={"votes": votes, "election_ref": election_ref},
     )
     data = response.json()
     assert response.status_code == 400, data
@@ -220,7 +223,11 @@ def test_can_vote_on_restricted_election():
         {"candidate_id": candidate["id"], "grade_id": grade_id}
         for candidate in data["candidates"]
     ]
-    response = client.put(f"/ballots", json={"votes": votes, "token": token})
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     data = response.json()
     assert response.status_code == 200, data
 
