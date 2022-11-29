@@ -160,7 +160,6 @@ class ElectionBase(BaseModel):
 
 
 class ElectionGet(ElectionBase):
-    ref: str
     grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
     candidates: list[CandidateGet] = Field(
         ..., min_items=2, max_items=settings.max_candidates
@@ -168,7 +167,6 @@ class ElectionGet(ElectionBase):
 
 
 class ResultsGet(ElectionGet):
-    id: int
     grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
     candidates: list[CandidateGet] = Field(
         ..., min_items=2, max_items=settings.max_candidates
