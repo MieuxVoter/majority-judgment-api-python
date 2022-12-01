@@ -314,14 +314,14 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     query = db.query(
         models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)
     )
-    db_votes = (
-        query.join(models.Vote.grade)
+    db_res = (
+        query.join(models.Vote.grade).join(models.Vote.candidate)
         .filter(models.Vote.election_ref == db_election.ref)
-        .group_by(models.Vote.candidate_id, models.Vote.grade_id)
+        .group_by(models.Vote.candidate_id, models.Grade.value)
         .all()
     )
     ballots: t.DefaultDict[int, dict[int, int]] = defaultdict(dict)
-    for candidate_id, grade_value, num_votes in db_votes:
+    for candidate_id, grade_value, num_votes in db_res:
         ballots[candidate_id][grade_value] = num_votes
     merit_profile = {
         c: [votes[value] for value in sorted(votes.keys(), reverse=True)]
