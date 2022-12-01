@@ -325,9 +325,9 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     }
 
     ranking = majority_judgment(merit_profile)  # pyright: ignore
+    db_election.ranking = ranking
+    db_election.merit_profile = merit_profile
 
     results = schemas.ResultsGet.from_orm(db_election)
-
-    results.ranking = ranking
 
     return results
