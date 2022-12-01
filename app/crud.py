@@ -11,23 +11,27 @@ from .settings import settings
 from .auth import create_ballot_token, create_admin_token, jws_verify
 
 
-def get_election(db: Session, election_ref_or_id: str | int):
+def get_election(db: Session, election_ref_or_id: str):
     """
     Load an election given its ID or its ref
     """
-    elections_by_id = db.query(models.Election).filter(
-        (models.Election.id == election_ref_or_id)
-        | (models.Election.ref == election_ref_or_id)
-    )
+    if election_ref_or_id.isnumeric():
+        elections = db.query(models.Election).filter(
+            models.Election.id == election_ref_or_id
+        )
+    else:
+        elections = db.query(models.Election).filter(
+            models.Election.ref == election_ref_or_id
+        )
 
-    if elections_by_id.count() > 1:
+    if elections.count() > 1:
         raise errors.InconsistentDatabaseError(
             "elections",
             f"Several elections have the same primary keys {election_ref_or_id}",
         )
 
-    if elections_by_id.count() == 1:
-        return elections_by_id.first()
+    if elections.count() == 1:
+        return elections.first()
 
     raise errors.NotFoundError("elections")
 
