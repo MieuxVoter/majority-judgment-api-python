@@ -116,12 +116,44 @@ class ElectionBase(BaseModel):
     name: Name
     description: Description = ""
     ref: Ref = ""
-    num_voters: int = Field(0, ge=0, le=settings.max_voters)
     date_start: datetime = Field(default_factory=datetime.now)
     date_end: datetime = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     force_close: bool = False
     restricted: bool = False
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+class ElectionGet(ElectionBase):
+    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[CandidateGet] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+
+
+class ResultsGet(ElectionGet):
+    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    candidates: list[CandidateGet] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+    merit_profile: dict[int, list[int]]
+    ranking: dict[int, int] = {}
+
+
+class ElectionAndInvitesGet(ElectionGet):
+    invites: list[str] = []
+    admin: str = ""
+
+
+class ElectionCreate(ElectionBase):
+    grades: list[GradeBase] = Field(..., min_items=2, max_items=settings.max_grades)
+    num_voters: int = Field(0, ge=0, le=settings.max_voters)
+    candidates: list[CandidateBase] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
 
     @validator("hide_results", "num_voters", "date_end")
     def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
@@ -153,38 +185,6 @@ class ElectionBase(BaseModel):
             raise ArgumentsSchemaError("This election can not end")
 
         return value
-
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
-
-
-class ElectionGet(ElectionBase):
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
-    candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
-    )
-
-
-class ResultsGet(ElectionGet):
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
-    candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
-    )
-    merit_profile: dict[int, list[int]]
-    ranking: dict[int, int] = {}
-
-
-class ElectionAndInvitesGet(ElectionGet):
-    invites: list[str] = []
-    admin: str = ""
-
-
-class ElectionCreate(ElectionBase):
-    grades: list[GradeBase] = Field(..., min_items=2, max_items=settings.max_grades)
-    candidates: list[CandidateBase] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
-    )
 
     @validator("grades")
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
