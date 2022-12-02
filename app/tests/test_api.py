@@ -128,9 +128,9 @@ def _generate_votes_from_response(
     return [
         {
             "candidate_id": c[candidate_key],
-            "grade_id": g[grade_key],
+            "grade_id": random.choice(data["grades"])[grade_key],
         }
-        for c, g in itertools.product(data["candidates"], data["grades"])
+        for c in data["candidates"]
     ]
 
 
@@ -144,7 +144,7 @@ def test_create_ballot():
     assert "ref" in data
     election_ref = data["ref"]
 
-    # We create votes using the ID
+    # We create too many votes using the ID
     votes = _generate_votes_from_response("id", data)
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": election_ref}
@@ -194,7 +194,7 @@ def test_cannot_create_vote_on_restricted_election():
         json={"votes": votes, "election_ref": election_ref},
     )
     data = response.json()
-    assert response.status_code == 400, data
+    assert response.status_code == 403, data
 
 
 def test_can_vote_on_restricted_election():
@@ -235,6 +235,24 @@ def test_can_vote_on_restricted_election():
     assert payload2 == payload
 
 
+def test_cannot_ballot_box_stuffing():
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    election_ref = data["ref"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    assert len(votes) == len(data["candidates"])
+    response = client.post(
+        f"/ballots", json={"votes": votes + votes, "election_ref": election_ref}
+    )
+    data = response.json()
+    assert response.status_code == 403, data
+
+
 def test_get_results():
     # Create a random election
     body = _random_election(10, 5)
@@ -245,7 +263,6 @@ def test_get_results():
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", data)
-    # print(data, votes)
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": election_ref}
     )
@@ -256,3 +273,6 @@ def test_get_results():
     response = client.get(f"/results/{election_ref}")
     assert response.status_code == 200, response.text
     data = response.json()
+    profile = data["merit_profile"]
+
+    assert len(profile) == len(data["candidates"])

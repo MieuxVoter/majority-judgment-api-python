@@ -168,9 +168,20 @@ def create_election(
     return election_and_invites
 
 
+def _check_ballot_is_consistent(
+    election: schemas.ElectionGet, ballot: schemas.BallotCreate
+):
+    votes_by_candidate = {
+        c.id: [v for v in ballot.votes if v.candidate_id == c.id]
+        for c in election.candidates
+    }
+    if not all(len(votes) == 1 for votes in votes_by_candidate.values()):
+        raise errors.ForbiddenError("Unconsistent ballot")
+
+
 def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGet:
     if ballot.votes == []:
-        raise errors.BadRequestError("The ballot contains no vote")
+        raise errors.ForbiddenError("The ballot contains no vote")
 
     db_election = _check_public_election(db, ballot.election_ref)
     election = schemas.ElectionGet.from_orm(db_election)
@@ -184,6 +195,7 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
     _check_item_in_election(
         db, [v.grade_id for v in ballot.votes], ballot.election_ref, models.Grade
     )
+    _check_ballot_is_consistent(election, ballot)
 
     # Ideally, we would use RETURNING but it does not work yet for SQLite
     db_votes = [
@@ -206,7 +218,7 @@ def _check_public_election(db: Session, election_ref: str):
     if db_election is None:
         raise errors.NotFoundError("elections")
     if db_election.restricted:
-        raise errors.BadRequestError(
+        raise errors.ForbiddenError(
             "The election is restricted. You can not create new votes"
         )
     return db_election
@@ -228,7 +240,7 @@ def _check_item_in_election(
         .count()
     )
     if num_items != len(unique_ids):
-        raise errors.BadRequestError(
+        raise errors.ForbiddenError(
             "Asking for resources related to a different election"
         )
 
@@ -249,7 +261,7 @@ def update_ballot(
         raise errors.NotFoundError("elections")
 
     if len(ballot.votes) != len(vote_ids):
-        raise errors.BadRequestError("Edit all votes at once.")
+        raise errors.ForbiddenError("Edit all votes at once.")
 
     _check_item_in_election(
         db, [v.candidate_id for v in ballot.votes], election_ref, models.Candidate
@@ -315,7 +327,8 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)
     )
     db_res = (
-        query.join(models.Vote.grade).join(models.Vote.candidate)
+        query.join(models.Vote.grade)
+        .join(models.Vote.candidate)
         .filter(models.Vote.election_ref == db_election.ref)
         .group_by(models.Vote.candidate_id, models.Grade.value)
         .all()
@@ -329,7 +342,7 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         ballots[candidate_id][grade_value] = num_votes
 
     merit_profile = {
-            c: {value: votes[value] for value in sorted(votes.keys(), reverse=True)}
+        c: {value: votes[value] for value in sorted(votes.keys(), reverse=True)}
         for c, votes in ballots.items()
     }
 

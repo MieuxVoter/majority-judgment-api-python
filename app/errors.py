@@ -27,8 +27,17 @@ class BadRequestError(Exception):
     The request is made inconsistent
     """
 
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, details: str):
+        self.details = details
+
+
+class ForbiddenError(Exception):
+    """
+    The request is made inconsistent
+    """
+
+    def __init__(self, details: str = "Forbidden"):
+        self.details = details
 
 
 class UnauthorizedError(Exception):
@@ -44,4 +53,3 @@ class NoRecordedVotes(Exception):
     """
     We can't display results if we don't have resutls
     """
-
