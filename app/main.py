@@ -44,11 +44,19 @@ async def unauthorized_exception_handler(request: Request, exc: errors.NotFoundE
     )
 
 
+@app.exception_handler(errors.ForbiddenError)
+async def forbidden_exception_handler(request: Request, exc: errors.ForbiddenError):
+    return JSONResponse(
+        status_code=403,
+        content={"message": f"Forbidden", "details": exc.details},
+    )
+
+
 @app.exception_handler(errors.BadRequestError)
-async def bad_request_exception_handler(request: Request, exc: errors.NotFoundError):
+async def bad_request_exception_handler(request: Request, exc: errors.BadRequestError):
     return JSONResponse(
         status_code=400,
-        content={"message": f"Bad Request", "details": exc.name},
+        content={"message": f"Bad Request", "details": exc.details},
     )
 
 
@@ -58,9 +66,7 @@ async def no_recorded_votes_exception_handler(
 ):
     return JSONResponse(
         status_code=403,
-        content={
-            "message": f"No votes have been recorded yet"
-        },
+        content={"message": f"No votes have been recorded yet"},
     )
 
 
