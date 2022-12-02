@@ -320,11 +320,16 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         .group_by(models.Vote.candidate_id, models.Grade.value)
         .all()
     )
+
+    if db_res == []:
+        raise errors.NoRecordedVotes()
+
     ballots: t.DefaultDict[int, dict[int, int]] = defaultdict(dict)
     for candidate_id, grade_value, num_votes in db_res:
         ballots[candidate_id][grade_value] = num_votes
+
     merit_profile = {
-        c: [votes[value] for value in sorted(votes.keys(), reverse=True)]
+            c: {value: votes[value] for value in sorted(votes.keys(), reverse=True)}
         for c, votes in ballots.items()
     }
 
