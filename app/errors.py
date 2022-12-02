@@ -38,3 +38,10 @@ class UnauthorizedError(Exception):
 
     def __init__(self, name: str):
         self.name = name
+
+
+class NoRecordedVotes(Exception):
+    """
+    We can't display results if we don't have resutls
+    """
+

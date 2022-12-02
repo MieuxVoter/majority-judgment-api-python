@@ -52,6 +52,18 @@ async def bad_request_exception_handler(request: Request, exc: errors.NotFoundEr
     )
 
 
+@app.exception_handler(errors.NoRecordedVotes)
+async def no_recorded_votes_exception_handler(
+    request: Request, exc: errors.NoRecordedVotes
+):
+    return JSONResponse(
+        status_code=403,
+        content={
+            "message": f"No votes have been recorded yet"
+        },
+    )
+
+
 @app.exception_handler(errors.InconsistentDatabaseError)
 async def inconsistent_database_exception_handler(
     request: Request, exc: errors.InconsistentDatabaseError
