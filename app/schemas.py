@@ -139,7 +139,7 @@ class ResultsGet(ElectionGet):
     candidates: list[CandidateGet] = Field(
         ..., min_items=2, max_items=settings.max_candidates
     )
-    merit_profile: dict[int, list[int]]
+    merit_profile: dict[int, dict[int, int]]
     ranking: dict[int, int] = {}
 
 
