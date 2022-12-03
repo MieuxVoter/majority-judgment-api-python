@@ -8,10 +8,10 @@ from jose import jwe, jws
 from jose.exceptions import JWEError, JWSError
 
 from . import crud, models, schemas, errors
-from .database import get_db, engine
+from .database import get_db, engine, Base
 from .settings import settings
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
