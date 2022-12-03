@@ -40,17 +40,17 @@ def test_ballot_token():
     Can verify ballot tokens with MANY different tokens
     """
     vote_ids = list(range(1000))
-    election_id = 0
-    token = create_ballot_token(vote_ids, election_id)
+    election_ref = "qwertyuiop"
+    token = create_ballot_token(vote_ids, election_ref)
     data = jws_verify(token)
-    assert data == {"votes": vote_ids, "election": election_id}
+    assert data == {"votes": vote_ids, "election": election_ref}
 
 
 def test_admin_token():
     """
     Can verify ballot tokens with MANY different tokens
     """
-    election_id = 0
-    token = create_admin_token(election_id)
+    election_ref = "qwertyuiop"
+    token = create_admin_token(election_ref)
     data = jws_verify(token)
-    assert data == {"admin": True, "election": election_id}
+    assert data == {"admin": True, "election": election_ref}
