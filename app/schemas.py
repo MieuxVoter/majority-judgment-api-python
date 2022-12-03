@@ -63,6 +63,10 @@ class CandidateGet(CandidateBase):
     id: int
 
 
+class CandidateUpdate(CandidateBase):
+    id: int
+
+
 class CandidateCreate(CandidateBase):
     #  When creating an election, we don't have access yet to the Candidate id
     pass
@@ -79,6 +83,10 @@ class GradeBase(BaseModel):
 
 class GradeGet(GradeBase):
     election_ref: str
+    id: int
+
+
+class GradeUpdate(GradeBase):
     id: int
 
 
@@ -143,9 +151,13 @@ class ResultsGet(ElectionGet):
     ranking: dict[int, int] = {}
 
 
-class ElectionAndInvitesGet(ElectionGet):
+class ElectionCreatedGet(ElectionGet):
     invites: list[str] = []
     admin: str = ""
+
+
+class ElectionUpdatedGet(ElectionGet):
+    invites: list[str] = []
 
 
 class ElectionCreate(ElectionBase):
@@ -190,19 +202,89 @@ class ElectionCreate(ElectionBase):
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
-            raise ArgumentsSchemaError("Two grades have the same value")
+            raise ArgumentsSchemaError("At least two grades have the same value")
 
         names = [g.name for g in grades]
         if len(set(names)) != len(grades):
-            raise ArgumentsSchemaError("Two grades have the same name")
+            raise ArgumentsSchemaError("At least two grades have the same name")
 
         return grades
 
     @validator("candidates")
-    def all_candidates_have_unique_names(cls, candidates: list[GradeBase]):
+    def all_candidates_have_unique_names(cls, candidates: list[CandidateBase]):
         names = [c.name for c in candidates]
         if len(set(names)) != len(candidates):
-            raise ArgumentsSchemaError("Two candidates have the same name")
+            raise ArgumentsSchemaError("At least two candidates have the same name")
+
+        return candidates
+
+
+class ElectionUpdate(ElectionBase):
+    ref: str
+    grades: list[GradeUpdate] = Field(..., min_items=2, max_items=settings.max_grades)
+    num_voters: int = Field(0, ge=0, le=settings.max_voters)
+    candidates: list[CandidateUpdate] = Field(
+        ..., min_items=2, max_items=settings.max_candidates
+    )
+
+    @validator("hide_results", "num_voters", "date_end")
+    def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
+        """
+        Enforce that the election is finish-able
+        """
+        if "hide_results" in values:
+            hide_results = values["hide_results"]
+        elif field.name == "hide_results":
+            hide_results = value
+        else:
+            return value
+
+        if "num_voters" in values:
+            num_voters = values["num_voters"]
+        elif field.name == "num_voters":
+            num_voters = value
+        else:
+            return value
+
+        if "date_end" in values:
+            date_end = values["date_end"]
+        elif field.name == "date_end":
+            date_end = value
+        else:
+            return value
+
+        if hide_results and num_voters == 0 and date_end is None:
+            raise ArgumentsSchemaError("This election can not end")
+
+        return value
+
+    @validator("grades")
+    def all_grades_have_unique_values_ids_and_names(cls, grades: list[GradeUpdate]):
+        values = [g.value for g in grades]
+        if len(set(values)) != len(grades):
+            raise ArgumentsSchemaError("At least two grades have the same value")
+
+        names = [g.name for g in grades]
+        if len(set(names)) != len(grades):
+            raise ArgumentsSchemaError("At least two grades have the same name")
+
+        ids = [g.id for g in grades]
+        if len(set(ids)) != len(ids):
+            raise ArgumentsSchemaError("At least two grades have the same id")
+
+        return grades
+
+    @validator("candidates")
+    def all_candidates_have_unique_names_and_ids(
+        cls, candidates: list[CandidateUpdate]
+    ):
+        names = [c.name for c in candidates]
+        if len(set(names)) != len(candidates):
+            raise ArgumentsSchemaError("At least two candidates have the same name")
+
+        ids = [c.id for c in candidates]
+        if len(set(ids)) != len(ids):
+            raise ArgumentsSchemaError("At least two candidates have the same id")
 
         return candidates
 
