@@ -1,5 +1,5 @@
 import string
-import itertools
+import copy
 import typing as t
 import random
 from fastapi.testclient import TestClient
@@ -276,3 +276,58 @@ def test_get_results():
     profile = data["merit_profile"]
 
     assert len(profile) == len(data["candidates"])
+
+
+def test_update_election():
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    token = data["admin"]
+
+    # Check we can not update without the token
+    response = client.put("/elections", json=data)
+    assert response.status_code == 422, response.content
+
+    # Check that the request fails with a wrong token
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {token}WRONG"}
+    )
+    assert response.status_code == 401, response.text
+
+    # But it works with the right token
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200, response.text
+
+    # We can update a candidate, or a grade
+    data["candidates"][0]["name"] += "MODIFIED"
+    data["candidates"][0]["description"] += "MODIFIED"
+    data["candidates"][0]["image"] += "MODIFIED"
+    data["grades"][0]["name"] += "MODIFIED"
+    data["grades"][0]["description"] += "MODIFIED"
+    data["grades"][0]["value"] += 10
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["candidates"][0]["name"].endswith("MODIFIED")
+    assert data["grades"][0]["name"].endswith("MODIFIED")
+
+    # But, we can not change the candidate IDs
+    data2 = copy.deepcopy(data)
+    del data2["candidates"][-1]
+    response = client.put(
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 403, response.text
+
+    data2 = copy.deepcopy(data)
+    data2["grades"][0]["id"] += 100
+    response = client.put(
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 403, response.text

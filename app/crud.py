@@ -72,6 +72,70 @@ def create_grade(
     return db_grade
 
 
+def update_candidates(
+    db: Session,
+    candidates: list[schemas.CandidateUpdate],
+    db_candidates: list[models.Candidate] | None = None,
+    commit: bool = False,
+) -> list[models.Candidate]:
+    candidate_by_id = {c.id: c for c in candidates}
+    candidate_ids = list(candidate_by_id.keys())
+
+    if db_candidates is None:
+        db_candidates = (
+            db.query(models.Candidate)
+            .filter(models.Candidate.id.in_(candidate_ids))
+            .all()
+        )
+
+    if len(candidate_ids) != len(db_candidates):
+        raise errors.NotFoundError("Can not find all candidates")
+
+    for db_candidate in db_candidates:
+        cid = int(str(db_candidate.id))
+        params = candidate_by_id[cid].dict()
+        del params["id"]
+        for key, value in params.items():
+            setattr(db_candidate, key, value)
+
+    if commit:
+        db.commit()
+        for db_candidate in db_candidates:
+            db.refresh(db_candidate)
+
+    return db_candidates
+
+
+def update_grades(
+    db: Session,
+    grades: list[schemas.GradeUpdate],
+    db_grades: list[models.Grade] | None = None,
+    commit: bool = False,
+) -> list[models.Grade]:
+    grade_by_id = {g.id: g for g in grades}
+    grade_ids = list(grade_by_id.keys())
+
+    if db_grades is None:
+        db_grades = db.query(models.Grade).filter(models.Grade.id.in_(grade_ids)).all()
+
+    if len(grade_ids) != len(db_grades):
+        raise errors.NotFoundError("Can not find all grades")
+
+    for db_grade in db_grades:
+        gid = int(str(db_grade.id))
+        params = grade_by_id[gid].dict()
+        del params["id"]
+        for key, value in params.items():
+            setattr(db_grade, key, value)
+
+    if commit:
+        db.commit()
+        for db_grade in db_grades:
+            db.refresh(db_grade)
+
+    return db_grades
+
+
 def _create_election_without_candidates_or_grade(
     db: Session, election: schemas.ElectionBase, commit: bool
 ) -> models.Election:
@@ -161,11 +225,69 @@ def create_election(
 
     admin = create_admin_token(str(db_election.ref))
 
-    election_and_invites = schemas.ElectionAndInvitesGet.from_orm(db_election)
-    election_and_invites.invites = invites
-    election_and_invites.admin = admin
+    created_election = schemas.ElectionCreatedGet.from_orm(db_election)
+    created_election.invites = invites
+    created_election.admin = admin
 
-    return election_and_invites
+    return created_election
+
+
+def update_election(
+    db: Session, election: schemas.ElectionUpdate, token: str
+) -> schemas.ElectionUpdatedGet:
+    payload = jws_verify(token)
+    election_ref = payload["election"]
+
+    # Check we can update the election
+    if not payload["admin"]:
+        raise errors.ForbiddenError("You are not allowed to manage the election")
+
+    db_election = get_election(db, election_ref)
+    if db_election is None:
+        raise errors.NotFoundError("elections")
+
+    if db_election.restricted != election.restricted:
+        raise errors.ForbiddenError("You can't edit restrictions")
+
+    if election.num_voters > 0 and not db_election.restricted:
+        raise errors.ForbiddenError(
+            "You can't invite voters on a non-restricted election"
+        )
+
+    candidate_ids = {c.id for c in election.candidates}
+    db_candidate_ids = {c.id for c in db_election.candidates}
+    if candidate_ids != db_candidate_ids:
+        raise errors.ForbiddenError("You must have the same candidate ids")
+
+    grade_ids = {c.id for c in election.grades}
+    db_grade_ids = {c.id for c in db_election.grades}
+    if grade_ids != db_grade_ids:
+        raise errors.ForbiddenError("You must have the same grade ids")
+
+    # Update the candidates and grades
+    update_candidates(db, election.candidates, db_election.candidates)
+    update_grades(db, election.grades, db_election.grades)
+
+    for key in [
+        "name",
+        "description",
+        "date_start",
+        "date_end",
+        "hide_results",
+        "force_close",
+    ]:
+        if getattr(db_election, key) != getattr(election, key):
+            setattr(db_election, key, getattr(election, key))
+
+    db.commit()
+    db.refresh(db_election)
+
+    updated_election = schemas.ElectionUpdatedGet.from_orm(db_election)
+    updated_election.invites = create_invite_tokens(
+        db, str(db_election.ref), len(election.candidates), election.num_voters
+    )
+
+    return updated_election
 
 
 def _check_ballot_is_consistent(
@@ -186,13 +308,13 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
     db_election = _check_public_election(db, ballot.election_ref)
     election = schemas.ElectionGet.from_orm(db_election)
 
-    _check_item_in_election(
+    _check_items_in_election(
         db,
         [v.candidate_id for v in ballot.votes],
         ballot.election_ref,
         models.Candidate,
     )
-    _check_item_in_election(
+    _check_items_in_election(
         db, [v.grade_id for v in ballot.votes], ballot.election_ref, models.Grade
     )
     _check_ballot_is_consistent(election, ballot)
@@ -224,7 +346,7 @@ def _check_public_election(db: Session, election_ref: str):
     return db_election
 
 
-def _check_item_in_election(
+def _check_items_in_election(
     db: Session,
     ids: t.Sequence[int],
     election_ref: str,
@@ -263,10 +385,10 @@ def update_ballot(
     if len(ballot.votes) != len(vote_ids):
         raise errors.ForbiddenError("Edit all votes at once.")
 
-    _check_item_in_election(
+    _check_items_in_election(
         db, [v.candidate_id for v in ballot.votes], election_ref, models.Candidate
     )
-    _check_item_in_election(
+    _check_items_in_election(
         db, [v.grade_id for v in ballot.votes], election_ref, models.Grade
     )
 

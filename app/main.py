@@ -93,9 +93,19 @@ def read_election_all_details(election_ref: str, db: Session = Depends(get_db)):
     return db_election
 
 
-@app.post("/elections", response_model=schemas.ElectionAndInvitesGet)
+@app.post("/elections", response_model=schemas.ElectionCreatedGet)
 def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_db)):
     return crud.create_election(db=db, election=election)
+
+
+@app.put("/elections", response_model=schemas.ElectionUpdatedGet)
+def update_election(
+    election: schemas.ElectionUpdate,
+    authorization: str = Header(),
+    db: Session = Depends(get_db),
+):
+    token = authorization.split("Bearer ")[1]
+    return crud.update_election(db=db, election=election, token=token)
 
 
 @app.post("/ballots", response_model=schemas.BallotGet)
