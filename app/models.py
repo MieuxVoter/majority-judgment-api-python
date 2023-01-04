@@ -18,11 +18,11 @@ class Election(Base):
     date_end = Column(DateTime)
     hide_results = Column(Boolean, default=False)
     restricted = Column(Boolean, default=False)
+    force_close = Column(Boolean, default=False)
 
     grades = relationship("Grade", back_populates="election")
     candidates = relationship("Candidate", back_populates="election")
     votes = relationship("Vote", back_populates="election")
-    force_close: bool = False
 
 
 class Candidate(Base):

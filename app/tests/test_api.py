@@ -13,7 +13,7 @@ from ..main import app
 
 test_database_url = "sqlite:///./test.db"
 test_engine = create_engine(
-    test_database_url, connect_args={"check_same_thread": False}
+    test_database_url, connect_args={"check_same_thread": False}, echo=True
 )
 TestingSessionLocal: sessionmaker = sessionmaker(  # type: ignore
     autocommit=False, autoflush=False, bind=test_engine
@@ -337,3 +337,31 @@ def test_update_election():
         f"/elections", json=data2, headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 403, response.text
+
+
+def test_close_election():
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    assert data["force_close"] == False
+    data["force_close"] = True
+    token = data["admin"]
+
+    # Check that the request fails with a wrong token
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {token}WRONG"}
+    )
+    assert response.status_code == 401, response.text
+
+    # But it works with the right token
+    print("UPDATE", data["force_close"])
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200, response.text
+    response2 = client.get(f"/elections/{data['ref']}", json=data)
+    assert response2.status_code == 200, response2.text
+    data2 = response2.json()
+    assert data2["force_close"] == True
