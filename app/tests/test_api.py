@@ -285,7 +285,7 @@ def test_update_election():
     assert response.status_code == 200, response.content
     data = response.json()
     new_name = f'{data["name"]}_MODIFIED'
-    data['name'] = new_name
+    data["name"] = new_name
     token = data["admin"]
 
     # Check we can not update without the token
@@ -303,9 +303,10 @@ def test_update_election():
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200, response.text
-    response = client.get(f"/elections", json=data)
+    response = client.get(f"/elections/{data['ref']}", json=data)
     assert response.status_code == 200, response.text
-    assert response.json()["name"] == new_name
+    data2 = response.json()
+    assert data2["name"] == new_name
 
     # We can update a candidate, or a grade
     data["candidates"][0]["name"] += "MODIFIED"
