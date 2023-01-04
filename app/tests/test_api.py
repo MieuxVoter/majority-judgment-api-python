@@ -303,9 +303,9 @@ def test_update_election():
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200, response.text
-    response = client.get(f"/elections/{data['ref']}", json=data)
-    assert response.status_code == 200, response.text
-    data2 = response.json()
+    response2 = client.get(f"/elections/{data['ref']}", json=data)
+    assert response2.status_code == 200, response2.text
+    data2 = response2.json()
     assert data2["name"] == new_name
 
     # We can update a candidate, or a grade

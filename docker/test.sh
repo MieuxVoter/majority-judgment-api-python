@@ -4,4 +4,4 @@ echo "SQLITE=True" >> $tmpfile
 
 docker run --env-file $tmpfile  \
 	majority-judgment/api-python:latest \
-	pytest
+	-c "pip install -r requirements-dev.txt; pytest"
