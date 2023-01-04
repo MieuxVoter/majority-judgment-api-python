@@ -1,7 +1,5 @@
-tmpfile=$(mktemp /tmp/mj-api.XXXX)
-echo "SECRET=mysecrettoken" >> $tmpfile
-echo "SQLITE=True" >> $tmpfile
+#! /usr/bin/env bash
 
-docker run --env-file $tmpfile  \
-	majority-judgment/api-python:latest \
-	-c "pip install -r requirements-dev.txt; pytest"
+# This script allows to start the backend with all services
+docker compose --profile all --env-file .env.local up -d  --build 
+

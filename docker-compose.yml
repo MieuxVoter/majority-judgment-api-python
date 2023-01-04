@@ -5,6 +5,10 @@ services:
     image: postgres:15.1
     restart: unless-stopped
     hostname: mj_db
+    healthcheck:
+      start_period: 10s
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 30s
     environment:
       - POSTGRES_USER=${DB_USER:-mj}
       - POSTGRES_PASSWORD=$DB_PASS
@@ -27,8 +31,10 @@ services:
       start_period: 30s
       test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
       interval: 30s
+      retries: 5
     depends_on:
-      - mj_db
+      - mj_db:
+          condition: service_healthy
     volumes:
       - .:/code
     networks:
