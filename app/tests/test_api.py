@@ -144,7 +144,7 @@ def test_create_ballot():
     assert "ref" in data
     election_ref = data["ref"]
 
-    # We create too many votes using the ID
+    # We create many votes using the election ID
     votes = _generate_votes_from_response("id", data)
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": election_ref}
@@ -158,7 +158,7 @@ def test_create_ballot():
 
     token = data["token"]
 
-    # Now, we check that we need the righ token to read the votes
+    # Now, we check that we need the right token to read the votes
     response = client.get(
         f"/ballots/", headers={"Authorization": f"Bearer {token}WRONG"}
     )
@@ -171,6 +171,31 @@ def test_create_ballot():
         assert v2["grade"]["id"] == v1["grade_id"]
         assert v2["candidate"]["id"] == v1["candidate_id"]
         assert v2["election_ref"] == election_ref
+
+
+def test_reject_incomplete_ballots():
+    """
+    This tests that a ballot contains a many vote as the number of candidates in an election
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.text
+    data = response.json()
+
+    # Create a ballot with one vote less than the number of candidates
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots", json={"votes": votes[:-1], "election_ref": data["ref"]}
+    )
+    assert response.status_code == 403, response.text
+
+    # But it should work with the whole ballot
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
+    )
+    assert response.status_code == 200, response.text
 
 
 def test_cannot_create_vote_on_restricted_election():
