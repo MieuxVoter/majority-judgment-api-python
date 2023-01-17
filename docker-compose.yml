@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   mj_db:
@@ -33,7 +33,7 @@ services:
       interval: 30s
       retries: 5
     depends_on:
-      - mj_db:
+      mj_db:
           condition: service_healthy
     volumes:
       - .:/code
@@ -151,10 +151,56 @@ services:
       - "traefik.http.routers.metabase.tls=true"
       - "traefik.http.routers.metabase.tls.certresolver=leresolver"
 
+  mj_admin:
+    image: fastapi-admin
+    container_name: fastapi-admin
+    build: 
+      context: ./docker/fastapi-admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    profiles:
+      - admin
+      - all
+    environment:
+      - TZ=${TIMEZONE:-Europe/Paris}
+      - DATABASE_URL=postgres://${DB_USER:-mj}:${DB_PASS}@mj_db:5432/fastapi-admin
+      - REDIS_URL=redis://mj_redis:6379/0
+    command: uvicorn examples.main:app_ --port 8000 --host 0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.fastapi_admin.entrypoints=web,websecure"
+      - "traefik.http.routers.fastapi_admin.rule=Host(`${FASTAPI_ADMIN_PREFIX:-fastapi}.${DOMAIN}`)"
+      - "traefik.http.services.fastapi_admin.loadbalancer.server.port=8000"
+      - "traefik.http.routers.fastapi_admin.tls=true"
+      - "traefik.http.routers.fastapi_admin.tls.certresolver=leresolver"
+    networks:
+      - lan
+      - traefik_network
+
+  mj_redis:
+    image: docker.io/bitnami/redis:7.0
+    hostname: mj_redis
+    profiles:
+      - admin
+      - all
+    networks:
+      - lan
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=false
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+        # ports:
+        #   - '6379:6379'
+    volumes:
+      - 'redis_data:/bitnami/redis/data'
+
 
 volumes:
   imgpush:
   db:
+  redis_data:
+    driver: local
 
 networks:
   lan:
