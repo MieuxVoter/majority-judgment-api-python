@@ -1,0 +1,3 @@
+[submodule "docker/fastapi-admin"]
+	path = docker/fastapi-admin
+	url = https://github.com/fastapi-admin/fastapi-admin
