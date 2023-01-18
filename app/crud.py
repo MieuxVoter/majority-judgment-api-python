@@ -445,6 +445,9 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     if db_election is None:
         raise errors.NotFoundError("elections")
 
+    if db_election.hide_results and (db_election.date_end > datetime.now()):
+        raise errors.ForbiddenError("The election is not closed")
+
     query = db.query(
         models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)
     )
