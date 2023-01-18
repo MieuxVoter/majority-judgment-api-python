@@ -390,3 +390,28 @@ def test_close_election():
     assert response2.status_code == 200, response2.text
     data2 = response2.json()
     assert data2["force_close"] == True
+
+def test_can_edit_a_ballot():
+    """
+    Test that on a restricted election, we can edit its own ballot
+    """
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    election_ref = data["ref"]
+    tokens = data["invites"]
+    assert len(tokens) == 1
+    token = tokens[0]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
+    data = response.json()
+    assert response.status_code == 200, data
+    ballot_ref = data["ref"]
+
