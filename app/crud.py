@@ -5,7 +5,7 @@ from collections import defaultdict
 import typing as t
 from sqlalchemy.orm import Session
 from sqlalchemy import func, insert
-from majority_judgment import majority_judgment
+from majority_judgment import majority_judgment, Candidate, Vote
 from . import models, schemas, errors
 from .settings import settings
 from .auth import create_ballot_token, create_admin_token, jws_verify
@@ -463,14 +463,21 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     for candidate_id, grade_value, num_votes in db_res:
         ballots[candidate_id][grade_value] = num_votes
 
-    merit_profile = {
+    merit_profile2 = {
         c: {value: votes[value] for value in sorted(votes.keys(), reverse=True)}
         for c, votes in ballots.items()
     }
 
-    ranking = majority_judgment(merit_profile)  # pyright: ignore
+    merit_profile: dict[Candidate, list[Vote]] = {
+        c: sorted(sum([
+            [value] * votes[value]
+            for value in sorted(votes.keys(), reverse=True)], []))
+        for c, votes in ballots.items()
+    }
+
+    ranking = majority_judgment(merit_profile, reverse=True)  # pyright: ignore
     db_election.ranking = ranking
-    db_election.merit_profile = merit_profile
+    db_election.merit_profile = merit_profile2
 
     results = schemas.ResultsGet.from_orm(db_election)
 
