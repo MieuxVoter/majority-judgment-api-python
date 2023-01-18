@@ -126,8 +126,9 @@ def update_ballot(
     return crud.update_ballot(db=db, ballot=ballot, token=token)
 
 
-@app.get("/ballots/", response_model=schemas.BallotGet)
+@app.get("/ballots", response_model=schemas.BallotGet)
 def get_ballot(authorization: str = Header(), db: Session = Depends(get_db)):
+    print("FOO GET BALLOT")
     token = authorization.split("Bearer ")[1]
     return crud.get_ballot(db=db, token=token)
 
