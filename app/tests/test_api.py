@@ -173,9 +173,75 @@ def test_create_ballot():
         assert v2["election_ref"] == election_ref
 
 
-def test_reject_incomplete_ballots():
+def test_reject_wrong_ballots_restricted_election():
     """
-    This tests that a ballot contains a many vote as the number of candidates in an election
+    This tests that a  ballot contains a many vote as the number of candidates in an election.
+    Here we consider a restricted election.
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    data = response.json()
+    assert response.status_code == 200, data
+    tokens = data["invites"]
+    assert len(tokens) == 1
+    token = tokens[0]
+    grade_id = data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": candidate["id"], "grade_id": grade_id}
+        for candidate in data["candidates"]
+    ]
+
+    # Check a ballot with one vote less than the number of candidates is rejected
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes[-1]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422, response.json()
+
+    # Check that a ballot with an empty grade_id is rejected
+    grade_id = data["grades"][0]["id"]
+    votes2 = copy.deepcopy(votes)
+    votes2[0]["grade_id"] = None
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes2},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422, response.json()
+
+    # Check that a ballot with an empty candidate is rejected
+    votes2 = copy.deepcopy(votes)
+    votes2[0]["candidate_id"] = None
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes2},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422, response.json()
+
+    # But it should work with the whole ballot
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, response.json()
+
+    # Check that we can now get this ballot
+    response = client.get(
+        f"/ballots",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, response.json()
+
+
+def test_reject_wrong_ballots_unrestricted_election():
+    """
+    This tests that a  ballot contains a many vote as the number of candidates in an election
     """
     # Create a random election
     body = _random_election(10, 5)
@@ -189,6 +255,22 @@ def test_reject_incomplete_ballots():
         f"/ballots", json={"votes": votes[:-1], "election_ref": data["ref"]}
     )
     assert response.status_code == 403, response.text
+
+    # Check that a ballot with an empty grade_id is rejected
+    votes = _generate_votes_from_response("id", data)
+    votes[0]["grade_id"] = None
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
+    )
+    assert response.status_code == 422, response.text
+
+    # Check that a ballot with an empty candidate is rejected
+    votes = _generate_votes_from_response("id", data)
+    votes[0]["candidate_id"] = None
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
+    )
+    assert response.status_code == 422, response.text
 
     # But it should work with the whole ballot
     votes = _generate_votes_from_response("id", data)
@@ -224,7 +306,7 @@ def test_cannot_create_vote_on_restricted_election():
 
 def test_can_vote_on_restricted_election():
     """
-    On a restricted election, we need to update votes.
+    On a restricted election, we can update votes.
     """
     # Create a random election
     body = _random_election(10, 5)
@@ -390,28 +472,3 @@ def test_close_election():
     assert response2.status_code == 200, response2.text
     data2 = response2.json()
     assert data2["force_close"] == True
-
-def test_can_edit_a_ballot():
-    """
-    Test that on a restricted election, we can edit its own ballot
-    """
-    body = _random_election(10, 5)
-    body["restricted"] = True
-    body["num_voters"] = 1
-    response = client.post("/elections", json=body)
-    assert response.status_code == 200, response.content
-    data = response.json()
-    election_ref = data["ref"]
-    tokens = data["invites"]
-    assert len(tokens) == 1
-    token = tokens[0]
-
-    # We create votes using the ID
-    votes = _generate_votes_from_response("id", data)
-    response = client.post(
-        f"/ballots", json={"votes": votes, "election_ref": election_ref}
-    )
-    data = response.json()
-    assert response.status_code == 200, data
-    ballot_ref = data["ref"]
-
