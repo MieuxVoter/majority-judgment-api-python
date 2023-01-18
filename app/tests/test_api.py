@@ -1,5 +1,6 @@
 import string
 import copy
+from datetime import datetime, timedelta
 import typing as t
 import random
 from fastapi.testclient import TestClient
@@ -13,7 +14,7 @@ from ..main import app
 
 test_database_url = "sqlite:///./test.db"
 test_engine = create_engine(
-    test_database_url, connect_args={"check_same_thread": False}, echo=True
+    test_database_url, connect_args={"check_same_thread": False}, echo=False
 )
 TestingSessionLocal: sessionmaker = sessionmaker(  # type: ignore
     autocommit=False, autoflush=False, bind=test_engine
@@ -55,7 +56,9 @@ class RandomElection(t.TypedDict):
     candidates: list[dict[str, str]]
     grades: list[dict[str, int | str]]
     restricted: t.NotRequired[bool]
+    hide_results: t.NotRequired[bool]
     num_voters: t.NotRequired[int]
+    date_end: t.NotRequired[str]
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -363,6 +366,7 @@ def test_cannot_ballot_box_stuffing():
 def test_get_results():
     # Create a random election
     body = _random_election(10, 5)
+    body["hide_results"] = False
     response = client.post("/elections", json=body)
     assert response.status_code == 200, response.content
     data = response.json()
@@ -383,6 +387,42 @@ def test_get_results():
     profile = data["merit_profile"]
 
     assert len(profile) == len(data["candidates"])
+
+
+def test_get_results_with_hide_results():
+    # Create a random election
+    body = _random_election(10, 5)
+    body["hide_results"] = True
+    body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    election_ref = data["ref"]
+    admin_token = data["admin"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
+    assert response.status_code == 200, data
+
+    # But, we can't get the results
+    response = client.get(f"/results/{election_ref}")
+    assert response.status_code == 403, data
+
+    # So, we close the election
+    print("UPDATE", data["force_close"])
+    data["force_close"] = True
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+
+    # Now, we can access to the results
+    response = client.get(f"/results/{election_ref}")
+    assert response.status_code == 200, response.text
 
 
 def test_update_election():
@@ -452,11 +492,10 @@ def test_close_election():
     response = client.post("/elections", json=body)
     assert response.status_code == 200, response.content
     data = response.json()
-    assert data["force_close"] == False
-    data["force_close"] = True
     token = data["admin"]
 
     # Check that the request fails with a wrong token
+    data["force_close"] = True
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}WRONG"}
     )
