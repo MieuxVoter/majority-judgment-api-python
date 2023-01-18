@@ -445,7 +445,11 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     if db_election is None:
         raise errors.NotFoundError("elections")
 
-    if db_election.hide_results and (db_election.date_end > datetime.now()):
+    if (
+        db_election.hide_results
+        and (db_election.date_end > datetime.now())
+        and not db_election.force_close
+    ):
         raise errors.ForbiddenError("The election is not closed")
 
     query = db.query(
