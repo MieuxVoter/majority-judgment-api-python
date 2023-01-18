@@ -467,18 +467,16 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         ballots[candidate_id][grade_value] = num_votes
 
     merit_profile2 = {
-        c: {value: votes[value] for value in sorted(votes.keys(), reverse=True)}
+        c: {value: votes[value] for value in votes.keys()}
         for c, votes in ballots.items()
     }
 
     merit_profile: dict[Candidate, list[Vote]] = {
-        c: sorted(sum([
-            [value] * votes[value]
-            for value in sorted(votes.keys(), reverse=True)], []))
+        c: sorted(sum([[value] * votes[value] for value in votes.keys()], []))
         for c, votes in ballots.items()
     }
 
-    ranking = majority_judgment(merit_profile, reverse=True)  # pyright: ignore
+    ranking = majority_judgment(merit_profile, reverse=False)  # pyright: ignore
     db_election.ranking = ranking
     db_election.merit_profile = merit_profile2
 
