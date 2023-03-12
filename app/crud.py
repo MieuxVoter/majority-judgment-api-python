@@ -480,7 +480,7 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         for c, votes in ballots.items()
     }
 
-    ranking = majority_judgment(merit_profile, reverse=False)  # pyright: ignore
+    ranking = majority_judgment(merit_profile)  # pyright: ignore
     db_election.ranking = ranking
     db_election.merit_profile = merit_profile2
 
