@@ -58,7 +58,7 @@ class RandomElection(t.TypedDict):
     restricted: t.NotRequired[bool]
     hide_results: t.NotRequired[bool]
     num_voters: t.NotRequired[int]
-    date_end: t.NotRequired[str]
+    date_end: t.NotRequired[str | None]
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -90,6 +90,14 @@ def test_create_election():
     db_grade_names = {c["name"] for c in data["grades"]}
     req_grade_names = {c["name"] for c in body["grades"]}
     assert db_grade_names == req_grade_names, db_grade_names
+
+    # Can create an election with a null date_end
+    body = _random_election(2, 2)
+    body["date_end"] = None
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["name"] == body["name"]
 
 
 def test_get_election():
