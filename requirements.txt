@@ -5,3 +5,4 @@ pydantic==1.10.2
 psycopg2==2.9.5
 git+https://github.com/MieuxVoter/majority-judgment-library-python
 python-jose==3.3.0
+python-dateutil==2.8.2

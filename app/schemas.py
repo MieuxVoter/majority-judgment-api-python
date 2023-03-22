@@ -1,5 +1,6 @@
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import dateutil.parser
 from pydantic import BaseModel, Field, validator
 from pydantic.fields import ModelField
 from .settings import settings
@@ -16,37 +17,6 @@ Ref = t.Annotated[str, Field(..., max_length=255)]
 Image = t.Annotated[str, Field(..., max_length=255)]
 Description = t.Annotated[str, Field(..., max_length=1024)]
 Color = t.Annotated[str, Field(min_length=3, max_length=10)]
-
-
-def _causal_dates_validator(*fields: str):
-    """
-    Create a validator to assess the temporal logic for a list of field
-    """
-
-    def validator_fn(cls, value: datetime, values: dict[str, datetime], field):
-        """
-        Check that the field date_created happens before the field date_modified.
-        """
-        if field.name not in fields:
-            return value
-
-        if any(f not in values or values[f] is None for f in fields):
-            return value
-
-        idx_field = fields.index(field.name)
-        for i, f in enumerate(fields):
-            if i < idx_field and values[f] > value:
-                raise ArgumentsSchemaError(f"{f} is after {field.name}")
-            if i > idx_field and values[f] < value:
-                raise ArgumentsSchemaError(f"{f} is before {field.name}")
-
-        return value
-
-    return validator(
-        *fields,
-        allow_reuse=True,
-        always=True,
-    )(validator_fn)
 
 
 class CandidateBase(BaseModel):
@@ -124,10 +94,24 @@ class ElectionBase(BaseModel):
     name: Name
     description: Description = ""
     ref: Ref = ""
-    date_start: datetime = Field(default_factory=datetime.now)
-    date_end: datetime | None = Field(default_factory=_in_a_long_time)
+    date_start: datetime | int | str = Field(default_factory=datetime.now)
+    date_end: datetime | int | str | None = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     restricted: bool = False
+
+    @validator("date_end", "date_start", pre=True)
+    def parse_date(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, int):
+            return datetime.fromtimestamp(value)
+        try:
+            return dateutil.parser.parse(value)
+        except dateutil.parser.ParserError:
+            value = value[: value.index("(")]
+            return dateutil.parser.parse(value)
 
     class Config:
         orm_mode = True

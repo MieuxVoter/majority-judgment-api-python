@@ -1,6 +1,7 @@
 from datetime import datetime
 import pytest
 from pydantic.error_wrappers import ValidationError
+import dateutil.parser
 from ..schemas import (
     GradeCreate,
     GradeGet,
@@ -98,7 +99,10 @@ def test_election():
     )
     assert election.candidates == [candidate1, candidate0]
     assert len(election.grades) == 2
-    assert election.date_end > now
+
+    if election.date_end is None:
+        raise ArgumentsSchemaError("date_end is None")
+
     assert election.date_end > election.date_start
 
     with pytest.raises(ArgumentsSchemaError):
@@ -114,3 +118,49 @@ def test_election():
         ElectionCreate(
             name="test", grades=[grade0, grade1], candidates=[candidate1, candidate2]
         )
+
+
+def test_election_date_string():
+    """
+    Can create an Election with custom date
+    """
+    candidate0 = CandidateCreate(name="bar")
+    candidate1 = CandidateCreate(name="foo")
+    grade1 = GradeCreate(name="very good", value=2)
+    grade0 = GradeCreate(name="fair enough", value=1)
+    election = ElectionCreate(
+        name="test",
+        grades=[grade0, grade1],
+        candidates=[candidate1, candidate0],
+        date_end="Tue Mar 28 2023 09:23:54 GMT+0200 (Central European Summer Time)",
+        date_start="Tue Mar 27 2023 09:23:54 GMT+0200 (Central European Summer Time)",
+    )
+    assert election.candidates == [candidate1, candidate0]
+    assert len(election.grades) == 2
+
+    if election.date_end is None:
+        raise ArgumentsSchemaError("date_end is None")
+    assert election.date_end > election.date_start
+
+
+def test_election_date_int():
+    """
+    Can create an Election with custom date
+    """
+    candidate0 = CandidateCreate(name="bar")
+    candidate1 = CandidateCreate(name="foo")
+    grade1 = GradeCreate(name="very good", value=2)
+    grade0 = GradeCreate(name="fair enough", value=1)
+    election = ElectionCreate(
+        name="test",
+        grades=[grade0, grade1],
+        candidates=[candidate1, candidate0],
+        date_start=167947177,
+        date_end=167947178,
+    )
+    assert election.candidates == [candidate1, candidate0]
+    assert len(election.grades) == 2
+
+    if election.date_end is None:
+        raise ArgumentsSchemaError("date_end is None")
+    assert election.date_end > election.date_start
