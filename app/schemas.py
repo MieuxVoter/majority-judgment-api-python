@@ -34,7 +34,7 @@ class CandidateGet(CandidateBase):
 
 
 class CandidateUpdate(CandidateBase):
-    id: int
+    id: int | None = None
 
 
 class CandidateCreate(CandidateBase):
@@ -184,6 +184,8 @@ class ElectionCreate(ElectionBase):
 
     @validator("grades")
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
+        grades = [grade for grade in grades if grade.id is not None]
+
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
             raise ArgumentsSchemaError("At least two grades have the same value")

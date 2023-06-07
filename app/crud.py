@@ -254,6 +254,14 @@ def update_election(
             "You can't invite voters on a non-restricted election"
         )
 
+    # Create new candidates (those whose Id is None)
+    for candidate in election.candidates:
+        if candidate.id is None:
+            params = candidate.dict()
+            db_candidate = create_candidate(db, candidate, election_ref, True)
+            candidate.id = int(str(db_candidate.id))
+
+    # Check that candidates look fine
     candidate_ids = {c.id for c in election.candidates}
     db_candidate_ids = {c.id for c in db_election.candidates}
     if candidate_ids != db_candidate_ids:
