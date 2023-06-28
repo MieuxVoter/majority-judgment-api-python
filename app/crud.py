@@ -294,6 +294,8 @@ def update_election(
         "hide_results",
         "force_close",
     ]:
+        if getattr(election, key) is None:
+            continue
         if getattr(db_election, key) != getattr(election, key):
             setattr(db_election, key, getattr(election, key))
 

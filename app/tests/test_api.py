@@ -494,6 +494,30 @@ def test_update_election():
     assert response.status_code == 403, response.text
 
 
+def test_close_election2():
+    """
+    Test we can partially update an election
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    new_name = f'{data["name"]}_MODIFIED'
+    data["name"] = new_name
+    token = data["admin"]
+    election_ref = data["ref"]
+
+    close_response = client.put(
+        f"/elections",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"force_close": True, "ref": election_ref},
+    )
+    assert close_response.status_code == 200, close_response.json()
+    close_data = close_response.json()
+    assert close_data["force_close"] == True
+
+
 def test_close_election():
     # Create a random election
     body = _random_election(10, 5)
