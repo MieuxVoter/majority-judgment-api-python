@@ -184,7 +184,6 @@ class ElectionCreate(ElectionBase):
 
     @validator("grades")
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
-
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
             raise ArgumentsSchemaError("At least two grades have the same value")
@@ -204,7 +203,7 @@ class ElectionCreate(ElectionBase):
         return candidates
 
 
-class ElectionUpdate:
+class ElectionUpdate(BaseModel):
     ref: str
     name: Name | None = None
     description: Description | None = None
@@ -218,7 +217,7 @@ class ElectionUpdate:
     candidates: list[CandidateUpdate] | None = None
 
     @validator("grades")
-    def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase] | None):
+    def all_grades_have_unique_values_and_names(cls, grades: list[GradeUpdate] | None):
         if grades is None:
             return grades
 

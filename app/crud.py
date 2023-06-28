@@ -38,7 +38,7 @@ def get_election(db: Session, election_ref_or_id: str):
 
 def create_candidate(
     db: Session,
-    candidate: schemas.CandidateCreate,
+    candidate: schemas.CandidateCreate | schemas.CandidateUpdate,
     election_ref: str,
     commit: bool = False,
 ) -> models.Candidate:
@@ -246,35 +246,45 @@ def update_election(
     if db_election is None:
         raise errors.NotFoundError("elections")
 
-    if db_election.restricted != election.restricted:
+    if (
+        election.restricted is not None
+        and bool(db_election.restricted) != election.restricted
+    ):
         raise errors.ForbiddenError("You can't edit restrictions")
 
-    if election.num_voters > 0 and not db_election.restricted:
+    if (
+        election.num_voters is not None
+        and election.num_voters > 0
+        and not bool(db_election.restricted)
+    ):
         raise errors.ForbiddenError(
             "You can't invite voters on a non-restricted election"
         )
 
     # Create new candidates (those whose Id is None)
-    for candidate in election.candidates:
-        if candidate.id is None:
-            params = candidate.dict()
-            db_candidate = create_candidate(db, candidate, election_ref, True)
-            candidate.id = int(str(db_candidate.id))
+    if election.candidates is not None:
+        for candidate in election.candidates:
+            if candidate.id is None:
+                db_candidate = create_candidate(db, candidate, election_ref, True)
+                candidate.id = int(str(db_candidate.id))
 
-    # Check that candidates look fine
-    candidate_ids = {c.id for c in election.candidates}
-    db_candidate_ids = {c.id for c in db_election.candidates}
-    if candidate_ids != db_candidate_ids:
-        raise errors.ForbiddenError("You must have the same candidate ids")
+        # Check that candidates look fine
+        candidate_ids = {c.id for c in election.candidates}
+        db_candidate_ids = {c.id for c in db_election.candidates}
+        if candidate_ids != db_candidate_ids:
+            raise errors.ForbiddenError("You must have the same candidate ids")
 
-    grade_ids = {c.id for c in election.grades}
-    db_grade_ids = {c.id for c in db_election.grades}
-    if grade_ids != db_grade_ids:
-        raise errors.ForbiddenError("You must have the same grade ids")
+    if election.grades is not None:
+        grade_ids = {c.id for c in election.grades}
+        db_grade_ids = {c.id for c in db_election.grades}
+        if grade_ids != db_grade_ids:
+            raise errors.ForbiddenError("You must have the same grade ids")
 
     # Update the candidates and grades
-    update_candidates(db, election.candidates, db_election.candidates)
-    update_grades(db, election.grades, db_election.grades)
+    if election.candidates is not None:
+        update_candidates(db, election.candidates, db_election.candidates)
+    if election.grades is not None:
+        update_grades(db, election.grades, db_election.grades)
 
     for key in [
         "name",
@@ -291,9 +301,11 @@ def update_election(
     db.refresh(db_election)
 
     updated_election = schemas.ElectionUpdatedGet.from_orm(db_election)
-    updated_election.invites = create_invite_tokens(
-        db, str(db_election.ref), len(election.candidates), election.num_voters
-    )
+
+    if election.num_voters is not None:
+        updated_election.invites = create_invite_tokens(
+            db, str(db_election.ref), len(db_election.candidates), election.num_voters
+        )
 
     return updated_election
 
