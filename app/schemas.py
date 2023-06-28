@@ -204,48 +204,24 @@ class ElectionCreate(ElectionBase):
         return candidates
 
 
-class ElectionUpdate(ElectionBase):
+class ElectionUpdate:
     ref: str
-    grades: list[GradeUpdate] = Field(..., min_items=2, max_items=settings.max_grades)
-    num_voters: int = Field(0, ge=0, le=settings.max_voters)
-    force_close: bool = False
-    candidates: list[CandidateUpdate] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
-    )
-
-    @validator("hide_results", "num_voters", "date_end")
-    def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
-        """
-        Enforce that the election is finish-able
-        """
-        if "hide_results" in values:
-            hide_results = values["hide_results"]
-        elif field.name == "hide_results":
-            hide_results = value
-        else:
-            return value
-
-        if "num_voters" in values:
-            num_voters = values["num_voters"]
-        elif field.name == "num_voters":
-            num_voters = value
-        else:
-            return value
-
-        if "date_end" in values:
-            date_end = values["date_end"]
-        elif field.name == "date_end":
-            date_end = value
-        else:
-            return value
-
-        if hide_results and num_voters == 0 and date_end is None:
-            raise ArgumentsSchemaError("This election can not end")
-
-        return value
+    name: Name | None = None
+    description: Description | None = None
+    date_start: datetime | int | str | None = None
+    date_end: datetime | int | str | None = None
+    hide_results: bool | None = None
+    restricted: bool | None = None
+    grades: list[GradeUpdate] | None = None
+    num_voters: int | None = None
+    force_close: bool | None = None
+    candidates: list[CandidateUpdate] | None = None
 
     @validator("grades")
-    def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
+    def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase] | None):
+        if grades is None:
+            return grades
+
         grades = [grade for grade in grades if grade.id is not None]
 
         values = [g.value for g in grades]
@@ -264,8 +240,11 @@ class ElectionUpdate(ElectionBase):
 
     @validator("candidates")
     def all_candidates_have_unique_names_and_ids(
-        cls, candidates: list[CandidateUpdate]
+        cls, candidates: list[CandidateUpdate] | None
     ):
+        if candidates is None:
+            return candidates
+
         names = [c.name for c in candidates]
         if len(set(names)) != len(candidates):
             raise ArgumentsSchemaError("At least two candidates have the same name")
