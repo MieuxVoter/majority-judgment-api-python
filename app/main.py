@@ -92,6 +92,16 @@ def read_election_all_details(election_ref: str, db: Session = Depends(get_db)):
     db_election = crud.get_election(db, election_ref)
     return db_election
 
+@app.get("/elections/{election_ref}/progress/{token}", response_model=schemas.ElectionGet)
+def read_election_all_details(
+        election_ref: str, 
+        authorization: str = Header(),
+        db: Session = Depends(get_db)
+    ):
+    token = authorization.split("Bearer ")[1]
+    db_election = crud.get_progress(db, election_ref, token)
+    return db_election
+
 
 @app.post("/elections", response_model=schemas.ElectionCreatedGet)
 def create_election(election: schemas.ElectionCreate, db: Session = Depends(get_db)):
