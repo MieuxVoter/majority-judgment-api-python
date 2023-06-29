@@ -92,15 +92,14 @@ def read_election_all_details(election_ref: str, db: Session = Depends(get_db)):
     db_election = crud.get_election(db, election_ref)
     return db_election
 
-@app.get("/elections/{election_ref}/progress/{token}", response_model=schemas.ElectionGet)
-def read_election_all_details(
-        election_ref: str, 
-        authorization: str = Header(),
-        db: Session = Depends(get_db)
-    ):
+
+@app.get("/elections/{election_ref}/progress", response_model=schemas.Progress)
+def get_progress(
+    election_ref: str, authorization: str = Header(), db: Session = Depends(get_db)
+):
     token = authorization.split("Bearer ")[1]
-    db_election = crud.get_progress(db, election_ref, token)
-    return db_election
+    progress = crud.get_progress(db, election_ref, token)
+    return progress
 
 
 @app.post("/elections", response_model=schemas.ElectionCreatedGet)
@@ -138,7 +137,6 @@ def update_ballot(
 
 @app.get("/ballots", response_model=schemas.BallotGet)
 def get_ballot(authorization: str = Header(), db: Session = Depends(get_db)):
-    print("FOO GET BALLOT")
     token = authorization.split("Bearer ")[1]
     return crud.get_ballot(db=db, token=token)
 

@@ -36,6 +36,38 @@ def get_election(db: Session, election_ref_or_id: str):
     raise errors.NotFoundError("elections")
 
 
+def get_progress(db: Session, election_ref: str, token: str) -> schemas.Progress:
+    """
+    Load an election given its ID or its ref
+    """
+    payload = jws_verify(token)
+    election_ref2 = payload["election"]
+    if election_ref != election_ref2:
+        raise errors.UnauthorizedError("Wrong election ref")
+    # Check we can update the election
+    if not payload["admin"]:
+        raise errors.ForbiddenError("You are not allowed to manage the election")
+
+    # Votes are provided for each candidate and each voter
+    votes = db.query(models.Vote).filter(models.Vote.election_ref == election_ref)
+    candidates = db.query(models.Candidate).filter(
+        models.Candidate.election_ref == election_ref
+    )
+
+    num_votes = votes.count()
+    num_candidates = candidates.count()
+    num_voters = num_votes // num_candidates
+
+    # Get number of voters who have voted (their grade is not null)
+    voters_voted = votes.filter(models.Vote.grade != None)
+    num_voters_voted = voters_voted.count() // num_candidates
+
+    return schemas.Progress(
+        num_voters=num_voters,
+        num_voters_voted=num_voters_voted,
+    )
+
+
 def create_candidate(
     db: Session,
     candidate: schemas.CandidateCreate | schemas.CandidateUpdate,

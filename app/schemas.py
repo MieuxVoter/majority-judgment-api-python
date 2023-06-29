@@ -268,3 +268,8 @@ class BallotCreate(BaseModel):
 
 class BallotUpdate(BaseModel):
     votes: list[VoteCreate]
+
+
+class Progress(BaseModel):
+    num_voters: int | None
+    num_voters_voted: int

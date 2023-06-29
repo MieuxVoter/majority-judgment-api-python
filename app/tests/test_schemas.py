@@ -8,6 +8,7 @@ from ..schemas import (
     ElectionCreate,
     CandidateCreate,
     CandidateGet,
+    Progress,
     VoteGet,
     ArgumentsSchemaError,
 )
@@ -164,3 +165,11 @@ def test_election_date_int():
     if election.date_end is None:
         raise ArgumentsSchemaError("date_end is None")
     assert election.date_end > election.date_start
+
+
+def test_progress():
+    """
+    Can create a simple Progress
+    """
+    progress = Progress(num_voters=0, num_voters_voted=0)
+    assert progress.num_voters == 0

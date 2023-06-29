@@ -534,7 +534,6 @@ def test_close_election():
     assert response.status_code == 401, response.text
 
     # But it works with the right token
-    print("UPDATE", data["force_close"])
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
     )
@@ -543,3 +542,50 @@ def test_close_election():
     assert response2.status_code == 200, response2.text
     data2 = response2.json()
     assert data2["force_close"] == True
+
+
+def test_progress():
+    # Create a random election using invitations
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 10
+    response = client.post("/elections", json=body)
+    data = response.json()
+    election_ref = data["ref"]
+    assert response.status_code == 200, data
+
+    # Get the progress and check that none of the voters have already voted
+    admin = data["admin"]
+    progress_rep = client.get(
+        f"/elections/{data['ref']}/progress",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    progress_data = progress_rep.json()
+    assert progress_rep.status_code == 200, progress_data
+    assert progress_data["num_voters"] == 10
+    assert progress_data["num_voters_voted"] == 0
+
+    # Vote with the first voter
+    token = data["invites"][0]
+    grade_id = data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": candidate["id"], "grade_id": grade_id}
+        for candidate in data["candidates"]
+    ]
+    vote_rep = client.put(
+        f"/ballots",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"votes": votes},
+    )
+    vote_data = vote_rep.json()
+    assert vote_rep.status_code == 200, vote_data
+
+    # Check the progress has changed
+    progress_rep = client.get(
+        f"/elections/{data['ref']}/progress",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    progress_data = progress_rep.json()
+    assert progress_rep.status_code == 200, progress_data
+    assert progress_data["num_voters"] == 10
+    assert progress_data["num_voters_voted"] == 1
