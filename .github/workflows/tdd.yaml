@@ -20,6 +20,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+          pip install types-python-dateutil
       - name: Static typing with mypy
         run: |
           # stop the build if there are MyPy errors

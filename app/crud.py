@@ -4,10 +4,9 @@ import string
 from collections import defaultdict
 import typing as t
 from sqlalchemy.orm import Session
-from sqlalchemy import func, insert
-from majority_judgment import majority_judgment, Candidate, Vote
+from sqlalchemy import func
+from majority_judgment import majority_judgment
 from . import models, schemas, errors
-from .settings import settings
 from .auth import create_ballot_token, create_admin_token, jws_verify
 
 
@@ -529,7 +528,7 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         for c, votes in ballots.items()
     }
 
-    merit_profile: dict[Candidate, list[Vote]] = {
+    merit_profile:dict[int, list[int]] = {
         c: sorted(sum([[value] * votes[value] for value in votes.keys()], []))
         for c, votes in ballots.items()
     }

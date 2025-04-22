@@ -85,6 +85,19 @@ def test_vote():
     assert vote.candidate == candidate
     assert vote.grade == grade
 
+def _to_datetime(value):
+    if isinstance(value, datetime):
+        return value
+    elif isinstance(value, int):
+        return datetime.fromtimestamp(value)
+    elif isinstance(value, str):
+        try:
+            return dateutil.parser.parse(value)
+        except:
+            # Gérer les erreurs de parsing
+            pass
+    # Valeur par défaut ou erreur
+    return None
 
 def test_election():
     """
@@ -101,10 +114,10 @@ def test_election():
     assert election.candidates == [candidate1, candidate0]
     assert len(election.grades) == 2
 
-    if election.date_end is None:
+    if _to_datetime(election.date_end) is None:
         raise ArgumentsSchemaError("date_end is None")
 
-    assert election.date_end > election.date_start
+    assert _to_datetime(election.date_end) > _to_datetime(election.date_start)
 
     with pytest.raises(ArgumentsSchemaError):
         # grades should have different value
@@ -139,9 +152,9 @@ def test_election_date_string():
     assert election.candidates == [candidate1, candidate0]
     assert len(election.grades) == 2
 
-    if election.date_end is None:
+    if _to_datetime(election.date_end) is None:
         raise ArgumentsSchemaError("date_end is None")
-    assert election.date_end > election.date_start
+    assert _to_datetime(election.date_end) > _to_datetime(election.date_start)
 
 
 def test_election_date_int():
@@ -162,9 +175,9 @@ def test_election_date_int():
     assert election.candidates == [candidate1, candidate0]
     assert len(election.grades) == 2
 
-    if election.date_end is None:
+    if _to_datetime(election.date_end) is None:
         raise ArgumentsSchemaError("date_end is None")
-    assert election.date_end > election.date_start
+    assert _to_datetime(election.date_end) > _to_datetime(election.date_start)
 
 
 def test_progress():
