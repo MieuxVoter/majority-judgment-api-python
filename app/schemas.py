@@ -87,14 +87,16 @@ def _in_a_long_time() -> datetime:
     """
     Provides the date in the future
     """
-    return datetime.now() + timedelta(weeks=10 * 52)
+    return datetime.now(timezone.utc) + timedelta(weeks=10 * 52)
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 class ElectionBase(BaseModel):
     name: Name
     description: Description = ""
     ref: Ref = ""
-    date_start: datetime | int | str = Field(default_factory=datetime.now)
+    date_start: datetime | int | str = Field(default_factory=_utc_now)
     date_end: datetime | int | str | None = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     restricted: bool = False
@@ -103,15 +105,22 @@ class ElectionBase(BaseModel):
     def parse_date(cls, value):
         if value is None:
             return None
+        
         if isinstance(value, datetime):
-            return value
-        if isinstance(value, int):
-            return datetime.fromtimestamp(value)
-        try:
-            return dateutil.parser.parse(value)
-        except dateutil.parser.ParserError:
-            value = value[: value.index("(")]
-            return dateutil.parser.parse(value)
+            value_as_datetime = value
+        elif isinstance(value, int):
+            value_as_datetime = datetime.fromtimestamp(value)
+        else:
+            try:
+                value_as_datetime = dateutil.parser.parse(value)
+            except dateutil.parser.ParserError:
+                value = value[: value.index("(")]
+                value_as_datetime = dateutil.parser.parse(value)
+
+        if value_as_datetime.tzinfo is None:
+            value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
+
+        return value_as_datetime
 
     class Config:
         orm_mode = True
