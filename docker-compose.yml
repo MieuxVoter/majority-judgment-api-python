@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   mj_db:
     image: postgres:15.1
@@ -85,7 +83,7 @@ services:
       - RESTIC_FORGET_ARGS=--prune --keep-last 1 --keep-daily 1
       - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - MAILX_ARGS=-r '${RESTIC_SEND_MAIL}' -s 'Result of the last restic backup run' -S smtp='${SMTP_HOST}:${SMTP_PORT;-587}' -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user='${SMTP_USER}' -S smtp-auth-password='${SMTP_PASS}' '${RESTIC_DEST_MAIL}'
+      - MAILX_ARGS=-r "${RESTIC_SEND_MAIL}" -s "Result of the last restic backup run" -S smtp="${SMTP_HOST}:${SMTP_PORT:-587}" -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user="${SMTP_USER}" -S smtp-auth-password="${SMTP_PASS}" "${RESTIC_DEST_MAIL}"
 
   mj_imgpush:
     profiles:
@@ -157,7 +155,6 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${EMAIL:-pgadmin4@pgadmin.org}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
-    restart: unless-stopped
     profiles:
       - admin
       - all
