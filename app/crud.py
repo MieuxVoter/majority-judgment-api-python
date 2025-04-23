@@ -73,7 +73,7 @@ def create_candidate(
     election_ref: str,
     commit: bool = False,
 ) -> models.Candidate:
-    params = candidate.dict()
+    params = candidate.model_dump()
     params["election_ref"] = election_ref
     db_candidate = models.Candidate(**params)
     db.add(db_candidate)
@@ -91,7 +91,7 @@ def create_grade(
     election_ref: str,
     commit: bool = False,
 ) -> models.Grade:
-    params = grade.dict()
+    params = grade.model_dump()
     params["election_ref"] = election_ref
     db_grade = models.Grade(**params)
     db.add(db_grade)
@@ -124,7 +124,7 @@ def update_candidates(
 
     for db_candidate in db_candidates:
         cid = int(str(db_candidate.id))
-        params = candidate_by_id[cid].dict()
+        params = candidate_by_id[cid].model_dump()
         del params["id"]
         for key, value in params.items():
             setattr(db_candidate, key, value)
@@ -154,7 +154,7 @@ def update_grades(
 
     for db_grade in db_grades:
         gid = int(str(db_grade.id))
-        params = grade_by_id[gid].dict()
+        params = grade_by_id[gid].model_dump()
         del params["id"]
         for key, value in params.items():
             setattr(db_grade, key, value)
@@ -238,12 +238,12 @@ def create_election(
 
     # Then, we add separatly candidates and grades
     for candidate in election.candidates:
-        params = candidate.dict()
+        params = candidate.model_dump()
         candidate = schemas.CandidateCreate(**params)
         create_candidate(db, candidate, election_ref, False)
 
     for grade in election.grades:
-        params = grade.dict()
+        params = grade.model_dump()
         grade = schemas.GradeCreate(**params)
         create_grade(db, grade, election_ref, False)
 
@@ -374,7 +374,7 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
 
     # Ideally, we would use RETURNING but it does not work yet for SQLite
     db_votes = [
-        models.Vote(**v.dict(), election_ref=ballot.election_ref) for v in ballot.votes
+        models.Vote(**v.model_dump(), election_ref=ballot.election_ref) for v in ballot.votes
     ]
     db.add_all(db_votes)
     db.commit()

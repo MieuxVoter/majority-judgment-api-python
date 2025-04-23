@@ -1,9 +1,10 @@
 import random
 import sys
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")	
+
     sqlite: bool = False
 
     secret: str = ""
@@ -20,10 +21,6 @@ class Settings(BaseSettings):
     max_voters: int = 1_000_000
 
     allowed_origins: list[str] = ["http://localhost"]
-
-    class Config:
-        env_file = ".env"
-        extra="ignore"
 
 
 def get_random_key(length: int, rng: random.Random) -> bytes:

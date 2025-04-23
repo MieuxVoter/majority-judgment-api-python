@@ -1,6 +1,6 @@
 from datetime import datetime
 import pytest
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 import dateutil.parser
 from ..schemas import (
     GradeCreate,
@@ -21,10 +21,6 @@ def test_grade_default_values():
     """
     grade = GradeCreate(name="foo", value=1)
     assert grade.name == "foo"
-
-    # Automatic conversion helps to load data from the payload
-    grade = GradeCreate(name="foo", value=1.2, description="bar foo")  # type: ignore
-    assert grade.value == 1
 
     grade = GradeCreate(name="foo", value="1", description="bar foo")  # type: ignore
     assert grade.value == 1

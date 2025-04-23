@@ -2,6 +2,7 @@ import typing as t
 from datetime import datetime, timedelta, timezone
 import dateutil.parser
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic_settings import SettingsConfigDict
 from .settings import settings
 
 class ArgumentsSchemaError(Exception):
@@ -18,12 +19,11 @@ Color = t.Annotated[str, Field(min_length=3, max_length=10)]
 
 
 class CandidateBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
+
     name: Name
     description: Description = ""
     image: Image = ""
-
-    class Config:
-        from_attributes = True
 
 
 class CandidateGet(CandidateBase):
@@ -41,13 +41,10 @@ class CandidateCreate(CandidateBase):
 
 
 class GradeBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     name: Name
     value: int = Field(ge=0, lt=settings.max_grades)
     description: Description = ""
-
-    class Config:
-        from_attributes = True
-
 
 class GradeGet(GradeBase):
     election_ref: str
@@ -64,22 +61,17 @@ class GradeCreate(GradeBase):
 
 
 class VoteGet(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     id: int
     election_ref: str
     candidate: CandidateGet | None = Field(default=None)
     grade: GradeGet | None = Field(default=None)
 
-    class Config:
-        from_attributes = True
-
 
 class VoteCreate(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     candidate_id: int
     grade_id: int
-
-    class Config:
-        from_attributes = True
-
 
 def _in_a_long_time() -> datetime:
     """
@@ -91,6 +83,8 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 class ElectionBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True, arbitrary_types_allowed=True)	
+
     name: Name
     description: Description = ""
     ref: Ref = ""
@@ -120,11 +114,6 @@ class ElectionBase(BaseModel):
             value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
 
         return value_as_datetime
-
-    class Config:
-        from_attributes = True
-        arbitrary_types_allowed = True
-
 
 class ElectionGet(ElectionBase):
     force_close: bool = False
