@@ -23,7 +23,6 @@ TestingSessionLocal: sessionmaker = sessionmaker(  # type: ignore
 
 Base.metadata.create_all(bind=test_engine)
 
-
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -467,7 +466,7 @@ def test_update_election():
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200, response.text
-    response2 = client.get(f"/elections/{data['ref']}", json=data)
+    response2 = client.get(f"/elections/{data['ref']}")
     assert response2.status_code == 200, response2.text
     data2 = response2.json()
     assert data2["name"] == new_name
@@ -547,7 +546,7 @@ def test_close_election():
         f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200, response.text
-    response2 = client.get(f"/elections/{data['ref']}", json=data)
+    response2 = client.get(f"/elections/{data['ref']}")
     assert response2.status_code == 200, response2.text
     data2 = response2.json()
     assert data2["force_close"] == True

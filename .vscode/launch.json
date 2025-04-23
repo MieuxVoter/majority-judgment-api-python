@@ -19,6 +19,38 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }
+        },
+        {
+            "name": "Test static type (mypy)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mypy",
+            "args": [
+                "app"
+            ],
+            "jinja": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Unit test (pytest)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+            ],
+            "jinja": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": {
+                "SECRET": "fsdq6sd9fqsdf",
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         }
     ]
 }
