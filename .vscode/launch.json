@@ -49,7 +49,8 @@
             "console": "integratedTerminal",
             "env": {
                 "SECRET": "fsdq6sd9fqsdf",
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}",
+                "SQLITE":"True"
             }
         }
     ]
