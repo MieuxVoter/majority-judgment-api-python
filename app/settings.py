@@ -1,7 +1,7 @@
 import random
 import sys
-from pydantic import BaseSettings
-
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     sqlite: bool = False
@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra="ignore"
 
 
 def get_random_key(length: int, rng: random.Random) -> bytes:

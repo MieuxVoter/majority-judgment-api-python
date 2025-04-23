@@ -1,10 +1,8 @@
 import typing as t
 from datetime import datetime, timedelta, timezone
 import dateutil.parser
-from pydantic import BaseModel, Field, validator
-from pydantic.fields import ModelField
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from .settings import settings
-
 
 class ArgumentsSchemaError(Exception):
     """
@@ -25,7 +23,7 @@ class CandidateBase(BaseModel):
     image: Image = ""
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CandidateGet(CandidateBase):
@@ -48,7 +46,7 @@ class GradeBase(BaseModel):
     description: Description = ""
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class GradeGet(GradeBase):
@@ -72,7 +70,7 @@ class VoteGet(BaseModel):
     grade: GradeGet | None = Field(default=None)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class VoteCreate(BaseModel):
@@ -80,7 +78,7 @@ class VoteCreate(BaseModel):
     grade_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 def _in_a_long_time() -> datetime:
@@ -101,7 +99,8 @@ class ElectionBase(BaseModel):
     hide_results: bool = True
     restricted: bool = False
 
-    @validator("date_end", "date_start", pre=True)
+    @field_validator("date_end", "date_start", mode="before")
+    @classmethod
     def parse_date(cls, value):
         if value is None:
             return None
@@ -123,7 +122,7 @@ class ElectionBase(BaseModel):
         return value_as_datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         arbitrary_types_allowed = True
 
 
@@ -160,28 +159,31 @@ class ElectionCreate(ElectionBase):
         ..., min_items=2, max_items=settings.max_candidates
     )
 
-    @validator("hide_results", "num_voters", "date_end")
-    def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
+    @field_validator("hide_results", "num_voters", "date_end")
+    @classmethod
+    def can_finish(cls, value: str, info: ValidationInfo):
         """
         Enforce that the election is finish-able
         """
+        values = info.data
+
         if "hide_results" in values:
             hide_results = values["hide_results"]
-        elif field.name == "hide_results":
+        elif info.field_name == "hide_results":
             hide_results = value
         else:
             return value
 
         if "num_voters" in values:
             num_voters = values["num_voters"]
-        elif field.name == "num_voters":
+        elif info.field_name == "num_voters":
             num_voters = value
         else:
             return value
 
         if "date_end" in values:
             date_end = values["date_end"]
-        elif field.name == "date_end":
+        elif info.field_name == "date_end":
             date_end = value
         else:
             return value
@@ -191,7 +193,8 @@ class ElectionCreate(ElectionBase):
 
         return value
 
-    @validator("grades")
+    @field_validator("grades")
+    @classmethod
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
@@ -203,7 +206,8 @@ class ElectionCreate(ElectionBase):
 
         return grades
 
-    @validator("candidates")
+    @field_validator("candidates")
+    @classmethod
     def all_candidates_have_unique_names(cls, candidates: list[CandidateBase]):
         names = [c.name for c in candidates]
         if len(set(names)) != len(candidates):
@@ -225,7 +229,8 @@ class ElectionUpdate(BaseModel):
     force_close: bool | None = None
     candidates: list[CandidateUpdate] | None = None
 
-    @validator("grades")
+    @field_validator("grades")
+    @classmethod
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeUpdate] | None):
         if grades is None:
             return grades
@@ -246,7 +251,8 @@ class ElectionUpdate(BaseModel):
 
         return grades
 
-    @validator("candidates")
+    @field_validator("candidates")
+    @classmethod
     def all_candidates_have_unique_names_and_ids(
         cls, candidates: list[CandidateUpdate] | None
     ):
