@@ -26,5 +26,7 @@ jobs:
           # stop the build if there are MyPy errors
           mypy app
       - name: Test with pytest
+        env: 
+          SECRET: rmO8kBuJPGzuy7g
         run: |
           SQLITE=True pytest
