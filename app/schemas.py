@@ -42,7 +42,7 @@ class CandidateCreate(CandidateBase):
 
 class GradeBase(BaseModel):
     name: Name
-    value: int = Field(ge=0, lt=settings.max_grades, pre=True)
+    value: int = Field(ge=0, lt=settings.max_grades)
     description: Description = ""
 
     class Config:
@@ -128,16 +128,16 @@ class ElectionBase(BaseModel):
 
 class ElectionGet(ElectionBase):
     force_close: bool = False
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    grades: list[GradeGet] = Field(..., min_length=2, max_length=settings.max_grades)
     candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
 
 
 class ResultsGet(ElectionGet):
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    grades: list[GradeGet] = Field(..., min_length=2, max_length=settings.max_grades)
     candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
     merit_profile: dict[int, dict[int, int]]
     ranking: dict[int, int] = {}
@@ -153,10 +153,10 @@ class ElectionUpdatedGet(ElectionGet):
 
 
 class ElectionCreate(ElectionBase):
-    grades: list[GradeBase] = Field(..., min_items=2, max_items=settings.max_grades)
-    num_voters: int = Field(0, ge=0, le=settings.max_voters)
+    grades: list[GradeBase] = Field(..., min_length=2, max_length=settings.max_grades)
+    num_voters: int = Field(default=0, ge=0, le=settings.max_voters)
     candidates: list[CandidateBase] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
 
     @field_validator("hide_results", "num_voters", "date_end")

@@ -170,7 +170,7 @@ def update_grades(
 def _create_election_without_candidates_or_grade(
     db: Session, election: schemas.ElectionBase, commit: bool
 ) -> models.Election:
-    params = election.dict()
+    params = election.model_dump()
     del params["candidates"]
     del params["grades"]
 
