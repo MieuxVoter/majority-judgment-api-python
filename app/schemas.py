@@ -82,6 +82,28 @@ def _in_a_long_time() -> datetime:
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
+def _parse_date(value:datetime | int | str | None):
+    if value is None:
+        return None
+    
+    if isinstance(value, datetime):
+        value_as_datetime = value
+    elif isinstance(value, int):
+        value_as_datetime = datetime.fromtimestamp(value)
+    else:
+        try:
+            value_as_datetime = dateutil.parser.parse(value)
+        except dateutil.parser.ParserError:
+            value = value[: value.index("(")]
+            value_as_datetime = dateutil.parser.parse(value)
+
+    if value_as_datetime.tzinfo is None and not settings.sqlite:
+        value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
+    elif value_as_datetime.tzinfo is not None and settings.sqlite:
+        value_as_datetime = value_as_datetime.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return value_as_datetime
+
 class ElectionBase(BaseModel):
     model_config = SettingsConfigDict(from_attributes=True, arbitrary_types_allowed=True)	
 
@@ -96,24 +118,7 @@ class ElectionBase(BaseModel):
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
     def parse_date(cls, value):
-        if value is None:
-            return None
-        
-        if isinstance(value, datetime):
-            value_as_datetime = value
-        elif isinstance(value, int):
-            value_as_datetime = datetime.fromtimestamp(value)
-        else:
-            try:
-                value_as_datetime = dateutil.parser.parse(value)
-            except dateutil.parser.ParserError:
-                value = value[: value.index("(")]
-                value_as_datetime = dateutil.parser.parse(value)
-
-        if value_as_datetime.tzinfo is None:
-            value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
-
-        return value_as_datetime
+        return _parse_date(value)
 
 class ElectionGet(ElectionBase):
     force_close: bool = False
@@ -204,7 +209,6 @@ class ElectionCreate(ElectionBase):
 
         return candidates
 
-
 class ElectionUpdate(BaseModel):
     ref: str
     name: Name | None = None
@@ -217,6 +221,11 @@ class ElectionUpdate(BaseModel):
     num_voters: int | None = None
     force_close: bool | None = None
     candidates: list[CandidateUpdate] | None = None
+
+    @field_validator("date_end", "date_start", mode="before")
+    @classmethod
+    def parse_date(cls, value):
+        return _parse_date(value)
 
     @field_validator("grades")
     @classmethod
