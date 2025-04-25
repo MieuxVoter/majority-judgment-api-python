@@ -51,6 +51,18 @@ pip install -r requirements-dev.txt
 
 5. Copy `.env` into `.env.local` and edit environment variables
 
+You need to define following variables:
+```
+POSTGRES_NAME
+POSTGRES_HOST
+POSTGRES_PORT
+POSTGRES_USER
+POSTGRES_PASSWORD
+```
+
+(In docker, DB_* variables are injected to POSTGRES_* variables)
+
+:warning: If your using launch.json on vscode, .env create a conflict. You need to remove it.
 
 6. Start the server:
 

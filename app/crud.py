@@ -4,10 +4,9 @@ import string
 from collections import defaultdict
 import typing as t
 from sqlalchemy.orm import Session
-from sqlalchemy import func, insert
-from majority_judgment import majority_judgment, Candidate, Vote
+from sqlalchemy import func
+from majority_judgment import majority_judgment
 from . import models, schemas, errors
-from .settings import settings
 from .auth import create_ballot_token, create_admin_token, jws_verify
 
 
@@ -74,7 +73,7 @@ def create_candidate(
     election_ref: str,
     commit: bool = False,
 ) -> models.Candidate:
-    params = candidate.dict()
+    params = candidate.model_dump()
     params["election_ref"] = election_ref
     db_candidate = models.Candidate(**params)
     db.add(db_candidate)
@@ -92,7 +91,7 @@ def create_grade(
     election_ref: str,
     commit: bool = False,
 ) -> models.Grade:
-    params = grade.dict()
+    params = grade.model_dump()
     params["election_ref"] = election_ref
     db_grade = models.Grade(**params)
     db.add(db_grade)
@@ -125,7 +124,7 @@ def update_candidates(
 
     for db_candidate in db_candidates:
         cid = int(str(db_candidate.id))
-        params = candidate_by_id[cid].dict()
+        params = candidate_by_id[cid].model_dump()
         del params["id"]
         for key, value in params.items():
             setattr(db_candidate, key, value)
@@ -155,7 +154,7 @@ def update_grades(
 
     for db_grade in db_grades:
         gid = int(str(db_grade.id))
-        params = grade_by_id[gid].dict()
+        params = grade_by_id[gid].model_dump()
         del params["id"]
         for key, value in params.items():
             setattr(db_grade, key, value)
@@ -171,7 +170,7 @@ def update_grades(
 def _create_election_without_candidates_or_grade(
     db: Session, election: schemas.ElectionBase, commit: bool
 ) -> models.Election:
-    params = election.dict()
+    params = election.model_dump()
     del params["candidates"]
     del params["grades"]
 
@@ -239,12 +238,12 @@ def create_election(
 
     # Then, we add separatly candidates and grades
     for candidate in election.candidates:
-        params = candidate.dict()
+        params = candidate.model_dump()
         candidate = schemas.CandidateCreate(**params)
         create_candidate(db, candidate, election_ref, False)
 
     for grade in election.grades:
-        params = grade.dict()
+        params = grade.model_dump()
         grade = schemas.GradeCreate(**params)
         create_grade(db, grade, election_ref, False)
 
@@ -257,7 +256,7 @@ def create_election(
 
     admin = create_admin_token(str(db_election.ref))
 
-    created_election = schemas.ElectionCreatedGet.from_orm(db_election)
+    created_election = schemas.ElectionCreatedGet.model_validate(db_election)
     created_election.invites = invites
     created_election.admin = admin
 
@@ -334,7 +333,7 @@ def update_election(
     db.commit()
     db.refresh(db_election)
 
-    updated_election = schemas.ElectionUpdatedGet.from_orm(db_election)
+    updated_election = schemas.ElectionUpdatedGet.model_validate(db_election)
 
     if election.num_voters is not None:
         updated_election.invites = create_invite_tokens(
@@ -360,7 +359,7 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
         raise errors.ForbiddenError("The ballot contains no vote")
 
     db_election = _check_public_election(db, ballot.election_ref)
-    election = schemas.ElectionGet.from_orm(db_election)
+    election = schemas.ElectionGet.model_validate(db_election)
 
     _check_items_in_election(
         db,
@@ -375,14 +374,14 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
 
     # Ideally, we would use RETURNING but it does not work yet for SQLite
     db_votes = [
-        models.Vote(**v.dict(), election_ref=ballot.election_ref) for v in ballot.votes
+        models.Vote(**v.model_dump(), election_ref=ballot.election_ref) for v in ballot.votes
     ]
     db.add_all(db_votes)
     db.commit()
     for v in db_votes:
         db.refresh(v)
 
-    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
+    votes_get = [schemas.VoteGet.model_validate(v) for v in db_votes]
     vote_ids = [v.id for v in votes_get]
     token = create_ballot_token(vote_ids, ballot.election_ref)
     return schemas.BallotGet(votes=votes_get, token=token, election=election)
@@ -458,7 +457,7 @@ def update_ballot(
     if len(db_votes) != len(vote_ids):
         raise errors.NotFoundError("votes")
 
-    election = schemas.ElectionGet.from_orm(db_votes[0].election)
+    election = schemas.ElectionGet.model_validate(db_votes[0].election)
 
     for vote, db_vote in zip(ballot.votes, db_votes):
         if db_vote.election_ref != election_ref:
@@ -467,7 +466,7 @@ def update_ballot(
         setattr(db_vote, "grade_id", vote.grade_id)
     db.commit()
 
-    votes_get = [schemas.VoteGet.from_orm(v) for v in db_votes]
+    votes_get = [schemas.VoteGet.model_validate(v) for v in db_votes]
     token = create_ballot_token(vote_ids, election_ref)
     return schemas.BallotGet(votes=votes_get, token=token, election=election)
 
@@ -490,7 +489,7 @@ def get_ballot(db: Session, token: str) -> schemas.BallotGet:
 
     election = db_votes[0].election
 
-    votes_get = [schemas.VoteGet.from_orm(v) for v in votes.all()]
+    votes_get = [schemas.VoteGet.model_validate(v) for v in votes.all()]
     return schemas.BallotGet(token=token, votes=votes_get, election=election)
 
 
@@ -529,7 +528,7 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
         for c, votes in ballots.items()
     }
 
-    merit_profile: dict[Candidate, list[Vote]] = {
+    merit_profile:dict[int, list[int]] = {
         c: sorted(sum([[value] * votes[value] for value in votes.keys()], []))
         for c, votes in ballots.items()
     }
@@ -538,6 +537,6 @@ def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
     db_election.ranking = ranking
     db_election.merit_profile = merit_profile2
 
-    results = schemas.ResultsGet.from_orm(db_election)
+    results = schemas.ResultsGet.model_validate(db_election)
 
     return results

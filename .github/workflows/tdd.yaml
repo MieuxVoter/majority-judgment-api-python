@@ -23,7 +23,9 @@ jobs:
       - name: Static typing with mypy
         run: |
           # stop the build if there are MyPy errors
-          mypy app
+          mypy app --show-traceback
       - name: Test with pytest
+        env: 
+          SECRET: rmO8kBuJPGzuy7g
         run: |
           SQLITE=True pytest

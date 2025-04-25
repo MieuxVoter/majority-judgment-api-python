@@ -1,10 +1,9 @@
 import typing as t
 from datetime import datetime, timedelta, timezone
 import dateutil.parser
-from pydantic import BaseModel, Field, validator
-from pydantic.fields import ModelField
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic_settings import SettingsConfigDict
 from .settings import settings
-
 
 class ArgumentsSchemaError(Exception):
     """
@@ -20,12 +19,11 @@ Color = t.Annotated[str, Field(min_length=3, max_length=10)]
 
 
 class CandidateBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
+
     name: Name
     description: Description = ""
     image: Image = ""
-
-    class Config:
-        orm_mode = True
 
 
 class CandidateGet(CandidateBase):
@@ -43,13 +41,10 @@ class CandidateCreate(CandidateBase):
 
 
 class GradeBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     name: Name
-    value: int = Field(ge=0, lt=settings.max_grades, pre=True)
+    value: int = Field(ge=0, lt=settings.max_grades)
     description: Description = ""
-
-    class Config:
-        orm_mode = True
-
 
 class GradeGet(GradeBase):
     election_ref: str
@@ -66,70 +61,77 @@ class GradeCreate(GradeBase):
 
 
 class VoteGet(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     id: int
     election_ref: str
     candidate: CandidateGet | None = Field(default=None)
     grade: GradeGet | None = Field(default=None)
 
-    class Config:
-        orm_mode = True
-
 
 class VoteCreate(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True)	
     candidate_id: int
     grade_id: int
-
-    class Config:
-        orm_mode = True
-
 
 def _in_a_long_time() -> datetime:
     """
     Provides the date in the future
     """
-    return datetime.now() + timedelta(weeks=10 * 52)
+    return datetime.now(timezone.utc) + timedelta(weeks=10 * 52)
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+def _parse_date(value:datetime | int | str | None):
+    if value is None:
+        return None
+    
+    if isinstance(value, datetime):
+        value_as_datetime = value
+    elif isinstance(value, int):
+        value_as_datetime = datetime.fromtimestamp(value)
+    else:
+        try:
+            value_as_datetime = dateutil.parser.parse(value)
+        except dateutil.parser.ParserError:
+            value = value[: value.index("(")]
+            value_as_datetime = dateutil.parser.parse(value)
+
+    if value_as_datetime.tzinfo is None and not settings.sqlite:
+        value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
+    elif value_as_datetime.tzinfo is not None and settings.sqlite:
+        value_as_datetime = value_as_datetime.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return value_as_datetime
 
 class ElectionBase(BaseModel):
+    model_config = SettingsConfigDict(from_attributes=True, arbitrary_types_allowed=True)	
+
     name: Name
     description: Description = ""
     ref: Ref = ""
-    date_start: datetime | int | str = Field(default_factory=datetime.now)
+    date_start: datetime | int | str = Field(default_factory=_utc_now)
     date_end: datetime | int | str | None = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     restricted: bool = False
 
-    @validator("date_end", "date_start", pre=True)
+    @field_validator("date_end", "date_start", mode="before")
+    @classmethod
     def parse_date(cls, value):
-        if value is None:
-            return None
-        if isinstance(value, datetime):
-            return value
-        if isinstance(value, int):
-            return datetime.fromtimestamp(value)
-        try:
-            return dateutil.parser.parse(value)
-        except dateutil.parser.ParserError:
-            value = value[: value.index("(")]
-            return dateutil.parser.parse(value)
-
-    class Config:
-        orm_mode = True
-        arbitrary_types_allowed = True
-
+        return _parse_date(value)
 
 class ElectionGet(ElectionBase):
     force_close: bool = False
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    grades: list[GradeGet] = Field(..., min_length=2, max_length=settings.max_grades)
     candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
 
 
 class ResultsGet(ElectionGet):
-    grades: list[GradeGet] = Field(..., min_items=2, max_items=settings.max_grades)
+    grades: list[GradeGet] = Field(..., min_length=2, max_length=settings.max_grades)
     candidates: list[CandidateGet] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
     merit_profile: dict[int, dict[int, int]]
     ranking: dict[int, int] = {}
@@ -145,34 +147,37 @@ class ElectionUpdatedGet(ElectionGet):
 
 
 class ElectionCreate(ElectionBase):
-    grades: list[GradeBase] = Field(..., min_items=2, max_items=settings.max_grades)
-    num_voters: int = Field(0, ge=0, le=settings.max_voters)
+    grades: list[GradeBase] = Field(..., min_length=2, max_length=settings.max_grades)
+    num_voters: int = Field(default=0, ge=0, le=settings.max_voters)
     candidates: list[CandidateBase] = Field(
-        ..., min_items=2, max_items=settings.max_candidates
+        ..., min_length=2, max_length=settings.max_candidates
     )
 
-    @validator("hide_results", "num_voters", "date_end")
-    def can_finish(cls, value: str, values: dict[str, t.Any], field: ModelField):
+    @field_validator("hide_results", "num_voters", "date_end")
+    @classmethod
+    def can_finish(cls, value: str, info: ValidationInfo):
         """
         Enforce that the election is finish-able
         """
+        values = info.data
+
         if "hide_results" in values:
             hide_results = values["hide_results"]
-        elif field.name == "hide_results":
+        elif info.field_name == "hide_results":
             hide_results = value
         else:
             return value
 
         if "num_voters" in values:
             num_voters = values["num_voters"]
-        elif field.name == "num_voters":
+        elif info.field_name == "num_voters":
             num_voters = value
         else:
             return value
 
         if "date_end" in values:
             date_end = values["date_end"]
-        elif field.name == "date_end":
+        elif info.field_name == "date_end":
             date_end = value
         else:
             return value
@@ -182,7 +187,8 @@ class ElectionCreate(ElectionBase):
 
         return value
 
-    @validator("grades")
+    @field_validator("grades")
+    @classmethod
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeBase]):
         values = [g.value for g in grades]
         if len(set(values)) != len(grades):
@@ -194,14 +200,14 @@ class ElectionCreate(ElectionBase):
 
         return grades
 
-    @validator("candidates")
+    @field_validator("candidates")
+    @classmethod
     def all_candidates_have_unique_names(cls, candidates: list[CandidateBase]):
         names = [c.name for c in candidates]
         if len(set(names)) != len(candidates):
             raise ArgumentsSchemaError("At least two candidates have the same name")
 
         return candidates
-
 
 class ElectionUpdate(BaseModel):
     ref: str
@@ -216,7 +222,13 @@ class ElectionUpdate(BaseModel):
     force_close: bool | None = None
     candidates: list[CandidateUpdate] | None = None
 
-    @validator("grades")
+    @field_validator("date_end", "date_start", mode="before")
+    @classmethod
+    def parse_date(cls, value):
+        return _parse_date(value)
+
+    @field_validator("grades")
+    @classmethod
     def all_grades_have_unique_values_and_names(cls, grades: list[GradeUpdate] | None):
         if grades is None:
             return grades
@@ -237,7 +249,8 @@ class ElectionUpdate(BaseModel):
 
         return grades
 
-    @validator("candidates")
+    @field_validator("candidates")
+    @classmethod
     def all_candidates_have_unique_names_and_ids(
         cls, candidates: list[CandidateUpdate] | None
     ):
