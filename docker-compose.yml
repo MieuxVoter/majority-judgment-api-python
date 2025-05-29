@@ -1,53 +1,63 @@
 services:
   mj_db:
+    profiles:
+      - core
+      - all
+    # https://hub.docker.com/_/postgres
     image: postgres:15.1
     restart: unless-stopped
-    hostname: mj_db
+    hostname: ${DB_HOST:-mj_db}
     healthcheck:
-      start_period: 10s
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 30s
+      start_period: 15s
+      test: ["CMD", "pg_isready", "--user", "${DB_USER:-mj}"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
     environment:
-      - POSTGRES_USER=${DB_USER:-mj}
-      - POSTGRES_PASSWORD=$DB_PASS
-      - POSTGRES_DB=${DB_NAME:-mj}
-      - TZ=${TIMEZONE:-Europe/Paris}
+      POSTGRES_DB: "${DB_NAME:-mj}"
+      POSTGRES_USER: "${DB_USER:-mj}"
+      POSTGRES_PASSWORD: "${DB_PASS}"
+      TZ: "${TIMEZONE:-Europe/Paris}"
     networks:
       - lan
     ports:
-      - 5432:5432
+      - ${DB_PORT:-5433}:5432
     volumes:
       - db:/var/lib/mysql
 
   mj_api:
+    profiles:
+      - core
+      - all
+    #image: majority-judgment/api-python:latest
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: majority-judgment/api-python:latest
     restart: unless-stopped
       # TODO remove reload
     command: uvicorn app.main:app --host 0.0.0.0 --port 8877 --proxy-headers --env-file ${ENV_FILE:-.env.local} --reload
     healthcheck:
       start_period: 30s
       test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
-      interval: 30s
-      retries: 5
+      interval: 10m
+      timeout: 10s
+      retries: 3
     depends_on:
       mj_db:
-          condition: service_healthy
+        condition: service_healthy
     volumes:
       - .:/code
     networks:
       - lan
       - traefik_network
     environment:
-      POSTGRES_USER: ${DB_USER:-mj}
-      POSTGRES_PASSWORD: $DB_PASS
-      POSTGRES_DB: ${DB_NAME:-mj}
-      POSTGRES_HOST: mj_db
-      TZ: ${TIMEZONE:-Europe/Paris}
+      POSTGRES_HOST: ${DB_HOST:-mj_db}
+      POSTGRES_USER: "${DB_USER:-mj}"
+      POSTGRES_PASSWORD: "${DB_PASS}"
+      POSTGRES_DB: "${DB_NAME:-mj}"
+      TZ: "${TIMEZONE:-Europe/Paris}"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["*"]}
-      SECRET: $SECRET
+      SECRET: "${SECRET}"
     ports:
       - 8877:8877
     labels:
@@ -59,33 +69,36 @@ services:
       - "traefik.http.routers.mj.tls=true"
       - "traefik.http.routers.mj.tls.certresolver=leresolver"
 
-  mj_restic:
-    profiles:
-      - backup
-      - all
-    depends_on:
-      - mj_db
-    image: restic
-    networks:
-      - lan
-    build:
-      context: ./docker/restic
-      dockerfile: Dockerfile
-      args:
-        RESTIC_INIT_ARGS: $RESTIC_INIT_ARGS
-        RESTIC_PASSWORD: $RESTIC_PASSWORD
-    restart: unless-stopped
-    volumes:
-      - db:/data/db
-      - imgpush:/data/images
-    environment:
-      - TZ=${TIMEZONE:-Europe/Paris}
-      - RESTIC_REPOSITORY=$RESTIC_REPOSITORY
-      - BACKUP_CRON=${RESTIC_BACKUP_CRON:-0 0 * * *}
-      - RESTIC_FORGET_ARGS=--prune --keep-last 1 --keep-daily 1
-      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - MAILX_ARGS=-r "${RESTIC_SEND_MAIL}" -s "Result of the last restic backup run" -S smtp="${SMTP_HOST}:${SMTP_PORT:-587}" -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user="${SMTP_USER}" -S smtp-auth-password="${SMTP_PASS}" "${RESTIC_DEST_MAIL}"
+  # Disabled because on our server this service fails repeatedly:
+  # > Fatal: create repository at s3:s3.amazonaws.com/mieuxvoter-app failed: client.BucketExists: Access Denied.
+#  mj_restic:
+#    profiles:
+#      - backup
+#      - all
+#    depends_on:
+#      mj_db:
+#        condition: service_healthy
+#    image: restic
+#    networks:
+#      - lan
+#    build:
+#      context: ./docker/restic
+#      dockerfile: Dockerfile
+#      args:
+#        RESTIC_INIT_ARGS: $RESTIC_INIT_ARGS
+#        RESTIC_PASSWORD: $RESTIC_PASSWORD
+#    restart: unless-stopped
+#    volumes:
+#      - db:/data/db
+#      - imgpush:/data/images
+#    environment:
+#      - TZ=${TIMEZONE:-Europe/Paris}
+#      - RESTIC_REPOSITORY=$RESTIC_REPOSITORY
+#      - BACKUP_CRON=${RESTIC_BACKUP_CRON:-0 0 * * *}
+#      - RESTIC_FORGET_ARGS=--prune --keep-last 1 --keep-daily 1
+#      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+#      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+#      - MAILX_ARGS=-r "${RESTIC_SEND_MAIL}" -s "Result of the last restic backup run" -S smtp="${SMTP_HOST}:${SMTP_PORT:-587}" -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user="${SMTP_USER}" -S smtp-auth-password="${SMTP_PASS}" "${RESTIC_DEST_MAIL}"
 
   mj_imgpush:
     profiles:
@@ -94,8 +107,8 @@ services:
     image: hauxir/imgpush:latest
     restart: unless-stopped
     environment:
-      PUID: $PUID
-      PGID: $PUID
+      PUID: ${PUID:-1000}
+      PGID: ${PUID:-1000}
       TZ: ${TIMEZONE:-Europe/Paris}
       IMAGES_DIR: /images
       MAX_SIZE_MB: 16
@@ -106,9 +119,11 @@ services:
       VALID_SIZES: ${VALID_SIZES:-"[100,200,300]"}
       NAME_STRATEGY: "uuidv4"
     healthcheck:
-      start_period: 0s
+      start_period: 15s
       test: ['CMD-SHELL', 'curl localhost:5000/liveness -s -f -o /dev/null || exit 1']
-      interval: 30s
+      interval: 10m
+      timeout: 10s
+      retries: 3
     networks:
       - lan
       - traefik_network
@@ -124,23 +139,24 @@ services:
       - "traefik.http.routers.imgpush.tls.certresolver=leresolver"
 
   mj_metabase:
-    image: metabase/metabase
-    restart: unless-stopped
     profiles:
       - dashboard
       - all
+    image: metabase/metabase
+    restart: unless-stopped
     depends_on:
-      - mj_db
+      mj_db:
+        condition: service_healthy
     networks:
       - lan
       - traefik_network
     environment:
       MB_DB_TYPE: postgres
-      MB_DB_DBNAME: ${DB_NAME:-mj}
-      MB_DB_PORT: ${DB_PORT:-5432}
-      MB_DB_USER: ${DB_USER:-mj}
-      MB_DB_PASS: $DB_PASS
-      MB_DB_HOST: mj_db
+      MB_DB_DBNAME: "${DB_NAME:-mj}"
+      MB_DB_HOST: ${DB_HOST:-mj_db}
+      MB_DB_PORT: ${DB_PORT:-5433}
+      MB_DB_USER: "${DB_USER:-mj}"
+      MB_DB_PASS: "${DB_PASS}"
       TZ: ${TIMEZONE:-Europe/Paris}
     labels:
       - "traefik.enable=true"
@@ -152,17 +168,22 @@ services:
       - "traefik.http.routers.metabase.tls.certresolver=leresolver"
 
   mj_pgadmin:
+    profiles:
+      - admin
+      - all
     image: dpage/pgadmin4
+    restart: unless-stopped
+    depends_on:
+      mj_db:
+        condition: service_healthy
     environment:
       PGADMIN_DEFAULT_EMAIL: ${EMAIL:-pgadmin4@pgadmin.org}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
-    profiles:
-      - admin
-      - all
-    healthcheck: 
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:5050"]
-      interval: 1m30s
+    healthcheck:
+      start_period: 15s
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:${PGADMIN_PORT:-5050}"]
+      interval: 10m
       timeout: 10s
       retries: 3
     volumes:
@@ -172,7 +193,6 @@ services:
     networks:
       - lan
       - traefik_network
-    restart: unless-stopped
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -189,6 +209,7 @@ volumes:
   pgadmin:
   redis_data:
     driver: local
+
 
 networks:
   lan:

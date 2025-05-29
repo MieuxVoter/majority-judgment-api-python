@@ -1,8 +1,10 @@
-# API for Mieux Voter
+# Majority Judgment App Server in Python
+
+> This is the REST API Backend for the Mieux Voter Online WebApp.
+
+You can use our instance of this at [api.mieuxvoter.fr/](https://api.mieuxvoter.fr/).
 
 This API allows you to create elections, vote and obtain results with [majority judgment](https://en.wikipedia.org/wiki/Majority_judgment).
-
-You can use our server at [api.mieuxvoter.fr/](api.mieuxvoter.fr/).
 
 Since our API relies on OpenAPI, documentation is automatically generated and it is available at [api.mieuxvoter.fr/redoc](api.mieuxvoter.fr/redoc) or [api.mieuxvoter.fr/docs](api.mieuxvoter.fr/docs).
 
@@ -11,31 +13,32 @@ Since our API relies on OpenAPI, documentation is automatically generated and it
 
 Copy the `.env` into `.env.local` with your own settings.
 
-Then launch the dockers with:
+Then launch the docker services with:
 
-`docker compose --profile all --env-file .env.local up -d`
+    docker compose --profile all --env-file .env.local up --detach
 
-Note that you can use the `profile` called `dashboard` if you only need Metabase, `image` if you only need to store images, or `backup` for restic.
+Note that you can use the `profile` called:
+- `core` if you only need the backend and database,
+- `dashboard` if you only need Metabase,
+- `image` if you only need to store images,
+- or `backup` for restic.
 
-You certainly want to apply databases migrations with:
+You certainly want to apply the database migrations with:
 
-`docker/migrate.sh`
+    ./docker/migrate.sh
 
 
 ## Run the tests
 
-`docker/test.sh`
+    ./docker/test.sh
 
 
 
 ## Local development
 
 1. Install [postgresql](https://www.postgresql.org/download/).
-
 2. Install python 3.11.
-
 3. Create a new virtual environment and activate it:
-
 
 ```bash
 venv .venv
@@ -60,9 +63,9 @@ POSTGRES_USER
 POSTGRES_PASSWORD
 ```
 
-(In docker, DB_* variables are injected to POSTGRES_* variables)
+> (In docker, `DB_*` variables are injected to `POSTGRES_*` variables)
 
-:warning: If your using launch.json on vscode, .env create a conflict. You need to remove it.
+:warning: If you're using `launch.json` on vscode, `.env` creates a conflict.  You need to remove it.
 
 6. Start the server:
 
@@ -70,13 +73,9 @@ POSTGRES_PASSWORD
 uvicorn app.main:app --reload --env-file .env.local
 ```
 
-7. Visit the generated documentation:
+7. Visit the generated documentation at http://127.0.0.1:8000/redoc
 
-```
-http://127.0.0.1:8000/redoc
-```
-
-If you need to alter the database, you can create new migrations using [alembic](https://alembic.sqlalchemy.org/en/latest/index.html).
+> If you need to alter the database, you can create new migrations using [alembic](https://alembic.sqlalchemy.org/en/latest/index.html).
 
 
 ## TODO

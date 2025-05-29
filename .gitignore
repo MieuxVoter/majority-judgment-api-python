@@ -1,11 +1,22 @@
-__pycache__/
+# Temporary files
 *.swp
 *.mo
 .#*
-.ipynb_checkpoints/
-.env.local
+
 backup
-.venv/
+
+# Python
+__pycache__/
+.mypy_cache
+.ipynb_checkpoints/
+/.venv/
+
+# Local (secret) configuration
+/.env.local
+
+# Databases (dumps?)
 test.db
 main.db
-.mypy_cache
+
+# IDE
+/.idea/
