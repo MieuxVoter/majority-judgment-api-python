@@ -39,7 +39,7 @@ services:
     healthcheck:
       start_period: 30s
       test: ['CMD-SHELL', 'curl localhost:8877/liveness -s -f -o /dev/null || exit 1']
-      interval: 10m
+      interval: 1m
       timeout: 10s
       retries: 3
     depends_on:
