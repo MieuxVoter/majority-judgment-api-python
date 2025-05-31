@@ -12,5 +12,6 @@ So far we're using the PatchedContext instance provided by behave.
 
 
 def reset_context(context):
+    context.users = dict()
     context.that_user = None
     context.that_poll = None

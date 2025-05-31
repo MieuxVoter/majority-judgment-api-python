@@ -1,43 +1,53 @@
 """
 Local database abstraction layer for step defs.
 """
+from behave.runner import Context
+from fastapi import Depends
+from sqlalchemy.orm import Session
+# from sqlalchemy.testing import db
+
+from app import errors
+from app.crud import get_election
+from app.database import get_db
+from app.models import Election
 
 
-from django.contrib.auth.models import User
-from election.models import Election
+db: Session = Depends(get_db)
 
 
-def make_user(context, username):
-    return User.objects.create_user(
-        username=username,
-        email='user@test.mieuxvoter.fr',
-        password=username
-    )
+class User:
+    def __init__(self, username):
+        self.username = username
 
 
-def count_users():
-    return User.objects.count()
+def make_user(context: Context, username):
+    user = User(username)
+    context.users[username] = user
+    return user
 
 
-def count_polls():  # TBD: "scrutin" translates to "poll"?
-    return Election.objects.count()
+def count_users(context: Context):
+    return len(context.users.items())
 
 
-def find_user(identifier, relax=False):
-    user = User.objects.get(username=identifier)
+def find_user(context: Context, username: str, relax=False):
+    user = context.users.get(username, None)
     if user is not None:
         return user
     if not relax:
-        raise ValueError("No user found matching `%s`." % identifier)
+        raise ValueError("No user found matching `%s`." % username)
     return None
+
+
+def count_polls():
+    return db.query(Election).count()
 
 
 def find_poll(identifier, relax=False):
-    poll = Election.objects.get(title=identifier)
-    if poll is not None:
-        return poll
-    if not relax:
-        raise ValueError("No poll found matching `%s`." % identifier)
+    try:
+        return get_election(db, identifier)
+    except errors.NotFoundError:
+        if not relax:
+            raise ValueError("No poll found matching `%s`." % identifier)
     return None
-
 

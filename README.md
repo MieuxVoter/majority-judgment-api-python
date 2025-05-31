@@ -28,7 +28,6 @@ You certainly want to apply the database migrations with:
     ./docker/migrate.sh
 
 
-
 ## Run the tests
 
     ./docker/test.sh

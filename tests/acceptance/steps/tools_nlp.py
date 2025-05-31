@@ -3,12 +3,14 @@ Natural Language Processing tools
 """
 
 import re
+
+from behave.runner import Context
 from text_to_num import text2num
 
 from tools_i18n import guess_locale
 
 
-def parse_amount(context, amount_string):
+def parse_amount(context: Context, amount_string):
     """
     - Multilingual (hopefully) EN - FR - …
     - Tailored for Gherkin features and behave
@@ -24,7 +26,8 @@ def parse_amount(context, amount_string):
         if re.match("^no(?:ne)?$", amount_string):
             return 0
 
-    return text2num(text=amount_string, lang=language, relaxed=True)
+    # return text2num(text=amount_string, lang=language, relaxed=True)
+    return text2num(text=amount_string, lang=language)
 
 
 def parse_yaml(context, with_i18n=True):

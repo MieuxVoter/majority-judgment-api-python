@@ -3,9 +3,10 @@ The intent is for toolbox to be a sort of shortcut, providing most tools.
 Not sure this is the python way.
 """
 
-from django.test import Client
+# from httpx import Client
+from fastapi.testclient import TestClient as Client
 
-
+from app.main import app
 # Keep these, it is used by those who import toolbox
 from tools_dbal import *
 from tools_nlp import *
@@ -19,7 +20,7 @@ class Actor(object):
     def __init__(self, name=None) -> None:
         super().__init__()
         self.name = name
-        self.client = Client()
+        self.client = Client(app)
         self.last_response = None
 
     def adjust_path(self, path):

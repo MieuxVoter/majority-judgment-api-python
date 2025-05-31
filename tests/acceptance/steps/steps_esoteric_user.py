@@ -32,4 +32,4 @@ def create_citizen_named(context, name):
 @step(u"(?:qu')?il(?: ne)? devrait y avoir (?P<amount>.+) citoyen(?:[⋅.-]?ne?|)s? dans la base de données")
 def there_should_be_n_users(context, amount):
     amount = parse_amount(context, amount)
-    assert_that(count_users(), equal_to(amount))
+    assert_that(count_users(context), equal_to(amount))

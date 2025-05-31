@@ -3,6 +3,7 @@ Environment module for acceptance testing of the scenaristic constitution.
 https://behave.readthedocs.io/en/latest/api.html#environment-file-functions
 """
 
+from behave.runner import Context
 from locale import setlocale, LC_TIME
 
 from steps.context_main import reset_context as reset_main_context
@@ -20,7 +21,7 @@ use_step_matcher("re")
 # and calling it again with "re" after your step def.  (it uses a `global`)
 
 
-def before_all(context):
+def before_all(context: Context):
     """
     Ran before the whole shooting match.
     """
@@ -34,8 +35,8 @@ def before_feature(context, feature):
     context_locale = guess_locale(context)
     setlocale(LC_TIME, "%s.UTF-8" % context_locale)
     # REQUIRES CUSTOM FORK OF HAMCREST
-    from hamcrest import set_locale as set_hamcrest_locale
-    set_hamcrest_locale(context_locale)
+    # from hamcrest import set_locale as set_hamcrest_locale
+    # set_hamcrest_locale(context_locale)
     ##################################
 
 
