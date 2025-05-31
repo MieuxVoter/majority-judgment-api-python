@@ -23,7 +23,8 @@ services:
     ports:
       - ${DB_PORT:-5433}:5432
     volumes:
-      - db:/var/lib/mysql
+      #- db:/var/lib/mysql
+      - db:/var/lib/postgresql/data
 
   mj_api:
     profiles:
@@ -214,4 +215,4 @@ volumes:
 networks:
   lan:
   traefik_network:
-    external: true 
+    external: true
