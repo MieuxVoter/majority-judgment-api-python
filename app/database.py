@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+from contextvars import ContextVar
 from urllib.parse import quote
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from .settings import settings
 
 
@@ -19,7 +21,7 @@ else:
     engine = create_engine(database_url)
 
 SessionLocal: sessionmaker = sessionmaker(  # type: ignore
-    autocommit=False, autoflush=False, bind=engine
+    autocommit=False, autoflush=False, bind=engine,
 )
 
 Base = declarative_base()
@@ -31,3 +33,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
+db_session: ContextVar[Session] = ContextVar('db_session')
