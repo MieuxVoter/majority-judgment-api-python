@@ -204,6 +204,10 @@ def create_invite_tokens(
     num_candidates: int,
     num_voters: int,
 ) -> list[str]:
+    if num_voters <= 0:
+        return []
+        
+    _check_election_is_not_ended(get_election(db, election_ref))
     now = datetime.now()
     params = {"date_created": now, "date_modified": now, "election_ref": election_ref}
     db_votes = [models.Vote(**params) for _ in range(num_voters * num_candidates)]
@@ -232,8 +236,10 @@ def create_election(
     # We create first the election
     # without candidates and grades
     db_election = _create_election_without_candidates_or_grade(db, election, True)
+
     if db_election is None:
         raise errors.InconsistentDatabaseError("Can not create election")
+    
     election_ref = str(db_election.ref)
 
     # Then, we add separatly candidates and grades
@@ -361,6 +367,8 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
     db_election = _check_public_election(db, ballot.election_ref)
     election = schemas.ElectionGet.model_validate(db_election)
 
+    _check_election_is_not_ended(db_election)
+
     _check_items_in_election(
         db,
         [v.candidate_id for v in ballot.votes],
@@ -398,6 +406,15 @@ def _check_public_election(db: Session, election_ref: str):
         )
     return db_election
 
+def _check_election_is_not_ended(election: models.Election):
+    """
+    Check that the election is not ended.
+    If it is, raise an error.
+    """
+    if election.date_end is not None and election.date_end < datetime.now():
+        raise errors.ForbiddenError("The election has ended. You can not create new votes")
+    if election.force_close:
+        raise errors.ForbiddenError("The election is closed. You can not create or update votes")    
 
 def _check_items_in_election(
     db: Session,
@@ -432,8 +449,11 @@ def update_ballot(
 
     # Check if the election exists
     db_election = get_election(db, election_ref)
+    
     if db_election is None:
         raise errors.NotFoundError("elections")
+
+    _check_election_is_not_ended(db_election)
 
     if len(ballot.votes) != len(vote_ids):
         raise errors.ForbiddenError("Edit all votes at once.")

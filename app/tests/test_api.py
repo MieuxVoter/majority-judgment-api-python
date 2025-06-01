@@ -175,15 +175,15 @@ def test_create_ballot():
         assert v2["candidate"]["id"] == v1["candidate_id"]
         assert v2["election_ref"] == election_ref
 
-    token = data["token"]
+    ballot_token = data["token"]
 
-    # Now, we check that we need the right token to read the votes
+    # Now, we check that we need the right ballot_token to read the votes
     response = client.get(
-        f"/ballots/", headers={"Authorization": f"Bearer {token}WRONG"}
+        f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
     assert response.status_code == 401, response.text
 
-    response = client.get(f"/ballots/", headers={"Authorization": f"Bearer {token}"})
+    response = client.get(f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}"})
     assert response.status_code == 200, response.text
     data = response.json()
     for v1, v2 in zip(votes, data["votes"]):
@@ -206,7 +206,7 @@ def test_reject_wrong_ballots_restricted_election():
     assert response.status_code == 200, data
     tokens = data["invites"]
     assert len(tokens) == 1
-    token = tokens[0]
+    ballot_token = tokens[0]
     grade_id = data["grades"][0]["id"]
     votes = [
         {"candidate_id": candidate["id"], "grade_id": grade_id}
@@ -217,7 +217,7 @@ def test_reject_wrong_ballots_restricted_election():
     response = client.put(
         f"/ballots",
         json={"votes": votes[-1]},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     assert response.status_code == 422, response.json()
 
@@ -228,7 +228,7 @@ def test_reject_wrong_ballots_restricted_election():
     response = client.put(
         f"/ballots",
         json={"votes": votes2},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     assert response.status_code == 422, response.json()
 
@@ -238,7 +238,7 @@ def test_reject_wrong_ballots_restricted_election():
     response = client.put(
         f"/ballots",
         json={"votes": votes2},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     assert response.status_code == 422, response.json()
 
@@ -246,14 +246,14 @@ def test_reject_wrong_ballots_restricted_election():
     response = client.put(
         f"/ballots",
         json={"votes": votes},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     assert response.status_code == 200, response.json()
 
     # Check that we can now get this ballot
     response = client.get(
         f"/ballots",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     assert response.status_code == 200, response.json()
 
@@ -299,6 +299,102 @@ def test_reject_wrong_ballots_unrestricted_election():
     assert response.status_code == 200, response.text
 
 
+def test_cannot_create_vote_on_ended_election():
+    """
+    On an ended election, we are not allowed to create new votes
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    election_data = response.json()
+    assert response.status_code == 200, election_data
+    assert len(election_data["invites"]) == 0
+    election_ref = election_data["ref"]
+    ballot_token = election_data["admin"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", election_data)
+    response = client.post(
+        f"/ballots",
+        json={"votes": votes, "election_ref": election_ref},
+    )
+    data = response.json()
+    assert response.status_code == 403, data
+
+    # Try to close the election with force_close
+    response = client.put(
+        f"/elections",
+        json={"force_close": True, "date_end":(datetime.now() + timedelta(days=1)).isoformat(), "ref": election_ref},
+        headers={"Authorization": f"Bearer {ballot_token}"},
+    )
+    assert response.status_code == 200, response.json()
+
+    votes = _generate_votes_from_response("id", election_data)
+    response = client.post(
+        f"/ballots",
+        json={"votes": votes, "election_ref": election_ref},
+    )
+    data = response.json()
+    assert response.status_code == 403, data
+
+def test_cannot_update_vote_on_ended_election():
+    """
+    On an ended restricted election, we are not allowed to update votes
+    """
+    """
+    This tests that a  ballot contains a many vote as the number of candidates in an election.
+    Here we consider a restricted election.
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    election_data = response.json()
+    election_ref = election_data["ref"]
+    election_token = election_data["admin"]
+    assert response.status_code == 200, election_data
+    tokens = election_data["invites"]
+    assert len(tokens) == 1
+
+    # Test for force_close = True
+    response = client.put(
+        f"/elections",
+        json={"force_close": True, "date_end":(datetime.now() + timedelta(days=1)).isoformat(), "ref": election_ref},
+        headers={"Authorization": f"Bearer {election_token}"},
+    )
+
+    ballot_token = tokens[0]
+    grade_id = election_data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": candidate["id"], "grade_id": grade_id}
+        for candidate in election_data["candidates"]
+    ]
+
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {ballot_token}"},
+    )
+    assert response.status_code == 403, response.json()
+
+    # Test for date_end in the past
+    response = client.put(
+        f"/elections",
+        json={"force_close": False, "date_end":(datetime.now() - timedelta(days=1)).isoformat(), "ref": election_ref},
+        headers={"Authorization": f"Bearer {election_token}"},
+    )
+
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {ballot_token}"},
+    )
+
+    assert response.status_code == 403, response.json()
+
+
 def test_cannot_create_vote_on_restricted_election():
     """
     On a restricted election, we are not allowed to create new votes
@@ -336,14 +432,14 @@ def test_can_vote_on_restricted_election():
     assert response.status_code == 200, data
     tokens = data["invites"]
     assert len(tokens) == 1
-    token = tokens[0]
+    ballot_token = tokens[0]
 
-    # Check that the token makes sense
-    payload = jws_verify(token)
+    # Check that the ballot_token makes sense
+    payload = jws_verify(ballot_token)
     assert len(payload["votes"]) == len(data["candidates"])
     assert payload["election"] == data["ref"]
 
-    # We create votes using the token
+    # We create votes using the ballot_token
     grade_id = data["grades"][0]["id"]
     votes = [
         {"candidate_id": candidate["id"], "grade_id": grade_id}
@@ -352,7 +448,7 @@ def test_can_vote_on_restricted_election():
     response = client.put(
         f"/ballots",
         json={"votes": votes},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
     )
     data = response.json()
     assert response.status_code == 200, data
@@ -449,21 +545,21 @@ def test_update_election():
     data = response.json()
     new_name = f'{data["name"]}_MODIFIED'
     data["name"] = new_name
-    token = data["admin"]
+    ballot_token = data["admin"]
 
-    # Check we can not update without the token
+    # Check we can not update without the ballot_token
     response = client.put("/elections", json=data)
     assert response.status_code == 422, response.content
 
-    # Check that the request fails with a wrong token
+    # Check that the request fails with a wrong ballot_token
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {token}WRONG"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
     assert response.status_code == 401, response.text
 
-    # But it works with the right token
+    # But it works with the right ballot_token
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}"}
     )
     assert response.status_code == 200, response.text
     response2 = client.get(f"/elections/{data['ref']}")
@@ -479,7 +575,7 @@ def test_update_election():
     data["grades"][0]["description"] += "MODIFIED"
     data["grades"][0]["value"] += 10
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}"}
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -490,14 +586,14 @@ def test_update_election():
     data2 = copy.deepcopy(data)
     del data2["candidates"][-1]
     response = client.put(
-        f"/elections", json=data2, headers={"Authorization": f"Bearer {token}"}
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {ballot_token}"}
     )
     assert response.status_code == 403, response.text
 
     data2 = copy.deepcopy(data)
     data2["grades"][0]["id"] += 100
     response = client.put(
-        f"/elections", json=data2, headers={"Authorization": f"Bearer {token}"}
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {ballot_token}"}
     )
     assert response.status_code == 403, response.text
 
@@ -513,12 +609,12 @@ def test_close_election2():
     data = response.json()
     new_name = f'{data["name"]}_MODIFIED'
     data["name"] = new_name
-    token = data["admin"]
+    ballot_token = data["admin"]
     election_ref = data["ref"]
 
     close_response = client.put(
         f"/elections",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
         json={"force_close": True, "ref": election_ref},
     )
     assert close_response.status_code == 200, close_response.json()
@@ -532,18 +628,18 @@ def test_close_election():
     response = client.post("/elections", json=body)
     assert response.status_code == 200, response.content
     data = response.json()
-    token = data["admin"]
+    ballot_token = data["admin"]
 
-    # Check that the request fails with a wrong token
+    # Check that the request fails with a wrong ballot_token
     data["force_close"] = True
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {token}WRONG"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
     assert response.status_code == 401, response.text
 
-    # But it works with the right token
+    # But it works with the right ballot_token
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {token}"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}"}
     )
     assert response.status_code == 200, response.text
     response2 = client.get(f"/elections/{data['ref']}")
@@ -574,7 +670,7 @@ def test_progress():
     assert progress_data["num_voters_voted"] == 0
 
     # Vote with the first voter
-    token = data["invites"][0]
+    ballot_token = data["invites"][0]
     grade_id = data["grades"][0]["id"]
     votes = [
         {"candidate_id": candidate["id"], "grade_id": grade_id}
@@ -582,7 +678,7 @@ def test_progress():
     ]
     vote_rep = client.put(
         f"/ballots",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {ballot_token}"},
         json={"votes": votes},
     )
     vote_data = vote_rep.json()
