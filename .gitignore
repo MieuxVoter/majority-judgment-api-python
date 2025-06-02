@@ -3,8 +3,6 @@
 *.mo
 .#*
 
-backup
-
 # Python
 __pycache__/
 .mypy_cache
@@ -14,9 +12,15 @@ __pycache__/
 # Local (secret) configuration
 /.env.local
 
+# Backup
+backup
+
 # Databases (dumps?)
 test.db
 main.db
+
+# Operating System
+.directory
 
 # IDE
 /.idea/

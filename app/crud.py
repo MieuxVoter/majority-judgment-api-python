@@ -231,7 +231,7 @@ def _check_if_ref_exists(db: Session, ref: str):
 
 
 def create_election(
-    db: Session, election: schemas.ElectionCreate
+    db: Session, election: schemas.ElectionCreate,
 ) -> schemas.ElectionGet:
     # We create first the election
     # without candidates and grades
@@ -242,7 +242,7 @@ def create_election(
     
     election_ref = str(db_election.ref)
 
-    # Then, we add separatly candidates and grades
+    # Then, we add separately candidates and grades
     for candidate in election.candidates:
         params = candidate.model_dump()
         candidate = schemas.CandidateCreate(**params)
