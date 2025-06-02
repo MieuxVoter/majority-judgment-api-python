@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     hostname: ${DB_HOST:-mj_db}
     healthcheck:
-      start_period: 15s
+      start_period: 20s
       test: ["CMD", "pg_isready", "--user", "${DB_USER:-mj}"]
       interval: 1m
       timeout: 10s
@@ -23,7 +23,10 @@ services:
     ports:
       - ${DB_PORT:-5433}:5432
     volumes:
-      - db:/var/lib/mysql
+      # Old mount point, before the infamous 2025-05 database wipe.
+      #- db:/var/lib/mysql
+      # Restoring the volume backup only worked when we mounted it here.
+      - db:/var/lib/postgresql/data
 
   mj_api:
     profiles:
@@ -45,11 +48,6 @@ services:
     depends_on:
       mj_db:
         condition: service_healthy
-    volumes:
-      - .:/code
-    networks:
-      - lan
-      - traefik_network
     environment:
       POSTGRES_HOST: ${DB_HOST:-mj_db}
       POSTGRES_USER: "${DB_USER:-mj}"
@@ -60,6 +58,11 @@ services:
       SECRET: "${SECRET}"
     ports:
       - 8877:8877
+    volumes:
+      - .:/code
+    networks:
+      - lan
+      - traefik_network
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -124,11 +127,11 @@ services:
       interval: 10m
       timeout: 10s
       retries: 3
+    volumes:
+      - imgpush:/images
     networks:
       - lan
       - traefik_network
-    volumes:
-      - imgpush:/images
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -147,9 +150,6 @@ services:
     depends_on:
       mj_db:
         condition: service_healthy
-    networks:
-      - lan
-      - traefik_network
     environment:
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: "${DB_NAME:-mj}"
@@ -158,6 +158,9 @@ services:
       MB_DB_USER: "${DB_USER:-mj}"
       MB_DB_PASS: "${DB_PASS}"
       TZ: ${TIMEZONE:-Europe/Paris}
+    networks:
+      - lan
+      - traefik_network
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
@@ -214,4 +217,4 @@ volumes:
 networks:
   lan:
   traefik_network:
-    external: true 
+    external: true
