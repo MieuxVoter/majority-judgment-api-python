@@ -115,7 +115,7 @@ class ElectionBase(BaseModel):
     name: Name
     description: Description = ""
     ref: Ref = ""
-    date_start: datetime | int | str = Field(default_factory=_utc_now)
+    date_start: datetime | int | str | None = Field(default_factory=_utc_now)
     date_end: datetime | int | str | None = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     restricted: bool = False

@@ -59,6 +59,7 @@ class RandomElection(t.TypedDict):
     hide_results: bool
     num_voters: int
     date_end: t.Optional[str]
+    date_start: t.Optional[str]
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -71,6 +72,7 @@ def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
     candidates = [{"name": _random_string(10)} for i in range(num_candidates)]
     name = _random_string(10)
     return {
+        "date_start":None,
         "candidates": candidates, 
         "grades": grades, 
         "name": name,
@@ -394,6 +396,56 @@ def test_cannot_update_vote_on_ended_election():
 
     assert response.status_code == 403, response.json()
 
+## TODO: cannot change start_date if a people vote; 
+## 
+def test_cannot_create_vote_on_unstarted_election():
+    """
+    On an unstarted election, we are not allowed to create new votes
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
+    body["date_end"] = (datetime.now() + timedelta(days=2)).isoformat()
+    response = client.post("/elections", json=body)
+    data = response.json()
+    assert response.status_code == 200, data
+    election_ref = data["ref"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots",
+        json={"votes": votes, "election_ref": election_ref},
+    )
+    data = response.json()
+    assert response.status_code == 403, data
+
+def test_cannot_update_vote_on_unstarted_election():
+    """
+    On an unstarted election, we are not allowed to create new votes
+    """
+    # Create a random election
+    body = _random_election(10, 5)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    body["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
+    body["date_end"] = (datetime.now() + timedelta(days=2)).isoformat()
+    response = client.post("/elections", json=body)
+    data = response.json()
+    assert response.status_code == 200, data
+    election_ref = data["ref"]
+    tokens = data["invites"]
+    assert len(tokens) == 1
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.put(
+        f"/ballots",
+        json={"votes": votes, "election_ref": election_ref},
+        headers={"Authorization": f"Bearer {tokens[0]}"},
+    )
+    data = response.json()
+    assert response.status_code == 403, data
 
 def test_cannot_create_vote_on_restricted_election():
     """

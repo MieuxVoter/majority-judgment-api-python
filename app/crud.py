@@ -367,6 +367,7 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
     db_election = _check_public_election(db, ballot.election_ref)
     election = schemas.ElectionGet.model_validate(db_election)
 
+    _check_election_is_started(db_election)
     _check_election_is_not_ended(db_election)
 
     _check_items_in_election(
@@ -405,6 +406,14 @@ def _check_public_election(db: Session, election_ref: str):
             "The election is restricted. You can not create new votes"
         )
     return db_election
+
+def _check_election_is_started(election: models.Election):
+    """
+    Check that the election is started.
+    If it is not, raise an error.
+    """
+    if election.date_start is not None and election.date_start > datetime.now():
+        raise errors.ForbiddenError("The election has not started yet. You can not create votes")
 
 def _check_election_is_not_ended(election: models.Election):
     """
@@ -453,6 +462,7 @@ def update_ballot(
     if db_election is None:
         raise errors.NotFoundError("elections")
 
+    _check_election_is_started(db_election)
     _check_election_is_not_ended(db_election)
 
     if len(ballot.votes) != len(vote_ids):
