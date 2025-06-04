@@ -98,9 +98,14 @@ def _parse_date(value:datetime | int | str | None):
             value_as_datetime = dateutil.parser.parse(value)
 
     if value_as_datetime.tzinfo is None and not settings.sqlite:
-        value_as_datetime = value_as_datetime.replace(tzinfo=timezone.utc)
-    elif value_as_datetime.tzinfo is not None and settings.sqlite:
-        value_as_datetime = value_as_datetime.astimezone(timezone.utc).replace(tzinfo=None)
+        import datetime as dt
+        local_tz = dt.datetime.now(dt.timezone.utc).astimezone().tzinfo
+        value_as_datetime = value_as_datetime.replace(tzinfo=local_tz).astimezone(timezone.utc)
+    elif value_as_datetime.tzinfo is not None:
+        if settings.sqlite:
+            value_as_datetime = value_as_datetime.astimezone(timezone.utc).replace(tzinfo=None)
+        else:
+            value_as_datetime = value_as_datetime.astimezone(timezone.utc)
 
     return value_as_datetime
 
