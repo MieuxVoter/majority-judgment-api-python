@@ -330,6 +330,7 @@ def update_election(
         "date_end",
         "hide_results",
         "force_close",
+        "auth_for_result",
     ]:
         if getattr(election, key) is None:
             continue
@@ -513,10 +514,19 @@ def get_ballot(db: Session, token: str) -> schemas.BallotGet:
     return schemas.BallotGet(token=token, votes=votes_get, election=election)
 
 
-def get_results(db: Session, election_ref: str) -> schemas.ResultsGet:
+def get_results(db: Session, election_ref: str, token: t.Optional[str]) -> schemas.ResultsGet:
     db_election = get_election(db, election_ref)
     if db_election is None:
         raise errors.NotFoundError("elections")
+
+    if db_election.auth_for_result:
+        if token is None:
+            raise errors.UnauthorizedError("Election require auth for result, you need to set Authentication header")
+        
+        payload = jws_verify(token)
+        
+        if payload["election"] != election_ref:
+            raise errors.UnauthorizedError("Wrong authentication for this election")
 
     if (
         db_election.hide_results

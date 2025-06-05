@@ -19,6 +19,7 @@ class Election(Base):
     hide_results = Column(Boolean, default=False)
     restricted = Column(Boolean, default=False)
     force_close = Column(Boolean, default=False)
+    auth_for_result = Column(Boolean, default=False)
 
     grades = relationship("Grade", back_populates="election")
     candidates = relationship("Candidate", back_populates="election")

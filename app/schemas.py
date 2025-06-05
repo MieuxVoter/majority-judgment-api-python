@@ -119,6 +119,7 @@ class ElectionBase(BaseModel):
     date_end: datetime | int | str | None = Field(default_factory=_in_a_long_time)
     hide_results: bool = True
     restricted: bool = False
+    auth_for_result: bool = False
 
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
@@ -226,6 +227,7 @@ class ElectionUpdate(BaseModel):
     num_voters: int | None = None
     force_close: bool | None = None
     candidates: list[CandidateUpdate] | None = None
+    auth_for_result: bool | None = None
 
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
