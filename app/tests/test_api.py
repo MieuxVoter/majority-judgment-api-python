@@ -60,6 +60,7 @@ class RandomElection(t.TypedDict):
     num_voters: int
     date_end: t.Optional[str]
     date_start: t.Optional[str]
+    auth_for_result: bool
 
 
 def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
@@ -80,6 +81,7 @@ def _random_election(num_candidates: int, num_grades: int) -> RandomElection:
         "hide_results": False,
         "num_voters": 0,
         "date_end": None,
+        "auth_for_result": False,
     }
 
 
@@ -589,6 +591,47 @@ def test_get_results_with_hide_results():
     assert response.status_code == 200, response.text
 
 
+def test_get_results_with_auth_for_result():
+    # Create a random election
+    body = _random_election(10, 5)
+    body["auth_for_result"] = True
+    body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data = response.json()
+    election_ref = data["ref"]
+    admin_token = data["admin"]
+
+    # We create votes using the ID
+    votes = _generate_votes_from_response("id", data)
+    response = client.post(
+        f"/ballots", json={"votes": votes, "election_ref": election_ref}
+    )
+    assert response.status_code == 200, data
+
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+    )
+
+    assert response.status_code == 200, response.text
+
+    # But, we can't get the results
+    response = client.get(f"/results/{election_ref}")
+    assert response.status_code == 401, data
+
+    # Now, we can access to the results
+    response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 200, response.text
+
+    # Ensure other admin tokens can't access the results
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.content
+    data2 = response.json()
+    admin_token2 = data2["admin"]
+
+    response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token2}"})
+    assert response.status_code == 401, data
+
 def test_update_election():
     # Create a random election
     body = _random_election(10, 5)
@@ -597,7 +640,7 @@ def test_update_election():
     data = response.json()
     new_name = f'{data["name"]}_MODIFIED'
     data["name"] = new_name
-    ballot_token = data["admin"]
+    admin_token = data["admin"]
 
     # Check we can not update without the ballot_token
     response = client.put("/elections", json=data)
@@ -605,13 +648,22 @@ def test_update_election():
 
     # Check that the request fails with a wrong ballot_token
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}WRONG"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}WRONG"}
     )
-    assert response.status_code == 401, response.text
+    assert response.status_code == 401, response.text    
+
+    # Check that the request fails with a admnin token of other election
+    response2 = client.post("/elections", json=body)
+    data2 = response2.json()
+    admin_token2 = data2["admin"]
+    response = client.put(
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token2}"}
+    )
+    assert response.status_code == 403, response.text  
 
     # But it works with the right ballot_token
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200, response.text
     response2 = client.get(f"/elections/{data['ref']}")
@@ -627,7 +679,7 @@ def test_update_election():
     data["grades"][0]["description"] += "MODIFIED"
     data["grades"][0]["value"] += 10
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}"}
+        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -638,14 +690,14 @@ def test_update_election():
     data2 = copy.deepcopy(data)
     del data2["candidates"][-1]
     response = client.put(
-        f"/elections", json=data2, headers={"Authorization": f"Bearer {ballot_token}"}
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 403, response.text
 
     data2 = copy.deepcopy(data)
     data2["grades"][0]["id"] += 100
     response = client.put(
-        f"/elections", json=data2, headers={"Authorization": f"Bearer {ballot_token}"}
+        f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 403, response.text
 

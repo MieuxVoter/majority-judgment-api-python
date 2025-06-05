@@ -142,5 +142,6 @@ def get_ballot(authorization: str = Header(), db: Session = Depends(get_db)):
 
 
 @app.get("/results/{election_ref}", response_model=schemas.ResultsGet)
-def get_results(election_ref: str, db: Session = Depends(get_db)):
-    return crud.get_results(db=db, election_ref=election_ref)
+def get_results(election_ref: str, authorization: t.Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    token = authorization.split("Bearer ")[1] if authorization else None
+    return crud.get_results(db=db, token=token, election_ref=election_ref)
