@@ -111,6 +111,46 @@ def test_create_election():
     data = response.json()
     assert data["name"] == body["name"]
 
+def test_start_end_date_are_valid():
+    # cannot create an election where the start date is after the end date 
+    body = _random_election(2, 2)
+    body["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
+    body["date_end"] = (datetime.now()).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 422, response.text
+
+    body["date_start"] = (datetime.now()).isoformat()
+    body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200, response.text
+    election_data = response.json()
+    del election_data["candidates"]
+    del election_data["grades"]
+    del election_data["name"]
+    del election_data["restricted"]
+    del election_data["hide_results"]
+    del election_data["auth_for_result"]
+    admin_token = election_data["admin"]
+    election_ref = election_data["ref"]
+
+    # update election should not be allowed if the start date is after the end date
+    election_data["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
+    election_data["date_end"] = (datetime.now()).isoformat()
+    response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 422, response.text
+
+    # update election should be allowed if the start date is before the end date
+    del election_data["date_start"]
+    election_data["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
+    response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 403, response.text
+
+    # update election should be allowed if the start date is before the end date
+    del election_data["date_end"]
+    election_data["date_start"] = (datetime.now() + timedelta(days=2)).isoformat()
+    response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 403, response.text
+
 
 def test_get_election():
     body = _random_election(3, 4)
@@ -309,13 +349,14 @@ def test_cannot_create_vote_on_ended_election():
     """
     # Create a random election
     body = _random_election(10, 5)
+    body["date_start"] = (datetime.now() - timedelta(days=2)).isoformat()
     body["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
     response = client.post("/elections", json=body)
     election_data = response.json()
     assert response.status_code == 200, election_data
     assert len(election_data["invites"]) == 0
     election_ref = election_data["ref"]
-    ballot_token = election_data["admin"]
+    admin_token = election_data["admin"]
 
     # We create votes using the ID
     votes = _generate_votes_from_response("id", election_data)
@@ -330,7 +371,7 @@ def test_cannot_create_vote_on_ended_election():
     response = client.put(
         f"/elections",
         json={"force_close": True, "date_end":(datetime.now() + timedelta(days=1)).isoformat(), "ref": election_ref},
-        headers={"Authorization": f"Bearer {ballot_token}"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert response.status_code == 200, response.json()
 
@@ -386,9 +427,13 @@ def test_cannot_update_vote_on_ended_election():
     # Test for date_end in the past
     response = client.put(
         f"/elections",
-        json={"force_close": False, "date_end":(datetime.now() - timedelta(days=1)).isoformat(), "ref": election_ref},
+        json={"force_close": False, "date_start":(datetime.now() - timedelta(days=2)).isoformat(), "date_end":(datetime.now() - timedelta(days=1)).isoformat(), "ref": election_ref},
         headers={"Authorization": f"Bearer {election_token}"},
     )
+
+    assert response.status_code == 200, response.json()["date_end"]
+
+    print(response.json()["date_end"])
 
     response = client.put(
         f"/ballots",
