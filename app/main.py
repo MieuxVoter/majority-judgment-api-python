@@ -28,6 +28,16 @@ app.add_middleware(
 async def main():
     return {"message": "Hello World"}
 
+@app.exception_handler(schemas.ArgumentsSchemaError)
+async def invalid_schema_exception_handler(
+    request: Request, exc: schemas.ArgumentsSchemaError
+):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "message": f"Validation Error. {exc}",
+        },
+    )
 
 @app.exception_handler(errors.NotFoundError)
 async def not_found_exception_handler(request: Request, exc: errors.NotFoundError):

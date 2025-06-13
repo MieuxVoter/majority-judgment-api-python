@@ -173,6 +173,12 @@ def _create_election_without_candidates_or_grade(
     params = election.model_dump()
     del params["candidates"]
     del params["grades"]
+    
+    if params.get("date_start") is not None and params.get("date_end") is not None:
+        if params["date_start"] >= params["date_end"]:
+            raise errors.ForbiddenError(
+                "The start date must be before the end date of the election"
+            )
 
     db_election = models.Election(**params)
     db.add(db_election)
@@ -282,6 +288,17 @@ def update_election(
     db_election = get_election(db, election_ref)
     if db_election is None:
         raise errors.NotFoundError("elections")
+
+    if election.date_start is not None and election.date_end is None and db_election.date_end is not None:
+        if election.date_start > db_election.date_end:
+            raise errors.ForbiddenError(
+                "The start date must be before the end date of the election"
+            )
+    elif election.date_end is not None and election.date_start is None:
+        if election.date_end < db_election.date_start:
+            raise errors.ForbiddenError(
+                "The end date must be after the start date of the election"
+            )
 
     if (
         election.restricted is not None

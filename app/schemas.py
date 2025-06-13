@@ -1,7 +1,8 @@
 import typing as t
+from typing_extensions import Self
 from datetime import datetime, timedelta, timezone
 import dateutil.parser
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo, model_validator
 from pydantic_settings import SettingsConfigDict
 from .settings import settings
 
@@ -121,6 +122,13 @@ class ElectionBase(BaseModel):
     restricted: bool = False
     auth_for_result: bool = False
 
+    @model_validator(mode="after")
+    def check_dates_order(self) -> Self:
+        if self.date_start and self.date_end and _parse_date(self.date_start) > _parse_date(self.date_end):
+            raise ArgumentsSchemaError("date_start must be before or equal to date_end")
+        
+        return self
+
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
     def parse_date(cls, value):
@@ -228,6 +236,13 @@ class ElectionUpdate(BaseModel):
     force_close: bool | None = None
     candidates: list[CandidateUpdate] | None = None
     auth_for_result: bool | None = None
+
+    @model_validator(mode="after")
+    def check_dates_order(self) -> Self:
+        if self.date_start and self.date_end and _parse_date(self.date_start) > _parse_date(self.date_end):
+            raise ArgumentsSchemaError(f"date_start must be before or equal to date_end")
+            
+        return self
 
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
