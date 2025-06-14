@@ -41,8 +41,10 @@ def get_progress(db: Session, election_ref: str, token: str) -> schemas.Progress
     """
     payload = jws_verify(token)
     election_ref2 = payload["election"]
+
     if election_ref != election_ref2:
         raise errors.UnauthorizedError("Wrong election ref")
+    
     # Check we can update the election
     if not payload["admin"]:
         raise errors.ForbiddenError("You are not allowed to manage the election")
@@ -285,7 +287,11 @@ def update_election(
     if not payload["admin"]:
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
+    if election_ref != election.ref:
+        raise errors.UnauthorizedError("Wrong election ref")
+
     db_election = get_election(db, election_ref)
+
     if db_election is None:
         raise errors.NotFoundError("elections")
 
