@@ -547,6 +547,60 @@ def get_ballot(db: Session, token: str) -> schemas.BallotGet:
     return schemas.BallotGet(token=token, votes=votes_get, election=election)
 
 
+def get_detailed_results(db:Session, election_ref:str, token: str) -> str:
+    payload = jws_verify(token)
+        
+    if payload["election"] != election_ref:
+        raise errors.UnauthorizedError("Wrong authentication for this election")
+
+    db_election = get_election(db, election_ref)
+    votes = db_election.votes
+    candidates = db_election.candidates
+    candidates_count = len(candidates)
+    filtered_votes = [v for v in votes if v.candidate_id is not None and v.grade_id is not None]
+    vote_count = len(filtered_votes)
+    filtered_votes.sort(key=lambda v: v.id)
+
+    if vote_count % candidates_count != 0:
+        raise errors.ForbiddenError("The number of votes is not a multiple of the number of candidates")
+
+    # Build a table header: first cell empty, then candidate names
+    header = [""] + [c.name for c in candidates]
+    table = []
+
+    # Group votes by voter (each group has candidates_count votes)
+    for i in range(vote_count // candidates_count):
+        group = filtered_votes[i * candidates_count : (i + 1) * candidates_count]
+        # Check all votes in group have the same timestamp
+        timestamps = {v.date_created for v in group}
+
+        if len(timestamps) != 1:
+            raise errors.ForbiddenError("Votes in a ballot must have the same timestamp")
+        
+        # Check all candidates are present
+        candidate_ids = {v.candidate_id for v in group}
+        expected_ids = {c.id for c in candidates}
+
+        if candidate_ids != expected_ids:
+            raise errors.ForbiddenError("Each ballot must contain all candidates")
+        
+        # Build row: first cell is timestamp, then grade label for each candidate
+        row = ['-']
+
+        for c in candidates:
+            vote = next(v for v in group if v.candidate_id == c.id)
+            # Find grade label from header/table
+            grade = next((g for g in db_election.grades if g.id == vote.grade_id), None)
+            row.append(grade.label if grade else "")
+
+        table.insert(random.randint(0, len(table)), row)
+
+    table.insert(0, header)
+    return table
+    
+
+
+
 def get_results(db: Session, election_ref: str, token: t.Optional[str]) -> schemas.ResultsGet:
     db_election = get_election(db, election_ref)
     if db_election is None:
