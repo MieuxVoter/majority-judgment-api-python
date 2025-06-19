@@ -83,7 +83,7 @@ def _in_a_long_time() -> datetime:
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
-def _parse_date(value:datetime | int | str | None):
+def parse_date(value:datetime | int | str | None):
     if value is None:
         return None
     
@@ -124,7 +124,7 @@ class ElectionBase(BaseModel):
 
     @model_validator(mode="after")
     def check_dates_order(self) -> Self:
-        if self.date_start and self.date_end and _parse_date(self.date_start) > _parse_date(self.date_end):
+        if self.date_start and self.date_end and parse_date(self.date_start) > parse_date(self.date_end):
             raise ArgumentsSchemaError("date_start must be before or equal to date_end")
         
         return self
@@ -132,7 +132,7 @@ class ElectionBase(BaseModel):
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
     def parse_date(cls, value):
-        return _parse_date(value)
+        return parse_date(value)
 
 class ElectionGet(ElectionBase):
     force_close: bool = False
@@ -239,7 +239,7 @@ class ElectionUpdate(BaseModel):
 
     @model_validator(mode="after")
     def check_dates_order(self) -> Self:
-        if self.date_start and self.date_end and _parse_date(self.date_start) > _parse_date(self.date_end):
+        if self.date_start and self.date_end and parse_date(self.date_start) > parse_date(self.date_end):
             raise ArgumentsSchemaError(f"date_start must be before or equal to date_end")
             
         return self
@@ -247,7 +247,7 @@ class ElectionUpdate(BaseModel):
     @field_validator("date_end", "date_start", mode="before")
     @classmethod
     def parse_date(cls, value):
-        return _parse_date(value)
+        return parse_date(value)
 
     @field_validator("grades")
     @classmethod

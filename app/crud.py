@@ -288,7 +288,7 @@ def update_election(
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     if election_ref != election.ref:
-        raise errors.UnauthorizedError("Wrong election ref")
+        raise errors.ForbiddenError("Wrong election ref")
 
     db_election = get_election(db, election_ref)
 
@@ -296,12 +296,12 @@ def update_election(
         raise errors.NotFoundError("elections")
 
     if election.date_start is not None and election.date_end is None and db_election.date_end is not None:
-        if election.date_start > db_election.date_end:
+        if schemas.parse_date(election.date_start) > schemas.parse_date(db_election.date_end):
             raise errors.ForbiddenError(
                 "The start date must be before the end date of the election"
             )
     elif election.date_end is not None and election.date_start is None:
-        if election.date_end < db_election.date_start:
+        if schemas.parse_date(election.date_end) < schemas.parse_date(db_election.date_start):
             raise errors.ForbiddenError(
                 "The end date must be after the start date of the election"
             )
