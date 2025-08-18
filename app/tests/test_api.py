@@ -134,7 +134,7 @@ def test_start_end_date_are_valid():
     body["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
     body["date_end"] = (datetime.now()).isoformat()
     response = client.post("/elections", json=body)
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "SCHEMA_VALIDATION_ERROR")
 
     body["date_start"] = (datetime.now()).isoformat()
     body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
@@ -154,7 +154,7 @@ def test_start_end_date_are_valid():
     election_data["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
     election_data["date_end"] = (datetime.now()).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "SCHEMA_VALIDATION_ERROR")
 
     # update election should be rejected if the new end date is before the existing start date
     del election_data["date_start"]

@@ -42,9 +42,7 @@ async def invalid_schema_exception_handler(
 ):
     return JSONResponse(
         status_code=422,
-        content={
-            "message": f"Validation Error. {exc}",
-        },
+        content={"error": "SCHEMA_VALIDATION_ERROR", "message": str(exc)},
     )
 
 @app.exception_handler(errors.UnauthorizedError)
