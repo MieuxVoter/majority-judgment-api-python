@@ -607,7 +607,7 @@ def test_get_results():
     assert len(profile) == len(data["candidates"])
 
 
-def test_get_results_with_hide_results():
+def test_get_results_with_hidden_results():
     # Create a random election
     body = _random_election(10, 5)
     body["hide_results"] = True
@@ -627,7 +627,7 @@ def test_get_results_with_hide_results():
 
     # But, we can't get the results
     response = client.get(f"/results/{election_ref}")
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "RESULTS_HIDDEN")
 
     # So, we close the election
     print("UPDATE", data["force_close"])

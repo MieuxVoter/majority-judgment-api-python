@@ -84,3 +84,9 @@ class InconsistentBallotError(CustomError):
     status_code = 403
     error_code = "INCONSISTENT_BALLOT"
     message = "This ballot is inconsistent."
+
+class ResultsHiddenError(CustomError):
+    status_code = 403
+    error_code = "RESULTS_HIDDEN"
+    message = "Results are hidden."
+

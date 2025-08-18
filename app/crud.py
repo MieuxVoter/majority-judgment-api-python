@@ -566,7 +566,7 @@ def get_results(db: Session, election_ref: str, token: t.Optional[str]) -> schem
         and (db_election.date_end is not None and db_election.date_end > datetime.now())
         and not db_election.force_close
     ):
-        raise errors.ForbiddenError("The election is not closed")
+        raise errors.ResultsHiddenError("Results are hidden until the election is closed.")
 
     query = db.query(
         models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)
