@@ -3,8 +3,8 @@ import json
 from fastapi import Depends, FastAPI, HTTPException, Request, Body, Header
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from jose import jwe, jws
 from jose.exceptions import JWEError, JWSError
 
 from . import crud, models, schemas, errors
@@ -22,6 +22,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # This overrides FastAPI's default 422 validation error handler
+    # to produce our standardized error format.
+    return JSONResponse(
+        status_code=422,
+        content={"error": "VALIDATION_ERROR", "message": str(exc)},
+    )
 
 @app.get("/")
 async def main():

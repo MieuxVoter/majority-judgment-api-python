@@ -279,7 +279,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes[-1]},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty grade_id is rejected
     grade_id = data["grades"][0]["id"]
@@ -290,7 +290,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes2},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty candidate is rejected
     votes2 = copy.deepcopy(votes)
@@ -300,7 +300,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes2},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # But it should work with the whole ballot
     response = client.put(
