@@ -241,7 +241,7 @@ def test_create_ballot():
     response = client.get(
         f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
-    assert response.status_code == 401, response.text
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     response = client.get(f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}"})
     assert response.status_code == 200, response.text
@@ -675,7 +675,7 @@ def test_get_results_with_auth_for_result():
 
     # But, we can't get the results
     response = client.get(f"/results/{election_ref}")
-    assert response.status_code == 401, data
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # Now, we can access to the results
     response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token}"})
@@ -688,7 +688,7 @@ def test_get_results_with_auth_for_result():
     admin_token2 = data2["admin"]
 
     response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token2}"})
-    assert response.status_code == 401, data
+    check_error_response(response, 401, "UNAUTHORIZED")
 
 def test_update_election():
     # Create a random election
@@ -708,7 +708,7 @@ def test_update_election():
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}WRONG"}
     )
-    assert response.status_code == 401, response.text    
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # Check that the request fails with a admnin token of other election
     response2 = client.post("/elections", json=body)
@@ -797,7 +797,7 @@ def test_close_election():
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
-    assert response.status_code == 401, response.text
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # But it works with the right ballot_token
     response = client.put(

@@ -23,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
@@ -44,13 +43,6 @@ async def invalid_schema_exception_handler(
         status_code=422,
         content={"error": "SCHEMA_VALIDATION_ERROR", "message": str(exc)},
     )
-
-@app.exception_handler(errors.UnauthorizedError)
-async def unauthorized_exception_handler(request: Request, exc: errors.NotFoundError):
-    return JSONResponse(
-        status_code=401, content={"message": "Unautorized", "details": exc.name}
-    )
-
 
 @app.exception_handler(errors.BadRequestError)
 async def bad_request_exception_handler(request: Request, exc: errors.BadRequestError):

@@ -50,14 +50,10 @@ class ForbiddenError(CustomError):
     error_code = "FORBIDDEN"
     message = "You are not authorized to perform this action."
 
-class UnauthorizedError(Exception):
-    """
-    The verification could not be verified
-    """
-
-    def __init__(self, name: str):
-        self.name = name
-
+class UnauthorizedError(CustomError):
+    status_code = 401
+    error_code = "UNAUTHORIZED"
+    message = "Authentication is required and has failed or has not yet been provided."
 
 class NoRecordedVotes(Exception):
     """
