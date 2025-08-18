@@ -69,3 +69,8 @@ class ElectionFinishedError(CustomError):
     error_code = "ELECTION_FINISHED"
     message = "The election has finished and cannot be voted on."
 
+class InvalidDateError(CustomError):
+    status_code = 409
+    error_code = "INVALID_DATE_CONFIGURATION"
+    message = "The provided date configuration is invalid."
+

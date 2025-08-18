@@ -160,14 +160,13 @@ def test_start_end_date_are_valid():
     del election_data["date_start"]
     election_data["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 403, response.text
+    check_error_response(response, 409, "INVALID_DATE_CONFIGURATION")
 
     # update election should be rejected if the new start date is after the existing end date
     del election_data["date_end"]
     election_data["date_start"] = (datetime.now() + timedelta(days=2)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 403, response.text
-
+    check_error_response(response, 409, "INVALID_DATE_CONFIGURATION")
 
 def test_get_election():
     body = _random_election(3, 4)

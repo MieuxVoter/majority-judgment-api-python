@@ -297,12 +297,12 @@ def update_election(
 
     if election.date_start is not None and election.date_end is None and db_election.date_end is not None:
         if schemas.parse_date(election.date_start) > schemas.parse_date(db_election.date_end):
-            raise errors.ForbiddenError(
+            raise errors.InvalidDateError(
                 "The start date must be before the end date of the election"
             )
     elif election.date_end is not None and election.date_start is None:
         if schemas.parse_date(election.date_end) < schemas.parse_date(db_election.date_start):
-            raise errors.ForbiddenError(
+            raise errors.InvalidDateError(
                 "The end date must be after the start date of the election"
             )
 
