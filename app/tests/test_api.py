@@ -477,8 +477,7 @@ def test_cannot_create_vote_on_unstarted_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_NOT_STARTED")
 
 def test_cannot_update_vote_on_unstarted_election():
     """
@@ -504,8 +503,7 @@ def test_cannot_update_vote_on_unstarted_election():
         json={"votes": votes, "election_ref": election_ref},
         headers={"Authorization": f"Bearer {tokens[0]}"},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_NOT_STARTED")
 
 def test_cannot_create_vote_on_restricted_election():
     """
@@ -527,9 +525,7 @@ def test_cannot_create_vote_on_restricted_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
-
+    check_error_response(response, 403, "ELECTION_RESTRICTED")
 
 def test_can_vote_on_restricted_election():
     """

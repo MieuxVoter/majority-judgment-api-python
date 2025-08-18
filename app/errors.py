@@ -70,3 +70,12 @@ class InvalidDateError(CustomError):
     error_code = "INVALID_DATE_CONFIGURATION"
     message = "The provided date configuration is invalid."
 
+class ElectionNotStartedError(CustomError):
+    status_code = 403
+    error_code = "ELECTION_NOT_STARTED"
+    message = "The election has not started yet."
+
+class ElectionRestrictedError(CustomError):
+    status_code = 403
+    error_code = "ELECTION_RESTRICTED"
+    message = "This is a restricted election."

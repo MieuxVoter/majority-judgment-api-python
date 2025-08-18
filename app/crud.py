@@ -426,7 +426,7 @@ def _check_public_election(db: Session, election_ref: str):
     if db_election is None:
         raise errors.NotFoundError("elections")
     if db_election.restricted:
-        raise errors.ForbiddenError(
+        raise errors.ElectionRestrictedError(
             "The election is restricted. You can not create new votes"
         )
     return db_election
@@ -437,7 +437,7 @@ def _check_election_is_started(election: models.Election):
     If it is not, raise an error.
     """
     if election.date_start is not None and election.date_start > datetime.now():
-        raise errors.ForbiddenError("The election has not started yet. You can not create votes")
+        raise errors.ElectionNotStartedError("The election has not started yet. You can not create votes")
 
 def _check_election_is_not_ended(election: models.Election):
     """
