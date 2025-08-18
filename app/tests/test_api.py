@@ -333,7 +333,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes[:-1], "election_ref": data["ref"]}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "FORBIDDEN")
 
     # Check that a ballot with an empty grade_id is rejected
     votes = _generate_votes_from_response("id", data)
@@ -341,7 +341,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
     )
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty candidate is rejected
     votes = _generate_votes_from_response("id", data)
@@ -349,7 +349,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
     )
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # But it should work with the whole ballot
     votes = _generate_votes_from_response("id", data)
