@@ -79,3 +79,8 @@ class ElectionRestrictedError(CustomError):
     status_code = 403
     error_code = "ELECTION_RESTRICTED"
     message = "This is a restricted election."
+
+class InconsistentBallotError(CustomError):
+    status_code = 403
+    error_code = "INCONSISTENT_BALLOT"
+    message = "This ballot is inconsistent."

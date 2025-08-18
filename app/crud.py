@@ -381,7 +381,7 @@ def _check_ballot_is_consistent(
         for c in election.candidates
     }
     if not all(len(votes) == 1 for votes in votes_by_candidate.values()):
-        raise errors.ForbiddenError("Unconsistent ballot")
+        raise errors.InconsistentBallotError("Inconsistent ballot: each candidate must have exactly one vote.")
 
 
 def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGet:

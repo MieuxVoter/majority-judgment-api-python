@@ -333,7 +333,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes[:-1], "election_ref": data["ref"]}
     )
-    check_error_response(response, 403, "FORBIDDEN")
+    check_error_response(response, 403, "INCONSISTENT_BALLOT")
 
     # Check that a ballot with an empty grade_id is rejected
     votes = _generate_votes_from_response("id", data)
@@ -565,7 +565,7 @@ def test_can_vote_on_restricted_election():
     assert payload2 == payload
 
 
-def test_cannot_ballot_box_stuffing():
+def test_reject_ballot_box_stuffing():
     # Create a random election
     body = _random_election(10, 5)
     response = client.post("/elections", json=body)
@@ -579,9 +579,7 @@ def test_cannot_ballot_box_stuffing():
     response = client.post(
         f"/ballots", json={"votes": votes + votes, "election_ref": election_ref}
     )
-    data = response.json()
-    assert response.status_code == 403, data
-
+    check_error_response(response, 403, "INCONSISTENT_BALLOT")
 
 def test_get_results():
     # Create a random election
