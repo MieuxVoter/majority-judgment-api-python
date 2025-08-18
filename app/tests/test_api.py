@@ -150,19 +150,19 @@ def test_start_end_date_are_valid():
     admin_token = election_data["admin"]
     election_ref = election_data["ref"]
 
-    # update election should not be allowed if the start date is after the end date
+    # update election should not be allowed if the new start date is after the new end date
     election_data["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
     election_data["date_end"] = (datetime.now()).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
     assert response.status_code == 422, response.text
 
-    # update election should be allowed if the start date is before the end date
+    # update election should be rejected if the new end date is before the existing start date
     del election_data["date_start"]
     election_data["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
     assert response.status_code == 403, response.text
 
-    # update election should be allowed if the start date is before the end date
+    # update election should be rejected if the new start date is after the existing end date
     del election_data["date_end"]
     election_data["date_start"] = (datetime.now() + timedelta(days=2)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
