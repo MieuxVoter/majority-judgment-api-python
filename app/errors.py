@@ -99,3 +99,9 @@ class ImmutableIdsError(CustomError):
     status_code = 403
     error_code = "IMMUTABLE_IDS"
     message = "The set of IDs is immutable."
+
+class ElectionIsActiveError(CustomError):
+    status_code = 403
+    error_code = "ELECTION_IS_ACTIVE"
+    message = "This election is already active and cannot be modified."
+

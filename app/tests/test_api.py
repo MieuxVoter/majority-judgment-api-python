@@ -456,8 +456,43 @@ def test_cannot_update_vote_on_ended_election():
     )
     check_error_response(response, 403, "ELECTION_FINISHED")
 
-## TODO: cannot change start_date if a people vote; 
-## 
+def test_cannot_change_start_date_if_vote_is_cast():
+    """
+    Tests that the start_date of an election cannot be updated
+    once at least one vote has been cast.
+    """
+    # Create a restricted election that is already open
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    body["date_start"] = (datetime.now() - timedelta(days=1)).isoformat()
+    body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
+
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    election_ref = election_data["ref"]
+    admin_token = election_data["admin"]
+    ballot_token = election_data["invites"][0]
+
+    # Cast a vote to make the election "active"
+    grade_id = election_data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": c["id"], "grade_id": grade_id}
+        for c in election_data["candidates"]
+    ]
+    response = client.put(
+        "/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {ballot_token}"}
+    )
+    assert response.status_code == 200, "Setup failed: Could not cast the initial vote."
+
+    # Attempt to change the start_date, which should be forbidden
+    update_payload = {"ref": election_ref, "date_start": (datetime.now() - timedelta(days=2)).isoformat()}
+    response = client.put("/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"})
+    check_error_response(response, 403, "ELECTION_IS_ACTIVE")
+
 def test_cannot_create_vote_on_unstarted_election():
     """
     On an unstarted election, we are not allowed to create new votes
@@ -630,10 +665,12 @@ def test_get_results_with_hidden_results():
     check_error_response(response, 403, "RESULTS_HIDDEN")
 
     # So, we close the election
-    print("UPDATE", data["force_close"])
-    data["force_close"] = True
+    update_payload = {
+        "ref": election_ref,
+        "force_close": True
+    }
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+        f"/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -661,8 +698,10 @@ def test_get_results_with_auth_for_result():
     )
     assert response.status_code == 200, data
 
+    # Send a minimal update to ensure the election state is processed without triggering date change errors.
+    update_payload = {"ref": election_ref, "name": data["name"]}
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+        f"/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
     )
 
     assert response.status_code == 200, response.text

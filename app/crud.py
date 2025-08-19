@@ -346,6 +346,16 @@ def update_election(
     if election.grades is not None:
         update_grades(db, election.grades, db_election.grades)
 
+    # Check if start_date is being changed
+    if election.date_start is not None and str(db_election.date_start) != election.date_start:
+        # If so, check if any votes have been cast
+        num_votes_cast = db.query(models.Vote).filter(
+            models.Vote.election_ref == election_ref,
+            models.Vote.grade_id.is_not(None)
+        ).count()
+        if num_votes_cast > 0:
+            raise errors.ElectionIsActiveError("Cannot change the start date of an election that already has votes.")
+
     for key in [
         "name",
         "description",
