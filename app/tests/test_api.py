@@ -696,7 +696,7 @@ def test_update_election():
 
     # Check we can not update without the ballot_token
     response = client.put("/elections", json=data)
-    assert response.status_code == 422, response.content
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that the request fails with a wrong ballot_token
     response = client.put(
@@ -711,7 +711,7 @@ def test_update_election():
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token2}"}
     )
-    assert response.status_code == 403, response.text  
+    check_error_response(response, 403, "WRONG_ELECTION")
 
     # But it works with the right ballot_token
     response = client.put(
@@ -744,14 +744,14 @@ def test_update_election():
     response = client.put(
         f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "IMMUTABLE_IDS")
 
     data2 = copy.deepcopy(data)
     data2["grades"][0]["id"] += 100
     response = client.put(
         f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "IMMUTABLE_IDS")
 
 
 def test_close_election2():

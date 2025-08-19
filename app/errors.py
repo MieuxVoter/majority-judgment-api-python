@@ -90,3 +90,12 @@ class ResultsHiddenError(CustomError):
     error_code = "RESULTS_HIDDEN"
     message = "Results are hidden."
 
+class WrongElectionError(CustomError):
+    status_code = 403
+    error_code = "WRONG_ELECTION"
+    message = "Wrong election."
+
+class ImmutableIdsError(CustomError):
+    status_code = 403
+    error_code = "IMMUTABLE_IDS"
+    message = "The set of IDs is immutable."

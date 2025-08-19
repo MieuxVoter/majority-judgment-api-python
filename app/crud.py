@@ -288,7 +288,7 @@ def update_election(
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     if election_ref != election.ref:
-        raise errors.ForbiddenError("Wrong election ref")
+        raise errors.WrongElectionError("The provided admin token does not match this election.")
 
     db_election = get_election(db, election_ref)
 
@@ -332,13 +332,13 @@ def update_election(
         candidate_ids = {c.id for c in election.candidates}
         db_candidate_ids = {c.id for c in db_election.candidates}
         if candidate_ids != db_candidate_ids:
-            raise errors.ForbiddenError("You must have the same candidate ids")
+            raise errors.ImmutableIdsError("The set of candidate IDs cannot be changed during an update.")
 
     if election.grades is not None:
         grade_ids = {c.id for c in election.grades}
         db_grade_ids = {c.id for c in db_election.grades}
         if grade_ids != db_grade_ids:
-            raise errors.ForbiddenError("You must have the same grade ids")
+            raise errors.ImmutableIdsError("The set of grade IDs cannot be changed during an update.")
 
     # Update the candidates and grades
     if election.candidates is not None:
