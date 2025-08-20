@@ -26,15 +26,13 @@ class NotFoundError(CustomError):
     def __init__(self, name: str):
         super().__init__(message=f"Oops! No {name} were found.")
 
-class InconsistentDatabaseError(Exception):
-    """
-    An inconsistent value was detected on the database
-    """
+class InconsistentDatabaseError(CustomError):
+    status_code = 500
+    error_code = "INCONSISTENT_DATABASE"
+    message = "A serious internal error has occurred."
 
     def __init__(self, name: str, details: str | None = None):
-        self.name = name
-        self.details = details
-
+        super().__init__(message=f"A serious error has occurred with {name}. {details or ''}")
 
 class BadRequestError(CustomError):
     status_code = 400

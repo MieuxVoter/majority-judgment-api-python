@@ -53,18 +53,6 @@ async def invalid_schema_exception_handler(
         content={"error": "SCHEMA_VALIDATION_ERROR", "message": str(exc)},
     )
 
-@app.exception_handler(errors.InconsistentDatabaseError)
-async def inconsistent_database_exception_handler(
-    request: Request, exc: errors.InconsistentDatabaseError
-):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "message": f"A serious error has occured with {exc.name}. {exc.details or ''}"
-        },
-    )
-
-
 @app.get("/liveness")
 def read_root():
     return "OK"
