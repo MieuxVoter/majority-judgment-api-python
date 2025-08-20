@@ -317,6 +317,26 @@ def test_reject_wrong_ballots_restricted_election():
     )
     assert response.status_code == 200, response.json()
 
+def test_rejects_update_with_empty_ballot():
+    """
+    Tests that updating a ballot with an empty list of votes is rejected.
+    """
+    # Create a restricted election to get a valid ballot token
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    ballot_token = election_data["invites"][0]
+
+    # Attempt to update the ballot with an empty votes array
+    response = client.put(
+        "/ballots",
+        json={"votes": []},
+        headers={"Authorization": f"Bearer {ballot_token}"},
+    )
+    check_error_response(response, 400, "BAD_REQUEST")
 
 def test_reject_wrong_ballots_unrestricted_election():
     """

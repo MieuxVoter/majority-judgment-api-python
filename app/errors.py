@@ -36,13 +36,10 @@ class InconsistentDatabaseError(Exception):
         self.details = details
 
 
-class BadRequestError(Exception):
-    """
-    The request is made inconsistent
-    """
-
-    def __init__(self, details: str):
-        self.details = details
+class BadRequestError(CustomError):
+    status_code = 400
+    error_code = "BAD_REQUEST"
+    message = "The request is invalid."
 
 
 class ForbiddenError(CustomError):

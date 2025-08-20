@@ -53,14 +53,6 @@ async def invalid_schema_exception_handler(
         content={"error": "SCHEMA_VALIDATION_ERROR", "message": str(exc)},
     )
 
-@app.exception_handler(errors.BadRequestError)
-async def bad_request_exception_handler(request: Request, exc: errors.BadRequestError):
-    return JSONResponse(
-        status_code=400,
-        content={"message": f"Bad Request", "details": exc.details},
-    )
-
-
 @app.exception_handler(errors.NoRecordedVotes)
 async def no_recorded_votes_exception_handler(
     request: Request, exc: errors.NoRecordedVotes
