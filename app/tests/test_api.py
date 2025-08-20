@@ -636,6 +636,24 @@ def test_reject_ballot_box_stuffing():
     )
     check_error_response(response, 403, "INCONSISTENT_BALLOT")
 
+def test_get_results_for_election_with_no_votes():
+    """
+    Tests that requesting results for an election with zero votes
+    returns the correct specific error.
+    """
+    # Create a new, open election. Do not cast any votes.
+    body = _random_election(10, 5)
+    # Ensure the election is considered "closed" so we don't get a RESULTS_HIDDEN error
+    body["date_start"] = (datetime.now() - timedelta(days=2)).isoformat()
+    body["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_ref = response.json()["ref"]
+
+    # Request the results, which should fail predictably.
+    response = client.get(f"/results/{election_ref}")
+    check_error_response(response, 403, "NO_RECORDED_VOTES")
+
 def test_get_results():
     # Create a random election
     body = _random_election(10, 5)

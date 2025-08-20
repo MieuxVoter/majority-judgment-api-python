@@ -52,10 +52,10 @@ class UnauthorizedError(CustomError):
     error_code = "UNAUTHORIZED"
     message = "Authentication is required and has failed or has not yet been provided."
 
-class NoRecordedVotes(Exception):
-    """
-    We can't display results if we don't have resutls
-    """
+class NoRecordedVotes(CustomError):
+    status_code = 403
+    error_code = "NO_RECORDED_VOTES"
+    message = "No votes have been recorded yet."
 
 class ElectionFinishedError(CustomError):
     status_code = 403
