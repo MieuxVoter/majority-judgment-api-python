@@ -830,6 +830,23 @@ def test_update_election():
     )
     check_error_response(response, 403, "IMMUTABLE_IDS")
 
+def test_update_election_as_non_admin():
+    """
+    Tests that a non-admin user cannot update an election.
+    """
+    # Create a restricted election to get both an admin and a non-admin (ballot) token.
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    ballot_token = election_data["invites"][0] # This is a non-admin token
+
+    # Attempt to update the election using the ballot token.
+    update_payload = {"ref": election_data["ref"], "name": "New Name"}
+    response = client.put("/elections", json=update_payload, headers={"Authorization": f"Bearer {ballot_token}"})
+    check_error_response(response, 403, "FORBIDDEN")
 
 def test_close_election2():
     """

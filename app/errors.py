@@ -39,7 +39,6 @@ class BadRequestError(CustomError):
     error_code = "BAD_REQUEST"
     message = "The request is invalid."
 
-
 class ForbiddenError(CustomError):
     status_code = 403
     error_code = "FORBIDDEN"
