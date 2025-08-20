@@ -46,7 +46,8 @@ def get_progress(db: Session, election_ref: str, token: str) -> schemas.Progress
         raise errors.UnauthorizedError("Wrong election ref")
     
     # Check we can update the election
-    if not payload["admin"]:
+    # Use .get() for a safe check. If "admin" key is missing, it returns None (which is falsy).
+    if not payload.get("admin"):
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     # Votes are provided for each candidate and each voter
@@ -284,7 +285,8 @@ def update_election(
     election_ref = payload["election"]
 
     # Check we can update the election
-    if not payload["admin"]:
+    # Use .get() for a safe check. If "admin" key is missing, it returns None (which is falsy).
+    if not payload.get("admin"):
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     if election_ref != election.ref:
