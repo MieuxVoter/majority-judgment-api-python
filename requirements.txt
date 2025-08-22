@@ -4,6 +4,6 @@ sqlalchemy==2.0.40
 pydantic==2.11.3
 psycopg2==2.9.5
 git+https://github.com/MieuxVoter/majority-judgment-library-python
-python-jose==3.3.0
+python-jose==3.4.0
 python-dateutil==2.8.2
 pydantic-settings==2.9.1

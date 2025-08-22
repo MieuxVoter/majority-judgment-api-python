@@ -3,8 +3,8 @@
 
 ### Version
 
-#### Expected
+### Expected
 
-#### Actual
+### Actual
 
 ### Additional Details

@@ -87,7 +87,7 @@ async def inconsistent_database_exception_handler(
     return JSONResponse(
         status_code=500,
         content={
-            "message": f"A serious error has occured with {exc.name}. {exc.details or ''}"
+            "message": f"A serious error has occurred with {exc.name}. {exc.details or ''}"
         },
     )
 

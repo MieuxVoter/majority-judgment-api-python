@@ -33,6 +33,10 @@ You certainly want to apply the database migrations with:
     ./docker/test.sh
 
 
+## Create databases migrations
+
+    sudo ./docker/makemigrations.sh
+
 
 ## Local development
 
