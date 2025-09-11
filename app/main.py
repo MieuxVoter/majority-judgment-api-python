@@ -28,6 +28,14 @@ app.add_middleware(
 async def main():
     return {"message": "Hello World"}
 
+
+@app.exception_handler(errors.CustomError)
+async def custom_error_exception_handler(request: Request, exc: errors.CustomError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.error_code, "message": str(exc)},
+    )
+
 @app.exception_handler(schemas.ArgumentsSchemaError)
 async def invalid_schema_exception_handler(
     request: Request, exc: schemas.ArgumentsSchemaError

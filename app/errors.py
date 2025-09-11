@@ -2,6 +2,21 @@
 Utility to handle exceptions
 """
 
+class CustomError(Exception):
+    """
+    Base class for custom application errors.
+    """
+    status_code: int = 500
+    error_code: str = "UNEXPECTED_ERROR"
+    message: str = "An unexpected error occurred."
+
+    def __init__(self, message: str | None = None, status_code: int | None = None, error_code: str | None = None):
+        super().__init__(message or self.message)
+        if status_code is not None:
+            self.status_code = status_code
+        if error_code is not None:
+            self.error_code = error_code
+
 
 class NotFoundError(Exception):
     """
