@@ -45,14 +45,10 @@ class BadRequestError(Exception):
         self.details = details
 
 
-class ForbiddenError(Exception):
-    """
-    The request is made inconsistent
-    """
-
-    def __init__(self, details: str = "Forbidden"):
-        self.details = details
-
+class ForbiddenError(CustomError):
+    status_code = 403
+    error_code = "FORBIDDEN"
+    message = "You are not authorized to perform this action."
 
 class UnauthorizedError(Exception):
     """
@@ -67,3 +63,9 @@ class NoRecordedVotes(Exception):
     """
     We can't display results if we don't have resutls
     """
+
+class ElectionFinishedError(CustomError):
+    status_code = 403
+    error_code = "ELECTION_FINISHED"
+    message = "The election has finished and cannot be voted on."
+

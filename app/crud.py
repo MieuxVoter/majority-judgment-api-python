@@ -445,9 +445,9 @@ def _check_election_is_not_ended(election: models.Election):
     If it is, raise an error.
     """
     if election.date_end is not None and election.date_end < datetime.now():
-        raise errors.ForbiddenError("The election has ended. You can not create new votes")
+        raise errors.ElectionFinishedError("The election has ended. You can not create new votes")
     if election.force_close:
-        raise errors.ForbiddenError("The election is closed. You can not create or update votes")    
+        raise errors.ElectionFinishedError("The election is closed. You can not create or update votes")
 
 def _check_items_in_election(
     db: Session,

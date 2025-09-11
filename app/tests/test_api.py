@@ -381,8 +381,7 @@ def test_cannot_create_vote_on_ended_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
     # Try to close the election with force_close
     response = client.put(
@@ -397,8 +396,7 @@ def test_cannot_create_vote_on_ended_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
 def test_cannot_update_vote_on_ended_election():
     """
@@ -439,7 +437,7 @@ def test_cannot_update_vote_on_ended_election():
         json={"votes": votes},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 403, response.json()
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
     # Test for date_end in the past
     response = client.put(
@@ -457,8 +455,7 @@ def test_cannot_update_vote_on_ended_election():
         json={"votes": votes},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-
-    assert response.status_code == 403, response.json()
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
 ## TODO: cannot change start_date if a people vote; 
 ## 
