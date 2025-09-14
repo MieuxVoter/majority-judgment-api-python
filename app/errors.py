@@ -18,14 +18,13 @@ class CustomError(Exception):
             self.error_code = error_code
 
 
-class NotFoundError(Exception):
-    """
-    An item can not be found
-    """
+class NotFoundError(CustomError):
+    status_code = 404
+    error_code = "NOT_FOUND"
+    message = "The requested item could not be found."
 
     def __init__(self, name: str):
-        self.name = name
-
+        super().__init__(message=f"Oops! No {name} were found.")
 
 class InconsistentDatabaseError(Exception):
     """

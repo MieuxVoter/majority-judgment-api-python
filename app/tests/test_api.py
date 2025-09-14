@@ -30,10 +30,26 @@ def override_get_db():
     finally:
         db.close()
 
-
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+def check_error_response(response, expected_status_code: int, expected_error_code: str):
+    """
+    Helper function to assert a standardized error response from the API.
+    It checks the status code and the specific error code in the JSON body.
+    """
+    assert response.status_code == expected_status_code, \
+        f"Expected status {expected_status_code}, but got {response.status_code}. Body: {response.text}"
+
+    data = response.json()
+
+    assert "error" in data, f"Key 'error' not found in response body: {data}"
+    assert data["error"] == expected_error_code, \
+        f"Expected error code '{expected_error_code}', but got '{data['error']}'"
+
+    return data  # Return the parsed data in case a test needs to check the message
 
 
 def test_liveness():
@@ -44,7 +60,7 @@ def test_liveness():
 
 def test_read_a_missing_election():
     response = client.get("/elections/foo")
-    assert response.status_code == 404
+    check_error_response(response, 404, "NOT_FOUND")
 
 
 def _random_string(length: int) -> str:
@@ -110,6 +126,7 @@ def test_create_election():
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["name"] == body["name"]
+
 
 def test_start_end_date_are_valid():
     # cannot create an election where the start date is after the end date 

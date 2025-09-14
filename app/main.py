@@ -47,14 +47,6 @@ async def invalid_schema_exception_handler(
         },
     )
 
-@app.exception_handler(errors.NotFoundError)
-async def not_found_exception_handler(request: Request, exc: errors.NotFoundError):
-    return JSONResponse(
-        status_code=404,
-        content={"message": f"Oops! No {exc.name} were found."},
-    )
-
-
 @app.exception_handler(errors.UnauthorizedError)
 async def unauthorized_exception_handler(request: Request, exc: errors.NotFoundError):
     return JSONResponse(
