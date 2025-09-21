@@ -3,8 +3,8 @@ import json
 from fastapi import Depends, FastAPI, HTTPException, Request, Body, Header
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from jose import jwe, jws
 from jose.exceptions import JWEError, JWSError
 
 from . import crud, models, schemas, errors
@@ -23,10 +23,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # This overrides FastAPI's default 422 validation error handler
+    # to produce our standardized error format.
+    return JSONResponse(
+        status_code=422,
+        content={"error": "VALIDATION_ERROR", "message": str(exc)},
+    )
 
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
+
+
+@app.exception_handler(errors.CustomError)
+async def custom_error_exception_handler(request: Request, exc: errors.CustomError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.error_code, "message": str(exc)},
+    )
 
 @app.exception_handler(schemas.ArgumentsSchemaError)
 async def invalid_schema_exception_handler(
@@ -34,63 +50,8 @@ async def invalid_schema_exception_handler(
 ):
     return JSONResponse(
         status_code=422,
-        content={
-            "message": f"Validation Error. {exc}",
-        },
+        content={"error": "SCHEMA_VALIDATION_ERROR", "message": str(exc)},
     )
-
-@app.exception_handler(errors.NotFoundError)
-async def not_found_exception_handler(request: Request, exc: errors.NotFoundError):
-    return JSONResponse(
-        status_code=404,
-        content={"message": f"Oops! No {exc.name} were found."},
-    )
-
-
-@app.exception_handler(errors.UnauthorizedError)
-async def unauthorized_exception_handler(request: Request, exc: errors.NotFoundError):
-    return JSONResponse(
-        status_code=401, content={"message": "Unautorized", "details": exc.name}
-    )
-
-
-@app.exception_handler(errors.ForbiddenError)
-async def forbidden_exception_handler(request: Request, exc: errors.ForbiddenError):
-    return JSONResponse(
-        status_code=403,
-        content={"message": f"Forbidden", "details": exc.details},
-    )
-
-
-@app.exception_handler(errors.BadRequestError)
-async def bad_request_exception_handler(request: Request, exc: errors.BadRequestError):
-    return JSONResponse(
-        status_code=400,
-        content={"message": f"Bad Request", "details": exc.details},
-    )
-
-
-@app.exception_handler(errors.NoRecordedVotes)
-async def no_recorded_votes_exception_handler(
-    request: Request, exc: errors.NoRecordedVotes
-):
-    return JSONResponse(
-        status_code=403,
-        content={"message": f"No votes have been recorded yet"},
-    )
-
-
-@app.exception_handler(errors.InconsistentDatabaseError)
-async def inconsistent_database_exception_handler(
-    request: Request, exc: errors.InconsistentDatabaseError
-):
-    return JSONResponse(
-        status_code=500,
-        content={
-            "message": f"A serious error has occured with {exc.name}. {exc.details or ''}"
-        },
-    )
-
 
 @app.get("/liveness")
 def read_root():

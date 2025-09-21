@@ -46,7 +46,8 @@ def get_progress(db: Session, election_ref: str, token: str) -> schemas.Progress
         raise errors.UnauthorizedError("Wrong election ref")
     
     # Check we can update the election
-    if not payload["admin"]:
+    # Use .get() for a safe check. If "admin" key is missing, it returns None (which is falsy).
+    if not payload.get("admin"):
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     # Votes are provided for each candidate and each voter
@@ -284,11 +285,12 @@ def update_election(
     election_ref = payload["election"]
 
     # Check we can update the election
-    if not payload["admin"]:
+    # Use .get() for a safe check. If "admin" key is missing, it returns None (which is falsy).
+    if not payload.get("admin"):
         raise errors.ForbiddenError("You are not allowed to manage the election")
 
     if election_ref != election.ref:
-        raise errors.ForbiddenError("Wrong election ref")
+        raise errors.WrongElectionError("The provided admin token does not match this election.")
 
     db_election = get_election(db, election_ref)
 
@@ -297,12 +299,12 @@ def update_election(
 
     if election.date_start is not None and election.date_end is None and db_election.date_end is not None:
         if schemas.parse_date(election.date_start) > schemas.parse_date(db_election.date_end):
-            raise errors.ForbiddenError(
+            raise errors.InvalidDateError(
                 "The start date must be before the end date of the election"
             )
     elif election.date_end is not None and election.date_start is None:
         if schemas.parse_date(election.date_end) < schemas.parse_date(db_election.date_start):
-            raise errors.ForbiddenError(
+            raise errors.InvalidDateError(
                 "The end date must be after the start date of the election"
             )
 
@@ -332,19 +334,29 @@ def update_election(
         candidate_ids = {c.id for c in election.candidates}
         db_candidate_ids = {c.id for c in db_election.candidates}
         if candidate_ids != db_candidate_ids:
-            raise errors.ForbiddenError("You must have the same candidate ids")
+            raise errors.ImmutableIdsError("The set of candidate IDs cannot be changed during an update.")
 
     if election.grades is not None:
         grade_ids = {c.id for c in election.grades}
         db_grade_ids = {c.id for c in db_election.grades}
         if grade_ids != db_grade_ids:
-            raise errors.ForbiddenError("You must have the same grade ids")
+            raise errors.ImmutableIdsError("The set of grade IDs cannot be changed during an update.")
 
     # Update the candidates and grades
     if election.candidates is not None:
         update_candidates(db, election.candidates, db_election.candidates)
     if election.grades is not None:
         update_grades(db, election.grades, db_election.grades)
+
+    # Check if start_date is being changed
+    if election.date_start is not None and str(db_election.date_start) != election.date_start:
+        # If so, check if any votes have been cast
+        num_votes_cast = db.query(models.Vote).filter(
+            models.Vote.election_ref == election_ref,
+            models.Vote.grade_id.is_not(None)
+        ).count()
+        if num_votes_cast > 0:
+            raise errors.ElectionIsActiveError("Cannot change the start date of an election that already has votes.")
 
     for key in [
         "name",
@@ -381,7 +393,7 @@ def _check_ballot_is_consistent(
         for c in election.candidates
     }
     if not all(len(votes) == 1 for votes in votes_by_candidate.values()):
-        raise errors.ForbiddenError("Unconsistent ballot")
+        raise errors.InconsistentBallotError("Inconsistent ballot: each candidate must have exactly one vote.")
 
 
 def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGet:
@@ -426,7 +438,7 @@ def _check_public_election(db: Session, election_ref: str):
     if db_election is None:
         raise errors.NotFoundError("elections")
     if db_election.restricted:
-        raise errors.ForbiddenError(
+        raise errors.ElectionRestrictedError(
             "The election is restricted. You can not create new votes"
         )
     return db_election
@@ -437,7 +449,7 @@ def _check_election_is_started(election: models.Election):
     If it is not, raise an error.
     """
     if election.date_start is not None and election.date_start > datetime.now():
-        raise errors.ForbiddenError("The election has not started yet. You can not create votes")
+        raise errors.ElectionNotStartedError("The election has not started yet. You can not create votes")
 
 def _check_election_is_not_ended(election: models.Election):
     """
@@ -445,9 +457,9 @@ def _check_election_is_not_ended(election: models.Election):
     If it is, raise an error.
     """
     if election.date_end is not None and election.date_end < datetime.now():
-        raise errors.ForbiddenError("The election has ended. You can not create new votes")
+        raise errors.ElectionFinishedError("The election has ended. You can not create new votes")
     if election.force_close:
-        raise errors.ForbiddenError("The election is closed. You can not create or update votes")    
+        raise errors.ElectionFinishedError("The election is closed. You can not create or update votes")
 
 def _check_items_in_election(
     db: Session,
@@ -566,7 +578,7 @@ def get_results(db: Session, election_ref: str, token: t.Optional[str]) -> schem
         and (db_election.date_end is not None and db_election.date_end > datetime.now())
         and not db_election.force_close
     ):
-        raise errors.ForbiddenError("The election is not closed")
+        raise errors.ResultsHiddenError("Results are hidden until the election is closed.")
 
     query = db.query(
         models.Vote.candidate_id, models.Grade.value, func.count(models.Vote.id)

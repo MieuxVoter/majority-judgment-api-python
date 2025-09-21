@@ -30,10 +30,26 @@ def override_get_db():
     finally:
         db.close()
 
-
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
+
+def check_error_response(response, expected_status_code: int, expected_error_code: str):
+    """
+    Helper function to assert a standardized error response from the API.
+    It checks the status code and the specific error code in the JSON body.
+    """
+    assert response.status_code == expected_status_code, \
+        f"Expected status {expected_status_code}, but got {response.status_code}. Body: {response.text}"
+
+    data = response.json()
+
+    assert "error" in data, f"Key 'error' not found in response body: {data}"
+    assert data["error"] == expected_error_code, \
+        f"Expected error code '{expected_error_code}', but got '{data['error']}'"
+
+    return data  # Return the parsed data in case a test needs to check the message
 
 
 def test_liveness():
@@ -44,7 +60,7 @@ def test_liveness():
 
 def test_read_a_missing_election():
     response = client.get("/elections/foo")
-    assert response.status_code == 404
+    check_error_response(response, 404, "NOT_FOUND")
 
 
 def _random_string(length: int) -> str:
@@ -111,13 +127,14 @@ def test_create_election():
     data = response.json()
     assert data["name"] == body["name"]
 
+
 def test_start_end_date_are_valid():
     # cannot create an election where the start date is after the end date 
     body = _random_election(2, 2)
     body["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
     body["date_end"] = (datetime.now()).isoformat()
     response = client.post("/elections", json=body)
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "SCHEMA_VALIDATION_ERROR")
 
     body["date_start"] = (datetime.now()).isoformat()
     body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
@@ -133,24 +150,23 @@ def test_start_end_date_are_valid():
     admin_token = election_data["admin"]
     election_ref = election_data["ref"]
 
-    # update election should not be allowed if the start date is after the end date
+    # update election should not be allowed if the new start date is after the new end date
     election_data["date_start"] = (datetime.now() + timedelta(days=1)).isoformat()
     election_data["date_end"] = (datetime.now()).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "SCHEMA_VALIDATION_ERROR")
 
-    # update election should be allowed if the start date is before the end date
+    # update election should be rejected if the new end date is before the existing start date
     del election_data["date_start"]
     election_data["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 403, response.text
+    check_error_response(response, 409, "INVALID_DATE_CONFIGURATION")
 
-    # update election should be allowed if the start date is before the end date
+    # update election should be rejected if the new start date is after the existing end date
     del election_data["date_end"]
     election_data["date_start"] = (datetime.now() + timedelta(days=2)).isoformat()
     response = client.put("/elections", json=election_data, headers={"Authorization": f"Bearer {admin_token}"})
-    assert response.status_code == 403, response.text
-
+    check_error_response(response, 409, "INVALID_DATE_CONFIGURATION")
 
 def test_get_election():
     body = _random_election(3, 4)
@@ -225,7 +241,7 @@ def test_create_ballot():
     response = client.get(
         f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
-    assert response.status_code == 401, response.text
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     response = client.get(f"/ballots/", headers={"Authorization": f"Bearer {ballot_token}"})
     assert response.status_code == 200, response.text
@@ -263,7 +279,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes[-1]},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty grade_id is rejected
     grade_id = data["grades"][0]["id"]
@@ -274,7 +290,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes2},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty candidate is rejected
     votes2 = copy.deepcopy(votes)
@@ -284,7 +300,7 @@ def test_reject_wrong_ballots_restricted_election():
         json={"votes": votes2},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 422, response.json()
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # But it should work with the whole ballot
     response = client.put(
@@ -301,6 +317,26 @@ def test_reject_wrong_ballots_restricted_election():
     )
     assert response.status_code == 200, response.json()
 
+def test_rejects_update_with_empty_ballot():
+    """
+    Tests that updating a ballot with an empty list of votes is rejected.
+    """
+    # Create a restricted election to get a valid ballot token
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    ballot_token = election_data["invites"][0]
+
+    # Attempt to update the ballot with an empty votes array
+    response = client.put(
+        "/ballots",
+        json={"votes": []},
+        headers={"Authorization": f"Bearer {ballot_token}"},
+    )
+    check_error_response(response, 400, "BAD_REQUEST")
 
 def test_reject_wrong_ballots_unrestricted_election():
     """
@@ -317,7 +353,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes[:-1], "election_ref": data["ref"]}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "INCONSISTENT_BALLOT")
 
     # Check that a ballot with an empty grade_id is rejected
     votes = _generate_votes_from_response("id", data)
@@ -325,7 +361,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
     )
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that a ballot with an empty candidate is rejected
     votes = _generate_votes_from_response("id", data)
@@ -333,7 +369,7 @@ def test_reject_wrong_ballots_unrestricted_election():
     response = client.post(
         f"/ballots", json={"votes": votes, "election_ref": data["ref"]}
     )
-    assert response.status_code == 422, response.text
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # But it should work with the whole ballot
     votes = _generate_votes_from_response("id", data)
@@ -364,8 +400,7 @@ def test_cannot_create_vote_on_ended_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
     # Try to close the election with force_close
     response = client.put(
@@ -380,8 +415,7 @@ def test_cannot_create_vote_on_ended_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
 def test_cannot_update_vote_on_ended_election():
     """
@@ -422,7 +456,7 @@ def test_cannot_update_vote_on_ended_election():
         json={"votes": votes},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
-    assert response.status_code == 403, response.json()
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
     # Test for date_end in the past
     response = client.put(
@@ -440,11 +474,45 @@ def test_cannot_update_vote_on_ended_election():
         json={"votes": votes},
         headers={"Authorization": f"Bearer {ballot_token}"},
     )
+    check_error_response(response, 403, "ELECTION_FINISHED")
 
-    assert response.status_code == 403, response.json()
+def test_cannot_change_start_date_if_vote_is_cast():
+    """
+    Tests that the start_date of an election cannot be updated
+    once at least one vote has been cast.
+    """
+    # Create a restricted election that is already open
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    body["date_start"] = (datetime.now() - timedelta(days=1)).isoformat()
+    body["date_end"] = (datetime.now() + timedelta(days=1)).isoformat()
 
-## TODO: cannot change start_date if a people vote; 
-## 
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    election_ref = election_data["ref"]
+    admin_token = election_data["admin"]
+    ballot_token = election_data["invites"][0]
+
+    # Cast a vote to make the election "active"
+    grade_id = election_data["grades"][0]["id"]
+    votes = [
+        {"candidate_id": c["id"], "grade_id": grade_id}
+        for c in election_data["candidates"]
+    ]
+    response = client.put(
+        "/ballots",
+        json={"votes": votes},
+        headers={"Authorization": f"Bearer {ballot_token}"}
+    )
+    assert response.status_code == 200, "Setup failed: Could not cast the initial vote."
+
+    # Attempt to change the start_date, which should be forbidden
+    update_payload = {"ref": election_ref, "date_start": (datetime.now() - timedelta(days=2)).isoformat()}
+    response = client.put("/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"})
+    check_error_response(response, 403, "ELECTION_IS_ACTIVE")
+
 def test_cannot_create_vote_on_unstarted_election():
     """
     On an unstarted election, we are not allowed to create new votes
@@ -464,8 +532,7 @@ def test_cannot_create_vote_on_unstarted_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_NOT_STARTED")
 
 def test_cannot_update_vote_on_unstarted_election():
     """
@@ -491,8 +558,7 @@ def test_cannot_update_vote_on_unstarted_election():
         json={"votes": votes, "election_ref": election_ref},
         headers={"Authorization": f"Bearer {tokens[0]}"},
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "ELECTION_NOT_STARTED")
 
 def test_cannot_create_vote_on_restricted_election():
     """
@@ -514,9 +580,7 @@ def test_cannot_create_vote_on_restricted_election():
         f"/ballots",
         json={"votes": votes, "election_ref": election_ref},
     )
-    data = response.json()
-    assert response.status_code == 403, data
-
+    check_error_response(response, 403, "ELECTION_RESTRICTED")
 
 def test_can_vote_on_restricted_election():
     """
@@ -556,7 +620,7 @@ def test_can_vote_on_restricted_election():
     assert payload2 == payload
 
 
-def test_cannot_ballot_box_stuffing():
+def test_reject_ballot_box_stuffing():
     # Create a random election
     body = _random_election(10, 5)
     response = client.post("/elections", json=body)
@@ -570,9 +634,25 @@ def test_cannot_ballot_box_stuffing():
     response = client.post(
         f"/ballots", json={"votes": votes + votes, "election_ref": election_ref}
     )
-    data = response.json()
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "INCONSISTENT_BALLOT")
 
+def test_get_results_for_election_with_no_votes():
+    """
+    Tests that requesting results for an election with zero votes
+    returns the correct specific error.
+    """
+    # Create a new, open election. Do not cast any votes.
+    body = _random_election(10, 5)
+    # Ensure the election is considered "closed" so we don't get a RESULTS_HIDDEN error
+    body["date_start"] = (datetime.now() - timedelta(days=2)).isoformat()
+    body["date_end"] = (datetime.now() - timedelta(days=1)).isoformat()
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_ref = response.json()["ref"]
+
+    # Request the results, which should fail predictably.
+    response = client.get(f"/results/{election_ref}")
+    check_error_response(response, 403, "NO_RECORDED_VOTES")
 
 def test_get_results():
     # Create a random election
@@ -600,7 +680,7 @@ def test_get_results():
     assert len(profile) == len(data["candidates"])
 
 
-def test_get_results_with_hide_results():
+def test_get_results_with_hidden_results():
     # Create a random election
     body = _random_election(10, 5)
     body["hide_results"] = True
@@ -620,13 +700,15 @@ def test_get_results_with_hide_results():
 
     # But, we can't get the results
     response = client.get(f"/results/{election_ref}")
-    assert response.status_code == 403, data
+    check_error_response(response, 403, "RESULTS_HIDDEN")
 
     # So, we close the election
-    print("UPDATE", data["force_close"])
-    data["force_close"] = True
+    update_payload = {
+        "ref": election_ref,
+        "force_close": True
+    }
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+        f"/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -654,15 +736,17 @@ def test_get_results_with_auth_for_result():
     )
     assert response.status_code == 200, data
 
+    # Send a minimal update to ensure the election state is processed without triggering date change errors.
+    update_payload = {"ref": election_ref, "name": data["name"]}
     response = client.put(
-        f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}"}
+        f"/elections", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
     )
 
     assert response.status_code == 200, response.text
 
     # But, we can't get the results
     response = client.get(f"/results/{election_ref}")
-    assert response.status_code == 401, data
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # Now, we can access to the results
     response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token}"})
@@ -675,7 +759,7 @@ def test_get_results_with_auth_for_result():
     admin_token2 = data2["admin"]
 
     response = client.get(f"/results/{election_ref}", headers={"Authorization": f"Bearer {admin_token2}"})
-    assert response.status_code == 401, data
+    check_error_response(response, 401, "UNAUTHORIZED")
 
 def test_update_election():
     # Create a random election
@@ -689,13 +773,13 @@ def test_update_election():
 
     # Check we can not update without the ballot_token
     response = client.put("/elections", json=data)
-    assert response.status_code == 422, response.content
+    check_error_response(response, 422, "VALIDATION_ERROR")
 
     # Check that the request fails with a wrong ballot_token
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token}WRONG"}
     )
-    assert response.status_code == 401, response.text    
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # Check that the request fails with a admnin token of other election
     response2 = client.post("/elections", json=body)
@@ -704,7 +788,7 @@ def test_update_election():
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {admin_token2}"}
     )
-    assert response.status_code == 403, response.text  
+    check_error_response(response, 403, "WRONG_ELECTION")
 
     # But it works with the right ballot_token
     response = client.put(
@@ -737,15 +821,32 @@ def test_update_election():
     response = client.put(
         f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "IMMUTABLE_IDS")
 
     data2 = copy.deepcopy(data)
     data2["grades"][0]["id"] += 100
     response = client.put(
         f"/elections", json=data2, headers={"Authorization": f"Bearer {admin_token}"}
     )
-    assert response.status_code == 403, response.text
+    check_error_response(response, 403, "IMMUTABLE_IDS")
 
+def test_update_election_as_non_admin():
+    """
+    Tests that a non-admin user cannot update an election.
+    """
+    # Create a restricted election to get both an admin and a non-admin (ballot) token.
+    body = _random_election(5, 3)
+    body["restricted"] = True
+    body["num_voters"] = 1
+    response = client.post("/elections", json=body)
+    assert response.status_code == 200
+    election_data = response.json()
+    ballot_token = election_data["invites"][0] # This is a non-admin token
+
+    # Attempt to update the election using the ballot token.
+    update_payload = {"ref": election_data["ref"], "name": "New Name"}
+    response = client.put("/elections", json=update_payload, headers={"Authorization": f"Bearer {ballot_token}"})
+    check_error_response(response, 403, "FORBIDDEN")
 
 def test_close_election2():
     """
@@ -784,7 +885,7 @@ def test_close_election():
     response = client.put(
         f"/elections", json=data, headers={"Authorization": f"Bearer {ballot_token}WRONG"}
     )
-    assert response.status_code == 401, response.text
+    check_error_response(response, 401, "UNAUTHORIZED")
 
     # But it works with the right ballot_token
     response = client.put(
