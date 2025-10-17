@@ -2,7 +2,8 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
-
+import uuid  # Pour pouvoir appeler uuid.uuid4()
+from sqlalchemy import UUID
 
 class Election(Base):
     __tablename__ = "elections"
@@ -24,6 +25,7 @@ class Election(Base):
     grades = relationship("Grade", back_populates="election")
     candidates = relationship("Candidate", back_populates="election")
     votes = relationship("Vote", back_populates="election")
+    ballots = relationship("Ballot", back_populates="election")
 
 
 class Candidate(Base):
@@ -72,3 +74,20 @@ class Vote(Base):
 
     election_ref = Column(String(20), ForeignKey("elections.ref"))
     election = relationship("Election", back_populates="votes")
+
+    ballot_id = Column(Integer, ForeignKey("ballots.id"), nullable=True) 
+    ballot = relationship("Ballot", back_populates="votes")
+
+
+class Ballot(Base):
+    __tablename__ = "ballots"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    voter_uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, index=True)
+
+    date_created = Column(DateTime, server_default=func.now())
+    election_ref = Column(String(20), ForeignKey("elections.ref"))
+
+    election = relationship("Election", back_populates="ballots")
+    votes = relationship("Vote", back_populates="ballot")
