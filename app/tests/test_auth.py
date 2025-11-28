@@ -41,9 +41,9 @@ def test_ballot_token():
     """
     vote_ids = list(range(1000))
     election_ref = "qwertyuiop"
-    token = create_ballot_token(vote_ids, election_ref)
+    token = create_ballot_token(vote_ids, election_ref, 1)
     data = jws_verify(token)
-    assert data == {"votes": vote_ids, "election": election_ref}
+    assert data == {"votes": vote_ids, "election": election_ref, "ballot": 1}
 
 
 def test_admin_token():

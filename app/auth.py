@@ -27,12 +27,13 @@ def jws_verify(token: str) -> Mapping[str, t.Any]:
 def create_ballot_token(
     vote_ids: int | list[int],
     election_ref: str,
+    ballot_id:int
 ) -> str:
     if isinstance(vote_ids, int):
         vote_ids = [vote_ids]
     vote_ids = sorted(vote_ids)
     return jws.sign(
-        {"votes": vote_ids, "election": election_ref},
+        { "votes": vote_ids, "election": election_ref, "ballot": ballot_id },
         settings.secret,
         algorithm="HS256",
     )

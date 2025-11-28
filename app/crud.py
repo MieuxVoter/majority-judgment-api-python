@@ -219,14 +219,33 @@ def create_invite_tokens(
     _check_election_is_not_ended(get_election(db, election_ref))
     now = datetime.now()
     params = {"date_created": now, "date_modified": now, "election_ref": election_ref}
-    db_votes = [models.Vote(**params) for _ in range(num_voters * num_candidates)]
-    db.bulk_save_objects(db_votes, return_defaults=True)
-    db.commit()
+
+    try:
+        db_ballots = [models.Ballot(election_ref=election_ref) for _ in range(num_voters)]
+        db.bulk_save_objects(db_ballots, return_defaults=True)
+
+        db_votes = []
+
+        for ballot in db_ballots:
+            for _ in range(num_candidates):
+                db_votes.append(models.Vote(**params, ballot_id=ballot.id))
+        
+        db.bulk_save_objects(db_votes, return_defaults=True)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+    
+    tokens = []
     vote_ids = [int(str(v.id)) for v in db_votes]
-    tokens = [
-        create_ballot_token(vote_ids[i::num_voters], election_ref)
-        for i in range(num_voters)
-    ]
+
+    for i, ballot in enumerate(db_ballots):
+        start = i * num_candidates
+        end = start + num_candidates
+        tokens.append(
+            create_ballot_token(vote_ids[start:end], election_ref, int(str(ballot.id)))
+        )
+
     return tokens
 
 
@@ -417,18 +436,29 @@ def create_ballot(db: Session, ballot: schemas.BallotCreate) -> schemas.BallotGe
     )
     _check_ballot_is_consistent(election, ballot)
 
-    # Ideally, we would use RETURNING but it does not work yet for SQLite
-    db_votes = [
-        models.Vote(**v.model_dump(), election_ref=ballot.election_ref) for v in ballot.votes
-    ]
-    db.add_all(db_votes)
-    db.commit()
-    for v in db_votes:
-        db.refresh(v)
+    try:
+        db_ballot = models.Ballot(election_ref=ballot.election_ref)
+        db.add(db_ballot)
+        db.flush()
+
+        # Create votes and associate them with the ballot
+        db_votes = [
+            models.Vote(**v.model_dump(), election_ref=ballot.election_ref, ballot_id=db_ballot.id) 
+            for v in ballot.votes
+        ]
+        db.add_all(db_votes)
+        db.commit()
+        db.refresh(db_ballot)
+
+        for v in db_votes:
+            db.refresh(v)
+    except Exception as e:
+        db.rollback()
+        raise e
 
     votes_get = [schemas.VoteGet.model_validate(v) for v in db_votes]
     vote_ids = [v.id for v in votes_get]
-    token = create_ballot_token(vote_ids, ballot.election_ref)
+    token = create_ballot_token(vote_ids, ballot.election_ref, int(db_ballot.id))
     return schemas.BallotGet(votes=votes_get, token=token, election=election)
 
 
@@ -523,6 +553,13 @@ def update_ballot(
     if len(db_votes) != len(vote_ids):
         raise errors.NotFoundError("votes")
 
+    # Verify all votes belong to the same ballot
+    ballot_ids = {int(v.ballot_id) for v in db_votes if v.ballot_id is not None}
+
+    if len(ballot_ids) > 1:
+        raise errors.ForbiddenError("All votes must belong to the same ballot")
+
+    # old API does not contains ballot id in the token
     election = schemas.ElectionGet.model_validate(db_votes[0].election)
 
     for vote, db_vote in zip(ballot.votes, db_votes):
@@ -533,7 +570,6 @@ def update_ballot(
     db.commit()
 
     votes_get = [schemas.VoteGet.model_validate(v) for v in db_votes]
-    token = create_ballot_token(vote_ids, election_ref)
     return schemas.BallotGet(votes=votes_get, token=token, election=election)
 
 
