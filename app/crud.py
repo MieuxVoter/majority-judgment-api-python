@@ -368,7 +368,7 @@ def update_election(
         update_grades(db, election.grades, db_election.grades)
 
     # Check if start_date is being changed
-    if election.date_start is not None and str(db_election.date_start) != election.date_start:
+    if election.date_start is not None and schemas.parse_date(db_election.date_start) != schemas.parse_date(election.date_start):
         # If so, check if any votes have been cast
         num_votes_cast = db.query(models.Vote).filter(
             models.Vote.election_ref == election_ref,
