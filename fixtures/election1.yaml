@@ -1,0 +1,39 @@
+grades: ["Excellent", "Très Bien", "Bien", "Assez Bien", "Passable", "Insuffisant"]
+# rows are candidates, columns are grades
+profile:
+ - [4, 5, 7, 0, 2, 0]
+ - [4, 4, 7, 1, 1, 1]
+ - [4, 5, 1, 2, 4, 2]
+ - [3, 2, 6, 4, 2, 1]
+ - [3, 3, 4, 5, 2, 1]
+ - [3, 5, 2, 3, 4, 1]
+ - [6, 4, 4, 2, 1, 1]
+ - [6, 3, 4, 1, 3, 1]
+ - [4, 3, 6, 2, 2, 1]
+ - [6, 2, 5, 1, 2, 2]
+ - [17, 1, 0, 0, 0, 0]
+ - [5, 7, 3, 2, 0, 1]
+ - [10, 4, 1, 1, 2, 0]
+ - [7, 5, 1, 3, 1, 1]
+ - [4, 11, 1, 0, 1, 1]
+ - [1, 5, 6, 3, 2, 1]
+ - [12, 3, 0, 2, 0, 1]
+# this is in the same order than the profile
+results:
+ - {"more": 9, "maj_grade": "Bien", "less": 2, "jauge": "Bien / +9", "maj_value": "45/45/45/45/45/46/46/26/26",	"rank": 9.}
+ - {"more": 8, "maj_grade": "Bien", "less": 3, "jauge": "Bien / +8", "maj_value": "44/45/45/45/45/46/36/26/16",	"rank": 12.}
+ - {"more": 9, "maj_grade": "Bien", "less": 8, "jauge": "Bien / +9", "maj_value": "45/35/35/25/25/26/26/16/16",	"rank": 10.}
+ - {"more": 5, "maj_grade": "Bien", "less": 7, "jauge": "Bien / -7", "maj_value": "44/44/34/34/35/35/26/26/16",	"rank": 15.}
+ - {"more": 6, "maj_grade": "Bien", "less": 8, "jauge": "Bien / -8", "maj_value": "44/34/34/35/35/35/26/26/16",	"rank": 17.}
+ - {"more": 8, "maj_grade": "Bien", "less": 8, "jauge": "Bien / -8", "maj_value": "44/35/35/35/25/25/26/26/16",	"rank": 16.}
+ - {"more": 6, "maj_grade": "Très bien", "less": 9, "jauge": "Très bien / -9", "maj_value": "55/45/45/46/46/36/36/26/16", "rank": 7.}
+ - {"more": 9, "maj_grade": "Bien", "less": 5, "jauge": "Bien / +9", "maj_value": "45/45/45/46/36/26/26/26/16", "rank": 8.}
+ - {"more": 7, "maj_grade": "Bien", "less": 5, "jauge": "Bien / +7", "maj_value": "44/44/45/45/35/36/26/26/16", "rank": 13.}
+ - {"more": 7, "maj_grade": "Bien", "less": 5, "jauge": "Bien / +8", "maj_value": "44/45/45/46/36/26/26/16/16", "rank": 11.}
+ - {"more": *, "maj_grade": "Excellent", "less": 1, "jauge": "Excellent / -1", "maj_value": "66/66/66/66/66/66/66/66/16", "rank": 1.}
+ - {"more": 5, "maj_grade": "Très Bien" "less": 6, "jauge": "Très bien / -6", "maj_value": "55/55/55/45/46/46/36/36/16", "rank": 6.}
+ - {"more": *, "maj_grade": "Excellent", "less": -8, "jauge": "Excellent / -8", "maj_value": "66/56/56/56/56/46/36/26/26", "rank": 3.}
+ - {"more": 7, "maj_grade": "Très bien" "less": 6, "jauge": "Très bien / +7", "maj_value": "55/55/56/46/36/36/36/26/16", "rank": 4.}
+ - {"more": 4, "maj_grade": "Très bien" "less": 3, "jauge": "Très bien / +4", "maj_value": "55/55/55/55/5556/46/26/16", "rank": 5.}
+ - {"more": 6, "maj_grade": "Bien", "less": 6, "jauge": "Bien / -6", "maj_value": "44/44/44/35/35/35/25/25/16", "rank": 14.}
+ - {"more": *, "maj_grade": "Excellent", "less": 6, "jauge": "Excellent / -6", "maj_value": "66/66/66/56/56/56/36/36/16", "rank": 2.}
