@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB: "${DB_NAME:-mj}"
       POSTGRES_USER: "${DB_USER:-mj}"
-      POSTGRES_PASSWORD: "${DB_PASS:?error}"
+      POSTGRES_PASSWORD: "${DB_PASS:?'error: you must pass --env-file=.env.local to the docker compose command'}"
       TZ: "${TIMEZONE:-Europe/Paris}"
     networks:
       - lan
@@ -33,7 +33,6 @@ services:
     profiles:
       - core
       - all
-    #image: majority-judgment/api-python:latest
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -143,7 +142,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
       - "traefik.http.services.adminer.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.auth.basicauth.users=${AUTH_HASH:?error}"
+      - "traefik.http.middlewares.auth.basicauth.users=${AUTH_HASH}"
       - "traefik.http.routers.adminer.middlewares=auth"
       - "traefik.http.routers.adminer.entrypoints=websecure"
       - "traefik.http.routers.adminer.rule=Host(`adminer.${DOMAIN}`)"
